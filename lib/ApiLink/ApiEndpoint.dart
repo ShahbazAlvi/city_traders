@@ -3,10 +3,10 @@ class ApiEndpoints {
 
   static String get baseUrl {
     if (isProduction) {
-      return "https://api.distribution.afaqmis.com/api";
+      return "https://api.citytradersmis.com/api";
     } else {
       //return "http://192.168.100.145:5000/api"; // Android emulator localhost
-      return "https://api.distribution.afaqmis.com/api";
+      return "https://api.citytradersmis.com/api";
     }
   }
 }

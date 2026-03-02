@@ -178,6 +178,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../Provider/customer_Payment/customer_payment_provider.dart';
 import '../../../compoents/AppColors.dart';
+import '../../../utils/access_control.dart';
 import 'AddCustomerPaymentScreen.dart';
 
 class CustomerPaymentScreen extends StatefulWidget {
@@ -191,11 +192,33 @@ class _CustomerPaymentScreenState extends State<CustomerPaymentScreen> {
   final TextEditingController _searchController = TextEditingController();
   String searchQuery = '';
 
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   Future.microtask(() =>
+  //       context.read<CustomerPaymentProvider>().fetchCustomerPayments());
+  // }
+
+  bool canAddOrder    = false;
+  bool canEditOrder   = false;
+  bool canDeleteOrder = false;
+  bool canViewOrder   = false;
+
   @override
   void initState() {
     super.initState();
     Future.microtask(() =>
         context.read<CustomerPaymentProvider>().fetchCustomerPayments());
+    _loadPermissions(); // ✅ Load permissions
+  }
+  Future<void> _loadPermissions() async {
+    final add    = await AccessControl.canDo("can_add_customer_payments");
+
+
+    setState(() {
+      canAddOrder    = add;
+
+    });
   }
 
   @override
@@ -212,7 +235,9 @@ class _CustomerPaymentScreenState extends State<CustomerPaymentScreen> {
     return Scaffold(
       backgroundColor: const Color(0xfff5f7fb),
       appBar: _buildAppBar(),
-      floatingActionButton: FloatingActionButton.extended(
+
+      floatingActionButton: canAddOrder
+          ? FloatingActionButton.extended(
         elevation: 3,
         backgroundColor: AppColors.primary,
         onPressed: () {
@@ -226,7 +251,8 @@ class _CustomerPaymentScreenState extends State<CustomerPaymentScreen> {
         },
         icon: const Icon(Icons.add),
         label: const Text("New Payment"),
-      ),
+      )
+          : null,  // ← null means no FAB shown
       body: provider.isLoading
           ? _buildShimmerList()
           : filtered.isEmpty

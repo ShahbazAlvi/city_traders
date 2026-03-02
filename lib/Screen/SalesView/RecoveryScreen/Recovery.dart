@@ -303,6 +303,7 @@ import '../../../compoents/Customerdropdown.dart';
 import '../../../compoents/SaleManDropdown.dart';
 import '../../../model/CustomerModel/CustomerModel.dart';
 import '../../../model/SaleRecoveryModel/SaleRecoveryModel.dart';
+import '../../../utils/access_control.dart';
 import 'AddRecoveryScreen.dart';
 
 class RecoveryListScreen extends StatefulWidget {
@@ -320,6 +321,21 @@ class _RecoveryListScreenState extends State<RecoveryListScreen>
   // Animation controller for shimmer effect
   late AnimationController _shimmerController;
 
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _shimmerController = AnimationController.unbounded(vsync: this)
+  //     ..repeat(min: 0, max: 1, period: const Duration(milliseconds: 1500));
+  //
+  //   final provider = Provider.of<RecoveryProvider>(context, listen: false);
+  //   provider.fetchRecoveryReport();
+  // }
+  // ✅ Permission Variables
+  bool canAddOrder    = false;
+  bool canEditOrder   = false;
+  bool canDeleteOrder = false;
+  bool canViewOrder   = false;
+
   @override
   void initState() {
     super.initState();
@@ -328,7 +344,18 @@ class _RecoveryListScreenState extends State<RecoveryListScreen>
 
     final provider = Provider.of<RecoveryProvider>(context, listen: false);
     provider.fetchRecoveryReport();
+    _loadPermissions(); // ✅ Load permissions
   }
+  Future<void> _loadPermissions() async {
+    final add    = await AccessControl.canDo("can_add_recovery_voucher");
+
+
+    setState(() {
+      canAddOrder    = add;
+
+    });
+  }
+
 
   @override
   void dispose() {
@@ -514,6 +541,7 @@ class _RecoveryListScreenState extends State<RecoveryListScreen>
           ),
         ),
         actions: [
+          if(canAddOrder)
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(

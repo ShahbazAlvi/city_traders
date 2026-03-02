@@ -1,135 +1,10 @@
-// import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
-//
-// import '../../../Provider/stock_provider/stock_position_provider.dart';
-//
-//
-//
-//
-// class StockPositionScreen extends StatefulWidget {
-//   const StockPositionScreen({super.key});
-//
-//   @override
-//   State<StockPositionScreen> createState() => _StockPositionScreenState();
-// }
-//
-// class _StockPositionScreenState extends State<StockPositionScreen> {
-//
-//   @override
-//   void initState() {
-//     super.initState();
-//     Future.microtask(() =>
-//         Provider.of<StockPositionProvider>(context, listen: false)
-//             .fetchStockPosition());
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text("Stock Position"),
-//         centerTitle: true,
-//       ),
-//       body: Consumer<StockPositionProvider>(
-//         builder: (context, provider, child) {
-//           if (provider.loading) {
-//             return const Center(child: CircularProgressIndicator());
-//           }
-//
-//           if (provider.stockList.isEmpty) {
-//             return Center(child: Text(provider.message));
-//           }
-//
-//           return ListView.builder(
-//             padding: const EdgeInsets.all(12),
-//             itemCount: provider.stockList.length,
-//             itemBuilder: (context, index) {
-//               final item = provider.stockList[index];
-//               final itemStock = item.inQty - item.outQty;
-//               final isNegative = item.balanceQty < 0;
-//
-//               //final isNegative = itemStock < 0;
-//
-//               return Card(
-//                 margin: const EdgeInsets.only(bottom: 12),
-//                 elevation: 3,
-//                 child: Padding(
-//                   padding: const EdgeInsets.all(12),
-//                   child: Column(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Text(
-//                         item.itemName,
-//                         style: const TextStyle(
-//                           fontSize: 16,
-//                           fontWeight: FontWeight.bold,
-//                         ),
-//                       ),
-//
-//                       const SizedBox(height: 6),
-//
-//                       Text("SKU: ${item.sku}"),
-//                       Text("Category: ${item.category}"),
-//
-//
-//                       const Divider(),
-//
-//
-//
-//                     Row(
-//                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                 children: [
-//                 Text(
-//                   "Stock item : $itemStock",
-//                   style: TextStyle(
-//                     fontWeight: FontWeight.bold,
-//                     color: isNegative ? Colors.red : Colors.green,
-//                   ),
-//                 ),
-//                 ],
-//               ),
-//
-//                       const SizedBox(height: 6),
-//
-//                       Row(
-//                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                         children: [
-//                           Text(
-//                             "Balance: ${item.balanceQty}",
-//                             style: TextStyle(
-//                               fontWeight: FontWeight.bold,
-//                               color: isNegative ? Colors.red : Colors.green,
-//                             ),
-//                           ),
-//                           Text("Rate: ${item.avgRate}"),
-//                           Text("Value: ${item.stockValue}"),
-//                         ],
-//                       ),
-//                     ],
-//                   ),
-//                 ),
-//               );
-//             },
-//           );
-//         },
-//       ),
-//     );
-//   }
-// }
-//
-// extension on StockPositionProvider {
-//   bool get loading => true;
-//
-//   get stockList => null;
-//
-//   String get message => '';
-// }
+
 import 'package:demo_distribution/compoents/AppColors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart'; // Add this to pubspec.yaml
 
+import '../../../ApiLink/ApiEndpoint.dart';
 import '../../../Provider/stock_provider/stock_position_provider.dart';
 
 class StockPositionScreen extends StatefulWidget {
@@ -353,30 +228,10 @@ class _StockPositionScreenState extends State<StockPositionScreen>
                 value: "$lowStockItems",
                 color: Colors.orange,
               ),
-              // _buildStatItem(
-              //   icon: Icons.error_rounded,
-              //   label: "Negative",
-              //   value: "$negativeStockItems",
-              //   color: Colors.red,
-              // ),
+
             ],
           ),
-          const Divider(height: 30),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.money, color: Colors.green.shade700, size: 24),
-              const SizedBox(width: 8),
-              Text(
-                "Total Stock Value: Rs ${totalValue.toStringAsFixed(2)}",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green.shade700,
-                ),
-              ),
-            ],
-          ),
+
         ],
       ),
     );
@@ -462,10 +317,38 @@ class _StockPositionScreenState extends State<StockPositionScreen>
                         ),
                         borderRadius: BorderRadius.circular(15),
                       ),
-                      child: Icon(
-                        isNegative ? Icons.warning_rounded : Icons.inventory_rounded,
-                        color: isNegative ? Colors.red : Colors.blue,
-                        size: 28,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: item.image != null && item.image!.isNotEmpty
+                            ? Image.network(
+                          '${ApiEndpoints.baseUrl}/uploads/items/${item.image}',
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            isNegative ? Icons.warning_rounded : Icons.inventory_rounded,
+                            color: isNegative ? Colors.red : Colors.blue,
+                            size: 28,
+                          ),
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                                    : null,
+                                color: isNegative ? Colors.red : Colors.blue,
+                              ),
+                            );
+                          },
+                        )
+                            : Icon(
+                          isNegative ? Icons.warning_rounded : Icons.inventory_rounded,
+                          color: isNegative ? Colors.red : Colors.blue,
+                          size: 28,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -485,24 +368,7 @@ class _StockPositionScreenState extends State<StockPositionScreen>
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  "SKU: ${item.sku}",
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
+
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
@@ -533,31 +399,27 @@ class _StockPositionScreenState extends State<StockPositionScreen>
                       ),
                       decoration: BoxDecoration(
                         color: isNegative
-                            ? Colors.red.withOpacity(0.1)
-                            : item.balanceQty < 10
+
                             ? Colors.orange.withOpacity(0.1)
                             : Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isNegative
-                              ? Colors.red.withOpacity(0.3)
-                              : item.balanceQty < 10
+
                               ? Colors.orange.withOpacity(0.3)
                               : Colors.green.withOpacity(0.3),
                         ),
                       ),
                       child: Text(
                         isNegative
-                            ? "Negative"
-                            : item.balanceQty < 10
+
                             ? "Low Stock"
                             : "In Stock",
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: isNegative
-                              ? Colors.red
-                              : item.balanceQty < 10
+
                               ? Colors.orange
                               : Colors.green,
                         ),
@@ -566,24 +428,7 @@ class _StockPositionScreenState extends State<StockPositionScreen>
                   ],
                 ),
 
-                const SizedBox(height: 16),
 
-                // Progress indicator for stock level
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: _calculateStockPercentage(item.balanceQty.toDouble(), 100),
-                    backgroundColor: Colors.grey.shade200,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isNegative
-                          ? Colors.red
-                          : item.balanceQty < 50
-                          ? Colors.orange
-                          : Colors.green,
-                    ),
-                    minHeight: 6,
-                  ),
-                ),
 
                 const SizedBox(height: 16),
 
@@ -609,15 +454,7 @@ class _StockPositionScreenState extends State<StockPositionScreen>
                         color: Colors.green,
                       ),
                     ),
-                    // const SizedBox(width: 8),
-                    // Expanded(
-                    //   child: _buildMetricCard(
-                    //     icon: Icons.outbox_rounded,
-                    //     label: "total amount",
-                    //     value:  item.stockValue.toStringAsFixed(0),
-                    //     color: Colors.orange,
-                    //   ),
-                    // ),
+
                   ],
                 ),
 
@@ -717,22 +554,7 @@ class _StockPositionScreenState extends State<StockPositionScreen>
               fontWeight: FontWeight.w500,
             ),
           ),
-          // const SizedBox(height: 24),
-          // ElevatedButton.icon(
-          //   onPressed: () {
-          //     context.read<StockPositionProvider>().fetchStockPosition();
-          //   },
-          //   icon: const Icon(Icons.refresh_rounded),
-          //   label: const Text("Refresh"),
-          //   style: ElevatedButton.styleFrom(
-          //     backgroundColor: Colors.blue,
-          //     foregroundColor: Colors.white,
-          //     shape: RoundedRectangleBorder(
-          //       borderRadius: BorderRadius.circular(12),
-          //     ),
-          //     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          //   ),
-          // ),
+
         ],
       ),
     );
@@ -769,8 +591,3 @@ class _StockPositionScreenState extends State<StockPositionScreen>
   }
 }
 
-extension on StockPositionProvider {
-  bool get loading => true;
-  get stockList => null;
-  String get message => '';
-}

@@ -36,13 +36,7 @@ class LoginProvider with ChangeNotifier{
     notifyListeners();
 
     try{
-      // final response=await http.post(Uri.parse('${ApiEndpoints.baseUrl}/auth/login'),
-      //     headers: {"Content-Type": "application/json"},
-      //
-      //     body: jsonEncode({
-      //       'identifier':email,
-      //       'password':password
-      //     }));
+
       final client = http.Client(); // ek baar client create karo
 
       final response = await client.post(

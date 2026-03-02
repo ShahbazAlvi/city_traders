@@ -272,6 +272,7 @@ import '../../../Provider/SaleInvoiceProvider/SaleInvoicesProvider.dart';
 import '../../../Provider/SaleManProvider/SaleManProvider.dart';
 import '../../../compoents/AppColors.dart';
 import '../../../compoents/SaleManDropdown.dart';
+import '../../../utils/access_control.dart';
 import 'AddSalesInvoiceScreen.dart';
 
 class SaleInvoiseScreen extends StatefulWidget {
@@ -291,10 +292,34 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
   String searchQuery = '';
 
   @override
+  // void initState() {
+  //   super.initState();
+  //   Future.microtask(() {
+  //     Provider.of<SaleInvoicesProvider>(context, listen: false).fetchOrders();
+  //   });
+  // }
+  // ✅ Permission Variables
+  bool canAddOrder    = false;
+  bool canEditOrder   = false;
+  bool canDeleteOrder = false;
+  bool canViewOrder   = false;
+
+  @override
   void initState() {
     super.initState();
-    Future.microtask(() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<SaleInvoicesProvider>(context, listen: false).fetchOrders();
+    });
+   // _scrollController.addListener(_onScroll);
+    _loadPermissions(); // ✅ Load permissions
+  }
+  Future<void> _loadPermissions() async {
+    final add    = await AccessControl.canDo("can_add_sales_invoice_cash");
+
+
+    setState(() {
+      canAddOrder    = add;
+
     });
   }
 
@@ -337,7 +362,7 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
   get totalItems => null;
 
   String formatCurrency(double amount) {
-    return '₹${amount.toStringAsFixed(2)}';
+    return 'Rs:${amount.toStringAsFixed(2)}';
   }
 
   @override
@@ -411,6 +436,7 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
       centerTitle: true,
 
       actions: [
+        if (canAddOrder)
         Padding(
           padding: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
           child: ElevatedButton.icon(

@@ -16,6 +16,7 @@ import 'SalesView/DailysaleScreen/DailySaleScreen.dart';
 import 'SalesView/SalesScreen.dart';
 import 'SalesView/SetUp/EmployeeDefine/EmployeeDefine.dart';
 import 'SalesView/SetUp/ItemsListScreen/ItemsListsScreen.dart';
+import 'SalesView/stock/stockcard/stock_main.dart';
 import 'dashBoardView/calender.dart';
 import 'dashBoardView/chartdashboard.dart';
 import 'dashBoardView/recoverienChart.dart';
@@ -89,8 +90,8 @@ class _DashboardscreenState extends State<Dashboardscreen> {
   //   });
   // }
   bool isAdmin = false;
-  bool canViewCustomers = false;
-  bool canViewStaff = false;
+  bool canViewStock = false;
+  bool canViewReports = false;
   bool canViewSales = false;
   bool canViewPurchase=false;
   bool canViewDashboard=false;
@@ -112,8 +113,8 @@ class _DashboardscreenState extends State<Dashboardscreen> {
   Future<void> loadAccess() async {
     // Use canDo() which checks admin OR permission
     final admin     = await AccessControl.isAdmin();
-    final customers = await AccessControl.canDo("can_view_customer_payments");
-    final staff     = await AccessControl.canDo("can_view_employees");
+    final stock = await AccessControl.canDo("can_view_stock");
+    final reports     = await AccessControl.canDo("can_view_reports");
     final sales     = await AccessControl.canDo("can_view_sales");
     final purchase  = await AccessControl.canDo("can_view_purchase");
     final dashboard  = await AccessControl.canDo("can_view_dashboard");
@@ -121,12 +122,28 @@ class _DashboardscreenState extends State<Dashboardscreen> {
 
     setState(() {
       isAdmin          = admin;
-      canViewCustomers = customers;
-      canViewStaff     = staff;
+      canViewStock = stock;
+      canViewReports     = reports;
       canViewSales     = sales;
       canViewPurchase  = purchase;
 
     });
+  }
+  // Add these methods inside _DashboardscreenState class
+
+  Future<String?> _getUsername() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString('user');
+    if (userJson == null) return "Admin";
+    final user = jsonDecode(userJson);
+    return user['username'];
+  }
+
+  Future<String?> _getUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    final roles = prefs.getStringList('roles');
+    if (roles == null || roles.isEmpty) return "User";
+    return roles.join(', '); // shows all roles e.g. "manager"
   }
 
   @override
@@ -168,10 +185,11 @@ class _DashboardscreenState extends State<Dashboardscreen> {
                   end: Alignment.bottomRight,
                 ),
               ),
-              child: FutureBuilder<String?>(
-                future: _getUsername(), // async method defined above
+              child: FutureBuilder<List<String?>>(
+                future: Future.wait([_getUsername(), _getUserRole()]),
                 builder: (context, snapshot) {
-                  final username = snapshot.data ?? "Admin";
+                  final username = snapshot.data?[0] ?? "Admin";
+                  final role = snapshot.data?[1] ?? "User";
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -188,9 +206,26 @@ class _DashboardscreenState extends State<Dashboardscreen> {
                       Text(
                         'Welcome $username',
                         style: const TextStyle(
-                          color: Colors.black87,
+                          color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.25),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          role.toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.1,
+                          ),
                         ),
                       ),
                     ],
@@ -217,6 +252,15 @@ class _DashboardscreenState extends State<Dashboardscreen> {
             //
             //   },
             // ),
+            if (canViewStock)
+              ListTile(
+                leading: const Icon(Icons.block, color: Color(0xFF5B86E5)),
+                title: const Text('Stock'),
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => StockMain()));
+                },
+              ),
             if (canViewSales)
               ListTile(
                 leading: const Icon(Icons.sell, color: Color(0xFF5B86E5)),
@@ -244,6 +288,15 @@ class _DashboardscreenState extends State<Dashboardscreen> {
 
               },
             ),
+            if (canViewReports)
+              ListTile(
+                leading: const Icon(Icons.report, color: Color(0xFF5B86E5)),
+                title: const Text('reports'),
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => SalesDashboard()));
+                },
+              ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
@@ -351,14 +404,14 @@ class _DashboardscreenState extends State<Dashboardscreen> {
 
             const SizedBox(height: 16),
 
+              // In your Consumer builder, handle null data gracefully
               Consumer<DashBoardProvider>(
                 builder: (context, provider, child) {
-
-                  if (provider.isLoading || provider.dashboardData == null) {
+                  if (provider.isLoading) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  final dashboardData = provider.dashboardData!;
+                  final dashboardData = provider.dashboardData;
 
                   return Column(
                     children: [
@@ -376,11 +429,10 @@ class _DashboardscreenState extends State<Dashboardscreen> {
                               child: AnimatedDashboardCard(
                                 icon: Icons.person,
                                 title: 'Total Sales',
-                                count: dashboardData.stats.totalSales.toString(),
+                                count: dashboardData?.stats.totalSales.toString() ?? '0',  // ← default '0'
                                 bcolor: Colors.green,
                               ),
                             ),
-
                             GestureDetector(
                               onTap: () {
                                 Navigator.push(context,
@@ -389,11 +441,10 @@ class _DashboardscreenState extends State<Dashboardscreen> {
                               child: AnimatedDashboardCard(
                                 icon: Icons.shop,
                                 title: 'Total Products',
-                                count: dashboardData.stats.totalProducts.toString(),
+                                count: dashboardData?.stats.totalProducts.toString() ?? '0',  // ← default '0'
                                 bcolor: Colors.red,
                               ),
                             ),
-
                             GestureDetector(
                               onTap: () {
                                 Navigator.push(context,
@@ -402,11 +453,10 @@ class _DashboardscreenState extends State<Dashboardscreen> {
                               child: AnimatedDashboardCard(
                                 icon: Icons.people_alt,
                                 title: 'Total Customer',
-                                count: dashboardData.stats.totalCustomers.toString(),
+                                count: dashboardData?.stats.totalCustomers.toString() ?? '0',  // ← default '0'
                                 bcolor: Colors.blue,
                               ),
                             ),
-
                             GestureDetector(
                               onTap: () {
                                 Navigator.push(context,
@@ -415,7 +465,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
                               child: AnimatedDashboardCard(
                                 icon: Icons.account_balance_wallet,
                                 title: 'Total Salesman',
-                                count: dashboardData.stats.totalStaff.toString(),
+                                count: dashboardData?.stats.totalStaff.toString() ?? '0',  // ← default '0'
                                 bcolor: Colors.orange,
                               ),
                             ),
@@ -458,8 +508,6 @@ class _DashboardscreenState extends State<Dashboardscreen> {
       ),
     );
   }
-
-  Future<String?>? _getUsername() async {}
 }
 
 class AnimatedDashboardCard extends StatefulWidget {
