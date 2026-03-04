@@ -149,7 +149,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
                 if (canViewRecovery)
                 DashboardCard(
                   icon: Icons.newspaper,
-                  title: "Recovery",
+                  title: "Recovery Voucher",
                   color: Colors.amberAccent,
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const RecoveryListScreen()));
@@ -180,15 +180,15 @@ class _SalesDashboardState extends State<SalesDashboard> {
               _buildSectionTitle("📊 Reports"),
               const SizedBox(height: 14),
               _buildCardGrid([
-                if (canViewStockPosition)
-                DashboardCard(
-                  icon: Icons.cloud_upload_rounded,
-                  title: "Stock Positions",
-                  color: Colors.orangeAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const StockPositionScreen()));
-                  },
-                ),
+                // if (canViewStockPosition)
+                // DashboardCard(
+                //   icon: Icons.cloud_upload_rounded,
+                //   title: "Stock Positions",
+                //   color: Colors.orangeAccent,
+                //   onTap: () {
+                //     Navigator.push(context, MaterialPageRoute(builder: (_) => const StockPositionScreen()));
+                //   },
+                // ),
                 if (canViewReceivable)
                 DashboardCard(
                   icon: Icons.add_card,
@@ -198,33 +198,33 @@ class _SalesDashboardState extends State<SalesDashboard> {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceivableScreen()));
                   },
                 ),
-                if (canViewLedger)
-                DashboardCard(
-                  icon: Icons.newspaper,
-                  title: "Customer Ledger",
-                  color: Colors.purpleAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerLedgerScreen()));
-                  },
-                ),
-                if (canViewAging)
-                DashboardCard(
-                  icon: Icons.add_chart_rounded,
-                  title: "Credit Aging",
-                  color: Colors.cyanAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CreditAgingScreen()));
-                  },
-                ),
-                if (canViewDailySales)
-                DashboardCard(
-                  icon: Icons.sim_card_alert_rounded,
-                  title: "Daily Sales",
-                  color: Colors.lightBlueAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const DailySaleReportScreen()));
-                  },
-                ),
+                // if (canViewLedger)
+                // DashboardCard(
+                //   icon: Icons.newspaper,
+                //   title: "Customer Ledger",
+                //   color: Colors.purpleAccent,
+                //   onTap: () {
+                //     Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerLedgerScreen()));
+                //   },
+                // ),
+                // if (canViewAging)
+                // DashboardCard(
+                //   icon: Icons.add_chart_rounded,
+                //   title: "Credit Aging",
+                //   color: Colors.cyanAccent,
+                //   onTap: () {
+                //     Navigator.push(context, MaterialPageRoute(builder: (_) => const CreditAgingScreen()));
+                //   },
+                // ),
+                // if (canViewDailySales)
+                // DashboardCard(
+                //   icon: Icons.sim_card_alert_rounded,
+                //   title: "Daily Sales",
+                //   color: Colors.lightBlueAccent,
+                //   onTap: () {
+                //     Navigator.push(context, MaterialPageRoute(builder: (_) => const DailySaleReportScreen()));
+                //   },
+                // ),
                 // DashboardCard(
                 //   icon: Icons.cloud_upload_rounded,
                 //   title: "Daily Sales Report",

@@ -35,7 +35,7 @@ class _AppTextFieldState extends State<AppTextField> {
           suffixIcon: widget.icons!=null?IconButton(onPressed: widget.onToggleVisibility, icon: Icon(widget.icons)):null,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Colors.grey, width: 1.5),),
+            borderSide: const BorderSide(color: Colors.white, width: 1.5),),
 
         ),
 

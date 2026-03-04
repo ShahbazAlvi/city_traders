@@ -2,22 +2,30 @@
 import 'dart:ui';
 import 'package:demo_distribution/Screen/SalesView/stock/stock_positions.dart';
 import 'package:flutter/material.dart';
-import '../../../../compoents/AppColors.dart';
-import '../../../../utils/access_control.dart';
-import '../../SetUp/ItemsListScreen/ItemsListsScreen.dart';
+import '../../../compoents/AppColors.dart';
+import '../../utils/access_control.dart';
+import '../CustomerScreen/CustomersDefineScreen.dart';
+import '../PurchaseScreen/StockPositionScreen/StockPositionScreen.dart';
+import '../SalesView/SetUp/EmployeeDefine/EmployeeDefine.dart';
+import '../SalesView/SetUp/ItemsListScreen/ItemCategoriesScreen.dart';
+import '../SalesView/SetUp/ItemsListScreen/ItemTypeScreen.dart';
+import '../SalesView/SetUp/ItemsListScreen/ItemUnitScreen.dart';
+import '../SalesView/SetUp/ItemsListScreen/ItemsListsScreen.dart';
+import '../SalesView/SetUp/SalesAreaScreen/SalesAreaScreen.dart';
+import '../SalesView/SetUp/supplier/SupplierScreen.dart';
 
 
 
-class StockMain extends StatefulWidget {
-  const StockMain({super.key});
+class SetUpDashboard extends StatefulWidget {
+  const SetUpDashboard({super.key});
 
   @override
-  State<StockMain> createState() => _StockMainState();
+  State<SetUpDashboard> createState() => _SalesDashboardState();
 }
 
-class _StockMainState extends State<StockMain> {
+class _SalesDashboardState extends State<SetUpDashboard> {
   // Permissions
-  bool canViewItem = false;
+  bool canViewOrderBooking = false;
   bool canViewSalesInvoice = false;
   bool canViewRecovery     = false;
   bool canViewCustomerPayment = false;
@@ -33,7 +41,7 @@ class _StockMainState extends State<StockMain> {
     _loadPermissions();
   }
   Future<void> _loadPermissions() async {
-    final itemDefinity    = await AccessControl.canDo("can_view_item_definition");
+    final orderBooking     = await AccessControl.canDo("can_view_order_booking");
     final salesInvoice     = await AccessControl.canDo("can_view_sales_invoice_cash");
     final recovery         = await AccessControl.canDo("can_view_recovery_voucher");
     final customerPayment  = await AccessControl.canDo("can_view_customer_payments");
@@ -44,7 +52,7 @@ class _StockMainState extends State<StockMain> {
     final dailySales       = await AccessControl.canDo("can_view_daily_sales_report");
 
     setState(() {
-      canViewItem    = itemDefinity;
+      canViewOrderBooking    = orderBooking;
       canViewSalesInvoice    = salesInvoice;
       canViewRecovery        = recovery;
       canViewCustomerPayment = customerPayment;
@@ -89,7 +97,7 @@ class _StockMainState extends State<StockMain> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Stock Dashboard",
+                      "SetUp Dashboard",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 26,
@@ -99,7 +107,7 @@ class _StockMainState extends State<StockMain> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      "Manage stock, item define, and customer data efficiently",
+                      "Manage setup ,sales, invoices, and customer data efficiently",
                       style: TextStyle(color: Colors.white70, fontSize: 14),
                     ),
                   ],
@@ -108,34 +116,84 @@ class _StockMainState extends State<StockMain> {
 
               const SizedBox(height: 28),
 
+              // 🔸 Functionalities Section
 
-              _buildSectionTitle("📊 Reports"),
+              //🔸 Setup Section
+              _buildSectionTitle("🧩 Setup"),
               const SizedBox(height: 14),
               _buildCardGrid([
-                if (canViewStockPosition)
-                  DashboardCard(
-                    icon: Icons.cloud_upload_rounded,
-                    title: "Stock Positions",
-                    color: Colors.orangeAccent,
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const StockPositionScreen()));
-                    },
-                  ),
-                if(canViewItem)
-                  DashboardCard(
-                    icon: Icons.inventory_2,
-                    title: "List of Items",
-                    color: Colors.lightBlueAccent,
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemListScreen()));
-                    },
-                  ),
+                DashboardCard(
+                  icon: Icons.location_on_rounded,
+                  title: "Sales Areas",
+                  color: Colors.limeAccent,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SalesAreaScreen()));
+                  },
+                ),
+                DashboardCard(
+                  icon: Icons.category,
+                  title: "Category Item",
+                  color: Colors.orangeAccent,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoriesScreen()));
+                  },
+                ),
+
+                DashboardCard(
+                  icon: Icons.layers,
+                  title: "Items Type ",
+                  color: Colors.blueAccent,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemTypeScreen()));
+                  },
+                ),
+                DashboardCard(
+                  icon: Icons.straighten,
+                  title: "Item Unit ",
+                  color: Colors.tealAccent  ,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemUnitScreen()));
+                  },
+                ),
+                DashboardCard(
+                  icon: Icons.inventory_2,
+                  title: "List of Items",
+                  color: Colors.lightBlueAccent,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemListScreen()));
+                  },
+                ),
+                DashboardCard(
+                  icon: Icons.people,
+                  title: "Define Customers",
+                  color: Colors.pinkAccent,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomersDefineScreen()));
+                  },
+                ),
+                DashboardCard(
+                  icon: Icons.person,
+                  title: "Employee Information",
+                  color: Colors.orangeAccent,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const EmployeesScreen()));
+                  },
+                ),
+                DashboardCard(
+                  icon: Icons.local_shipping,
+                  title: "Vehicle Information",
+                  color: Colors.blueAccent,
+                  onTap: () {},
+                ),
+                DashboardCard(
+                  icon: Icons.store_rounded,
+                  title: "Supplier",
+                  color: Colors.tealAccent,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SupplierListScreen()));
+                  },
+                ),
               ]),
-
-              const SizedBox(height: 30),
-
-
-
 
               const SizedBox(height: 40),
             ],
@@ -203,14 +261,14 @@ class DashboardCard extends StatelessWidget {
               //  color: Colors.white.withOpacity(0.4),
               border: Border.all(color: Colors.white.withOpacity(0.2)),
               borderRadius: BorderRadius.circular(25),
-              // boxShadow: [
-              //   BoxShadow(
-              //     color: color.withOpacity(0.4),
-              //     blurRadius: 12,
-              //     spreadRadius: 2,
-              //     offset: const Offset(0, 3),
-              //   ),
-              // ],
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.4),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

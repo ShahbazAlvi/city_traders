@@ -4,18 +4,21 @@ import 'package:demo_distribution/Screen/SalesView/stock/stock_positions.dart';
 import 'package:flutter/material.dart';
 import '../../../../compoents/AppColors.dart';
 import '../../../../utils/access_control.dart';
-import '../../SetUp/ItemsListScreen/ItemsListsScreen.dart';
+import '../../SalesView/DailysaleScreen/DailySaleScreen.dart';
+import '../../SalesView/ReportsScreen/AgingScreen/AgingScreen.dart';
+import '../../SalesView/ReportsScreen/CustomerLedgerScreen/LedgerScreen.dart';
 
 
 
-class StockMain extends StatefulWidget {
-  const StockMain({super.key});
+
+class ReportsDashboardScreen extends StatefulWidget {
+  const ReportsDashboardScreen({super.key});
 
   @override
-  State<StockMain> createState() => _StockMainState();
+  State<ReportsDashboardScreen> createState() => _SalesDashboardState();
 }
 
-class _StockMainState extends State<StockMain> {
+class _SalesDashboardState extends State<ReportsDashboardScreen> {
   // Permissions
   bool canViewItem = false;
   bool canViewSalesInvoice = false;
@@ -33,23 +36,13 @@ class _StockMainState extends State<StockMain> {
     _loadPermissions();
   }
   Future<void> _loadPermissions() async {
-    final itemDefinity    = await AccessControl.canDo("can_view_item_definition");
-    final salesInvoice     = await AccessControl.canDo("can_view_sales_invoice_cash");
-    final recovery         = await AccessControl.canDo("can_view_recovery_voucher");
-    final customerPayment  = await AccessControl.canDo("can_view_customer_payments");
-    final stockPosition    = await AccessControl.canDo("can_view_stock_position");
-    final receivable       = await AccessControl.canDo("can_view_amount_receivables");
+
+
     final ledger           = await AccessControl.canDo("can_view_customer_ledger_report");
     final aging            = await AccessControl.canDo("can_view_credit_aging");
     final dailySales       = await AccessControl.canDo("can_view_daily_sales_report");
 
     setState(() {
-      canViewItem    = itemDefinity;
-      canViewSalesInvoice    = salesInvoice;
-      canViewRecovery        = recovery;
-      canViewCustomerPayment = customerPayment;
-      canViewStockPosition   = stockPosition;
-      canViewReceivable      = receivable;
       canViewLedger          = ledger;
       canViewAging           = aging;
       canViewDailySales      = dailySales;
@@ -89,7 +82,7 @@ class _StockMainState extends State<StockMain> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Stock Dashboard",
+                      "Reports Dashboard",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 26,
@@ -99,7 +92,7 @@ class _StockMainState extends State<StockMain> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      "Manage stock, item define, and customer data efficiently",
+                      "Manage reports, item define, and customer data efficiently",
                       style: TextStyle(color: Colors.white70, fontSize: 14),
                     ),
                   ],
@@ -108,36 +101,42 @@ class _StockMainState extends State<StockMain> {
 
               const SizedBox(height: 28),
 
-
+              // 🔸 Functionalities Section
               _buildSectionTitle("📊 Reports"),
               const SizedBox(height: 14),
               _buildCardGrid([
-                if (canViewStockPosition)
+                if (canViewLedger)
                   DashboardCard(
-                    icon: Icons.cloud_upload_rounded,
-                    title: "Stock Positions",
-                    color: Colors.orangeAccent,
+                    icon: Icons.newspaper,
+                    title: "Customer Ledger",
+                    color: Colors.purpleAccent,
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const StockPositionScreen()));
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerLedgerScreen()));
                     },
                   ),
-                if(canViewItem)
+                  if(canViewAging)
                   DashboardCard(
-                    icon: Icons.inventory_2,
-                    title: "List of Items",
+                    icon: Icons.add_chart_rounded,
+                    title: "Credit Aging",
+                    color: Colors.cyanAccent,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CreditAgingScreen()));
+                    },
+                  ),
+                if (canViewDailySales)
+                  DashboardCard(
+                    icon: Icons.sim_card_alert_rounded,
+                    title: "Daily Sales",
                     color: Colors.lightBlueAccent,
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemListScreen()));
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const DailySaleReportScreen()));
                     },
                   ),
+
+
               ]),
 
-              const SizedBox(height: 30),
 
-
-
-
-              const SizedBox(height: 40),
             ],
           ),
         ),

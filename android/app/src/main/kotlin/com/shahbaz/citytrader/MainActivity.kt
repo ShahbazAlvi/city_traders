@@ -1,4 +1,4 @@
-package com.example.demo_distribution
+package com.shahbaz.citytrader
 
 import io.flutter.embedding.android.FlutterActivity
 

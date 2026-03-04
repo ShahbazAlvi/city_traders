@@ -1,6 +1,8 @@
 
 import 'dart:convert';
 
+import 'package:demo_distribution/Screen/reports/reports_dashboard/reports_dashboard_screen.dart';
+import 'package:demo_distribution/Screen/setup/setup_dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -96,6 +98,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
   bool canViewPurchase=false;
   bool canViewDashboard=false;
   bool canViewBank=false;
+  bool canViewSetUp=false;
 
 
   @override
@@ -118,7 +121,8 @@ class _DashboardscreenState extends State<Dashboardscreen> {
     final sales     = await AccessControl.canDo("can_view_sales");
     final purchase  = await AccessControl.canDo("can_view_purchase");
     final dashboard  = await AccessControl.canDo("can_view_dashboard");
-    final bank  = await AccessControl.canDo("can_view_bank");
+    final bank  = await AccessControl.canDo("can_view_bank");//can_view_setup
+    final setup  = await AccessControl.canDo("can_view_setup");//can_view_setup
 
     setState(() {
       isAdmin          = admin;
@@ -126,6 +130,9 @@ class _DashboardscreenState extends State<Dashboardscreen> {
       canViewReports     = reports;
       canViewSales     = sales;
       canViewPurchase  = purchase;
+      canViewSetUp= setup;
+      canViewBank=bank;
+      canViewDashboard=dashboard;
 
     });
   }
@@ -152,7 +159,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
       backgroundColor: Color(0xFFEEEEEE),
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
-        title: Center(child: const Text("Dashboard",
+        title: Center(child: const Text("City Traders",
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -244,14 +251,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
                 Navigator.pop(context);
               },
             ),
-            // ListTile(
-            //   leading: const Icon(Icons.sell, color: Color(0xFF5B86E5)),
-            //   title: const Text('Sales'),
-            //   onTap: () {
-            //     Navigator.push(context, MaterialPageRoute(builder: (context)=>SalesDashboard()));
-            //
-            //   },
-            // ),
+
             if (canViewStock)
               ListTile(
                 leading: const Icon(Icons.block, color: Color(0xFF5B86E5)),
@@ -288,13 +288,23 @@ class _DashboardscreenState extends State<Dashboardscreen> {
 
               },
             ),
+            if (canViewSetUp)
+              ListTile(
+                leading: const Icon(Icons.wifi_protected_setup, color: Color(0xFF5B86E5)),
+                title: const Text('SetUp'),
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => SetUpDashboard()));
+                },
+              ),
+
             if (canViewReports)
               ListTile(
                 leading: const Icon(Icons.report, color: Color(0xFF5B86E5)),
                 title: const Text('reports'),
                 onTap: () {
                   Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => SalesDashboard()));
+                      MaterialPageRoute(builder: (_) => ReportsDashboardScreen()));
                 },
               ),
             const Divider(),
