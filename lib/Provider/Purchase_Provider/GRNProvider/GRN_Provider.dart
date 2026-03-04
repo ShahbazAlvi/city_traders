@@ -60,6 +60,9 @@ class GRNProvider extends ChangeNotifier {
       rethrow;
     }
   }
+  Future<void>update()async{
+
+  }
 
   /// ✅ DELETE RECORD (FIXED int TYPE)
   Future<void> deleteRecord(int id) async {
