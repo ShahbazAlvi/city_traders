@@ -76,21 +76,26 @@ class GRNProvider extends ChangeNotifier {
 
   /// ✅ ADD NEW GRN
   Future<bool> addNewGRN({
-    required String supplierId,
+    required String grnNo,
+    required int supplierId,
     required String grnDate,
-    required List<Map<String, dynamic>> products,
-    required double totalAmount,
+    required int locationId,
+    required List<Map<String, dynamic>> details,
+    required double totalAmount, required List<Map<String, dynamic>> products,
   }) async {
 
     bool success = await GRNApiService.addGRN(
+      grnNo: grnNo,
       supplierId: supplierId,
       grnDate: grnDate,
-      products: products,
-      totalAmount: totalAmount,
+      locationId: locationId,
+      status: "POSTED",
+      discount: 0,
+      details: details,
     );
 
     if (success) {
-      await getGRNData(); // refresh after add
+      await getGRNData();
     }
 
     return success;

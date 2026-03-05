@@ -57,95 +57,50 @@ class GRNApiService {
 
 
   /// ✅ Add New GRN Record
-  // static Future<bool> addGRN({
-  //   required String supplierId,
-  //   required String grnDate,
-  //   required List<Map<String, dynamic>> products,
-  //   required double totalAmount,
-  // }) async {
-  //   try {
-  //     final prefs = await SharedPreferences.getInstance();
-  //     final token = prefs.getString('token');
-  //
-  //     if (token == null) {
-  //       throw Exception("Token not found in SharedPreferences");
-  //     }
-  //
-  //     final url = Uri.parse("$baseUrl/grn");
-  //
-  //     final body = jsonEncode({
-  //       "supplierId": supplierId,
-  //       "grnDate": grnDate,
-  //       "products": products,
-  //       "totalAmount": totalAmount,
-  //     });
-  //
-  //     final response = await http.post(
-  //       url,
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         "Authorization": "Bearer $token",
-  //       },
-  //       body: body,
-  //     );
-  //
-  //     if (response.statusCode == 200) {
-  //       final data = jsonDecode(response.body);
-  //       return data["success"] == true;
-  //     } else {
-  //       print("Add GRN failed: ${response.body}");
-  //       return false;
-  //     }
-  //   } catch (e) {
-  //     print("Error in addGRN(): $e");
-  //     return false;
-  //   }
-  // }
   static Future<bool> addGRN({
-    required String supplierId,
+    required String grnNo,
+    required int supplierId,
     required String grnDate,
-    required List<Map<String, dynamic>> products,
-    required double totalAmount,
+    required int locationId,
+    required String status,
+    required double discount,
+    required List<Map<String, dynamic>> details,
   }) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
 
-      if (token == null) {
-        throw Exception("Token not found in SharedPreferences");
-      }
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString("token");
 
-      final url = Uri.parse("$baseUrl/grn");
+    final body = {
+      "grn_no": grnNo,
+      "supplier_id": supplierId,
+      "grn_date": grnDate,
+      "location_id": locationId,
+      "status": status,
+      "discount": discount,
+      "details": details
+    };
 
-      final body = jsonEncode({
-        "supplierId": supplierId,
-        "grnDate": grnDate,
-        "products": products,
-        "totalAmount": totalAmount,
-      });
+    print("REQUEST BODY: ${jsonEncode(body)}");
 
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: body,
-      );
+    final response = await http.post(
+      Uri.parse("${ApiEndpoints.baseUrl}/grns"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: jsonEncode(body),
+    );
 
-      print("STATUS: ${response.statusCode}");
-      print("BODY: ${response.body}");
+    print("STATUS CODE: ${response.statusCode}");
+    print("RESPONSE: ${response.body}");
 
-      if (response.statusCode == 200||response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        return data["success"] == true;
-      } else {
-        return false;
-      }
-    } catch (e) {
-      print("Exception in addGRN(): $e");
-      return false;
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return true;
     }
+
+    return false;
   }
+
 
 }

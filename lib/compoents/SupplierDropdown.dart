@@ -5,7 +5,7 @@ import '../../model/SupplierModel/SupplierModel.dart';
 
 class SupplierDropdown extends StatefulWidget {
   final String? selectedSupplierId;
-  final Function(String) onSelected; // ✅ Returns supplier ID
+  final Function(String) onSelected;
 
   const SupplierDropdown({
     super.key,
@@ -23,11 +23,12 @@ class _SupplierDropdownState extends State<SupplierDropdown> {
   @override
   void initState() {
     super.initState();
+
     selectedId = widget.selectedSupplierId;
 
-    // Load supplier list if not loaded yet
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<SupplierProvider>(context, listen: false);
+
       if (provider.suppliers.isEmpty) {
         provider.loadSuppliers();
       }
@@ -42,29 +43,27 @@ class _SupplierDropdownState extends State<SupplierDropdown> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (provider.suppliers.isEmpty) {
-          return const Text("No suppliers found");
-        }
-
         return DropdownButtonFormField<String>(
           value: selectedId,
           decoration: const InputDecoration(
             labelText: "Select Supplier",
             border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           ),
+
           items: provider.suppliers.map((SupplierModel supplier) {
             return DropdownMenuItem<String>(
               value: supplier.id.toString(),
               child: Text(supplier.name),
             );
           }).toList(),
+
           onChanged: (value) {
             setState(() {
               selectedId = value;
             });
+
             if (value != null) {
-              widget.onSelected(value); // ✅ Return selected ID
+              widget.onSelected(value); // return supplier id
             }
           },
         );
