@@ -11,8 +11,9 @@ import '../SalesView/SetUp/ItemsListScreen/ItemCategoriesScreen.dart';
 import '../SalesView/SetUp/ItemsListScreen/ItemTypeScreen.dart';
 import '../SalesView/SetUp/ItemsListScreen/ItemUnitScreen.dart';
 import '../SalesView/SetUp/ItemsListScreen/ItemsListsScreen.dart';
-import '../SalesView/SetUp/SalesAreaScreen/SalesAreaScreen.dart';
+
 import '../SalesView/SetUp/supplier/SupplierScreen.dart';
+import 'locations/locatioins_screen.dart';
 
 
 
@@ -41,7 +42,7 @@ class _SalesDashboardState extends State<SetUpDashboard> {
     _loadPermissions();
   }
   Future<void> _loadPermissions() async {
-    final orderBooking     = await AccessControl.canDo("can_view_order_booking");
+    final locations     = await AccessControl.canDo("can_view_location");
     final salesInvoice     = await AccessControl.canDo("can_view_sales_invoice_cash");
     final recovery         = await AccessControl.canDo("can_view_recovery_voucher");
     final customerPayment  = await AccessControl.canDo("can_view_customer_payments");
@@ -52,7 +53,7 @@ class _SalesDashboardState extends State<SetUpDashboard> {
     final dailySales       = await AccessControl.canDo("can_view_daily_sales_report");
 
     setState(() {
-      canViewOrderBooking    = orderBooking;
+      canViewOrderBooking    =  locations;
       canViewSalesInvoice    = salesInvoice;
       canViewRecovery        = recovery;
       canViewCustomerPayment = customerPayment;
@@ -124,10 +125,10 @@ class _SalesDashboardState extends State<SetUpDashboard> {
               _buildCardGrid([
                 DashboardCard(
                   icon: Icons.location_on_rounded,
-                  title: "Sales Areas",
+                  title: "location",
                   color: Colors.limeAccent,
                   onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SalesAreaScreen()));
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LocationScreen()));
                   },
                 ),
                 DashboardCard(

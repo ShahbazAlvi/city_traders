@@ -19,8 +19,7 @@ import 'SetUp/ItemsListScreen/ItemCategoriesScreen.dart';
 import 'SetUp/ItemsListScreen/ItemTypeScreen.dart';
 import 'SetUp/ItemsListScreen/ItemUnitScreen.dart';
 import 'SetUp/ItemsListScreen/ItemsListsScreen.dart';
-import 'SetUp/SalesAreaScreen/SalesAreaScreen.dart';
-import 'SetUp/supplier/SupplierScreen.dart';
+
 import 'customer_payment/customer_payment_screen.dart';
 
 

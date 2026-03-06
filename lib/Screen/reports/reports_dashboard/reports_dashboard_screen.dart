@@ -1,9 +1,11 @@
 
 import 'dart:ui';
 import 'package:demo_distribution/Screen/SalesView/stock/stock_positions.dart';
+import 'package:demo_distribution/model/BankModel/PaymentVoucher.dart';
 import 'package:flutter/material.dart';
 import '../../../../compoents/AppColors.dart';
 import '../../../../utils/access_control.dart';
+import '../../PurchaseScreen/SupplierLedgerScreen/SupplierLedgerScreen.dart';
 import '../../SalesView/DailysaleScreen/DailySaleScreen.dart';
 import '../../SalesView/ReportsScreen/AgingScreen/AgingScreen.dart';
 import '../../SalesView/ReportsScreen/CustomerLedgerScreen/LedgerScreen.dart';
@@ -29,6 +31,7 @@ class _SalesDashboardState extends State<ReportsDashboardScreen> {
   bool canViewLedger          = false;
   bool canViewAging           = false;
   bool canViewDailySales      = false;
+  bool canViewLedgerSupplier          = false;
 
   @override
   void initState() {
@@ -41,11 +44,13 @@ class _SalesDashboardState extends State<ReportsDashboardScreen> {
     final ledger           = await AccessControl.canDo("can_view_customer_ledger_report");
     final aging            = await AccessControl.canDo("can_view_credit_aging");
     final dailySales       = await AccessControl.canDo("can_view_daily_sales_report");
+    final Supplier_ledger           = await AccessControl.canDo("can_view_supplier_ledger_report");
 
     setState(() {
       canViewLedger          = ledger;
       canViewAging           = aging;
       canViewDailySales      = dailySales;
+      canViewLedgerSupplier          = Supplier_ledger;
     });
   }
   @override
@@ -130,6 +135,15 @@ class _SalesDashboardState extends State<ReportsDashboardScreen> {
                     color: Colors.lightBlueAccent,
                     onTap: () {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const DailySaleReportScreen()));
+                    },
+                  ),
+                if(canViewLedgerSupplier)
+                  DashboardCard(
+                    icon: Icons.people_alt_rounded,
+                    title: "Supplier Ledger",
+                    color: Colors.greenAccent,
+                    onTap: () {
+                      Navigator.push(context,MaterialPageRoute(builder: (context)=>SupplierLedgerScreen()));
                     },
                   ),
 

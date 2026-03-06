@@ -173,37 +173,29 @@ class _PurchaseDashboardState extends State<PurchaseDashboard> {
                   ),
                   DashboardCard(
                     icon: Icons.date_range_rounded,
-                    title: "DateWise Purchase",
+                    title: "Payment to Supplier ",
                     color: Colors.lightBlueAccent,
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context)=>DatewisePurchaseScreen()));
+                      Navigator.push(context, MaterialPageRoute(builder: (context)=>PaymentToSupplierScreen()));
                     },
                   ),
-                  DashboardCard(
-                    icon: Icons.shopping_bag_rounded,
-                    title: "ItemsWise Purchase",
-                    color: Colors.orangeAccent,
-                    onTap: () {
-                      Navigator.push(context,MaterialPageRoute(builder: (context)=>ItemWisePurchaseScreen()));
-                    },
-                  ),
-                  if(canViewLedger)
-                  DashboardCard(
-                    icon: Icons.people_alt_rounded,
-                    title: "Supplier Ledger",
-                    color: Colors.greenAccent,
-                    onTap: () {
-                      Navigator.push(context,MaterialPageRoute(builder: (context)=>SupplierLedgerScreen()));
-                    },
-                  ),
-                  DashboardCard(
-                    icon: Icons.person_pin_rounded,
-                    title: "SupplierWise Purchase",
-                    color: Colors.cyanAccent,
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context)=>SupplierwisePurchaseScreen()));
-                    },
-                  ),
+                  // DashboardCard(
+                  //   icon: Icons.shopping_bag_rounded,
+                  //   title: "ItemsWise Purchase",
+                  //   color: Colors.orangeAccent,
+                  //   onTap: () {
+                  //     Navigator.push(context,MaterialPageRoute(builder: (context)=>ItemWisePurchaseScreen()));
+                  //   },
+                  // ),
+
+                  // DashboardCard(
+                  //   icon: Icons.person_pin_rounded,
+                  //   title: "SupplierWise Purchase",
+                  //   color: Colors.cyanAccent,
+                  //   onTap: () {
+                  //     Navigator.push(context, MaterialPageRoute(builder: (context)=>SupplierwisePurchaseScreen()));
+                  //   },
+                  // ),
                   // DashboardCard(
                   //   icon: Icons.equalizer_rounded,
                   //   title: "Stock Position",

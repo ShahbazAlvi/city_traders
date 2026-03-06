@@ -83,14 +83,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
         salesData = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
     }
   }
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   Future.delayed(Duration.zero, () {
-  //     Provider.of<DashBoardProvider>(context, listen: false)
-  //         .fetchDashboardData();
-  //   });
-  // }
+
   bool isAdmin = false;
   bool canViewStock = false;
   bool canViewReports = false;
@@ -121,7 +114,7 @@ class _DashboardscreenState extends State<Dashboardscreen> {
     final sales     = await AccessControl.canDo("can_view_sales");
     final purchase  = await AccessControl.canDo("can_view_purchase");
     final dashboard  = await AccessControl.canDo("can_view_dashboard");
-    final bank  = await AccessControl.canDo("can_view_bank");//can_view_setup
+    final bank  = await AccessControl.canDo("can_view_accounts");//can_view_setup
     final setup  = await AccessControl.canDo("can_view_setup");//can_view_setup
 
     setState(() {

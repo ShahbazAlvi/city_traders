@@ -49,16 +49,55 @@ class _GRNScreenState extends State<GRNScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AddGRNScreen(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                final provider =
+                Provider.of<GRNProvider>(context, listen: false);
+
+                String nextOrderId = "GRN-0001";
+
+                if (provider.grnList.isNotEmpty) {
+                  final allNumbers = provider.grnList.map((order) {
+                    final id = order.grnNo;
+                    final regex = RegExp(r'GRN-(\d+)$');
+                    final match = regex.firstMatch(id);
+                    return match != null
+                        ? int.tryParse(match.group(1)!) ?? 0
+                        : 0;
+                  }).toList();
+
+                  final maxNumber = allNumbers.reduce((a, b) => a > b ? a : b);
+                  final incremented = maxNumber + 1;
+
+                  nextOrderId = "GRN-${incremented.toString().padLeft(4, '0')}";
+                }
+
+                print("✅ Next Order ID: $nextOrderId");
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        AddGRNScreen(nextOrderId: nextOrderId),
+                  ),
+                );
+              },
+
+              icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+              label: const Text(
+                "Add Order",
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              );
-            },
+              ),
+            ),
           ),
         ],
       ),

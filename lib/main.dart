@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'Provider/AmountReceivableDetailsProvider/AmountReceivableDetailsProvider.dart';
-import 'Provider/AreaSaleProvider/AreaSaleProvider.dart';
 import 'Provider/AuthProvider/LoginProvider.dart';
 import 'Provider/BankProvider/BankListProvider.dart';
 import 'Provider/BankProvider/PaymentVoucherProvider.dart';
@@ -37,6 +36,7 @@ import 'Provider/SaleManProvider/SaleManProvider.dart';
 import 'Provider/SalessProvider/SalessProvider.dart';
 import 'Provider/SupplierProvider/supplierProvider.dart';
 import 'Provider/customer_Payment/customer_payment_provider.dart';
+import 'Provider/setup/location_provider.dart';
 import 'Provider/stock_provider/stock_position_provider.dart';
 import 'Screen/splashview/splashLogo.dart';
 
@@ -69,7 +69,6 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => LoginProvider()),
         ChangeNotifierProvider(create: (_) => SalesProvider()),
         ChangeNotifierProvider(create: (_) => ItemDetailsProvider()),
-        ChangeNotifierProvider(create: (_) => SalesAreaProvider()),
         ChangeNotifierProvider(create: (_) => SaleInvoicesProvider()),
         ChangeNotifierProvider(create: (_) => RecoveryProvider()),
         ChangeNotifierProvider(create: (_) => ReceivableProvider()),
@@ -97,6 +96,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ManufacturesProvider()),
         ChangeNotifierProvider(create: (_) => CustomerPaymentProvider()),
         ChangeNotifierProvider(create: (_) => StockPositionProvider(),),
+        ChangeNotifierProvider(
+          create: (_) => LocationProvider(),
+        ),
 
 
 

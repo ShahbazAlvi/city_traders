@@ -1,54 +1,76 @@
 class PaymentToSupplierModel {
-  final String id;
-  final String receiptId;
-  final String date;
-  final Supplier supplier;
-  final num amountReceived;
-  final num newBalance;
-  final String remarks;
+  final int id;
+  final String paymentNo;
+  final int supplierId;
+  final String supplierName;
+  final String paymentDate;
+  final String paymentMode;
+  final String? bankName;
+  final String? grnNo;
+  final double invoiceAmount;
+  final double amount;
+  final double paymentBalance;
+  final String status;
+  final String? remarks;
   final String createdAt;
   final String updatedAt;
 
   PaymentToSupplierModel({
     required this.id,
-    required this.receiptId,
-    required this.date,
-    required this.supplier,
-    required this.amountReceived,
-    required this.newBalance,
-    required this.remarks,
+    required this.paymentNo,
+    required this.supplierId,
+    required this.supplierName,
+    required this.paymentDate,
+    required this.paymentMode,
+    this.bankName,
+    this.grnNo,
+    required this.invoiceAmount,
+    required this.amount,
+    required this.paymentBalance,
+    required this.status,
+    this.remarks,
     required this.createdAt,
     required this.updatedAt,
   });
 
   factory PaymentToSupplierModel.fromJson(Map<String, dynamic> json) {
     return PaymentToSupplierModel(
-      id: json["_id"],
-      receiptId: json["receiptId"],
-      date: json["date"],
-      supplier: Supplier.fromJson(json["supplier"]),
-      amountReceived: json["amountReceived"],
-      newBalance: json["newBalance"],
-      remarks: json["remarks"] ?? "",
-      createdAt: json["createdAt"],
-      updatedAt: json["updatedAt"],
+      id: json["id"] ?? 0,
+      paymentNo: json["payment_no"] ?? "",
+      supplierId: json["supplier_id"] ?? 0,
+      supplierName: json["supplier_name"] ?? "",
+      paymentDate: json["payment_date"] ?? "",
+      paymentMode: json["payment_mode"] ?? "",
+      bankName: json["bank_name"],
+      grnNo: json["grn_no"],
+      invoiceAmount: double.tryParse(json["invoice_amount"].toString()) ?? 0,
+      amount: double.tryParse(json["amount"].toString()) ?? 0,
+      paymentBalance: double.tryParse(json["payment_balance"].toString()) ?? 0,
+      status: json["status"] ?? "",
+      remarks: json["remarks"],
+      createdAt: json["created_at"] ?? "",
+      updatedAt: json["updated_at"] ?? "",
     );
   }
 }
+class PaymentToSupplierResponse {
+  final bool success;
+  final String message;
+  final List<PaymentToSupplierModel> data;
 
-class Supplier {
-  final String id;
-  final String supplierName;
-
-  Supplier({
-    required this.id,
-    required this.supplierName,
+  PaymentToSupplierResponse({
+    required this.success,
+    required this.message,
+    required this.data,
   });
 
-  factory Supplier.fromJson(Map<String, dynamic> json) {
-    return Supplier(
-      id: json["_id"],
-      supplierName: json["supplierName"],
+  factory PaymentToSupplierResponse.fromJson(Map<String, dynamic> json) {
+    List list = json["data"]?["data"] ?? [];
+
+    return PaymentToSupplierResponse(
+      success: json["success"] ?? false,
+      message: json["message"] ?? "",
+      data: list.map((e) => PaymentToSupplierModel.fromJson(e)).toList(),
     );
   }
 }
