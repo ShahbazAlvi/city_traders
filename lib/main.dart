@@ -1,4 +1,5 @@
 
+import 'package:demo_distribution/Provider/setup/tax_types_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -39,6 +40,7 @@ import 'Provider/customer_Payment/customer_payment_provider.dart';
 import 'Provider/setup/location_provider.dart';
 import 'Provider/stock_provider/stock_position_provider.dart';
 import 'Screen/splashview/splashLogo.dart';
+
 
 void main()async {
 
@@ -96,6 +98,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ManufacturesProvider()),
         ChangeNotifierProvider(create: (_) => CustomerPaymentProvider()),
         ChangeNotifierProvider(create: (_) => StockPositionProvider(),),
+        ChangeNotifierProvider(
+          create: (_) => TaxTypesProvider(),
+        ),
+
         ChangeNotifierProvider(
           create: (_) => LocationProvider(),
         ),

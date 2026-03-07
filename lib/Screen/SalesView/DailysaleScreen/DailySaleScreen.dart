@@ -832,7 +832,7 @@ class _DailySaleReportScreenState extends State<DailySaleReportScreen>
                       DataCell(Text(item.totalQty.toString())),
                       DataCell(
                         Text(
-                          "₹${NumberFormat('#,##,###').format(item.totalAmount)}",
+                          "Rs:${NumberFormat('#,##,###').format(item.totalAmount)}",
                           style: const TextStyle(
                             fontWeight: FontWeight.w500,
                           ),
@@ -840,7 +840,7 @@ class _DailySaleReportScreenState extends State<DailySaleReportScreen>
                       ),
                       DataCell(
                         Text(
-                          "₹${NumberFormat('#,##,###').format(item.totalAmount)}",
+                          "Rs:${NumberFormat('#,##,###').format(item.totalAmount)}",
                           style: const TextStyle(
                             fontWeight: FontWeight.w500,
                             color: Colors.green,
@@ -935,7 +935,7 @@ class _DailySaleReportScreenState extends State<DailySaleReportScreen>
                       ),
                       DataCell(
                         Text(
-                          "₹${NumberFormat('#,##,###').format(item.totalInvoiceAmount)}",
+                          "Rs:${NumberFormat('#,##,###').format(item.totalInvoiceAmount)}",
                           style: const TextStyle(
                             fontWeight: FontWeight.w500,
                           ),
@@ -943,7 +943,7 @@ class _DailySaleReportScreenState extends State<DailySaleReportScreen>
                       ),
                       DataCell(
                         Text(
-                          "₹${NumberFormat('#,##,###').format(item.totalReceived)}",
+                          "RS:${NumberFormat('#,##,###').format(item.totalReceived)}",
                           style: const TextStyle(
                             fontWeight: FontWeight.w500,
                             color: Colors.green,
@@ -952,7 +952,7 @@ class _DailySaleReportScreenState extends State<DailySaleReportScreen>
                       ),
                       DataCell(
                         Text(
-                          "₹${NumberFormat('#,##,###').format(balance)}",
+                          "Rs:${NumberFormat('#,##,###').format(balance)}",
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: balance > 0 ? Colors.orange : Colors.green,
@@ -994,7 +994,7 @@ class _DailySaleReportScreenState extends State<DailySaleReportScreen>
                       ),
                     ),
                     Text(
-                      "₹${NumberFormat('#,##,###').format(reportData.summary.payments.totalInvoiceAmount)}",
+                      "Rs:${NumberFormat('#,##,###').format(reportData.summary.payments.totalInvoiceAmount)}",
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -1015,7 +1015,7 @@ class _DailySaleReportScreenState extends State<DailySaleReportScreen>
                       ),
                     ),
                     Text(
-                      "₹${NumberFormat('#,##,###').format(reportData.summary.recoveries.totalRecovered)}",
+                      "Rs:${NumberFormat('#,##,###').format(reportData.summary.recoveries.totalRecovered)}",
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -1037,7 +1037,7 @@ class _DailySaleReportScreenState extends State<DailySaleReportScreen>
                       ),
                     ),
                     Text(
-                      "₹${NumberFormat('#,##,###').format(reportData.summary.payments.totalInvoiceAmount - reportData.summary.recoveries.totalRecovered)}",
+                      "Rs:${NumberFormat('#,##,###').format(reportData.summary.payments.totalInvoiceAmount - reportData.summary.recoveries.totalRecovered)}",
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,

@@ -1,6 +1,7 @@
 
 import 'dart:ui';
 import 'package:demo_distribution/Screen/SalesView/stock/stock_positions.dart';
+import 'package:demo_distribution/Screen/setup/tax_tapes/tax_types_screen.dart';
 import 'package:flutter/material.dart';
 import '../../../compoents/AppColors.dart';
 import '../../utils/access_control.dart';
@@ -192,6 +193,14 @@ class _SalesDashboardState extends State<SetUpDashboard> {
                   color: Colors.tealAccent,
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const SupplierListScreen()));
+                  },
+                ),
+                DashboardCard(
+                  icon: Icons.store_rounded,
+                  title: "Tax Types",
+                  color: Colors.tealAccent,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const TaxTypesScreen() ));
                   },
                 ),
               ]),

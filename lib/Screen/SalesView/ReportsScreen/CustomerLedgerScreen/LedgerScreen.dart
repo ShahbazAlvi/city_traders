@@ -821,7 +821,7 @@
 //           ),
 //           const SizedBox(height: 4),
 //           Text(
-//             "₹${NumberFormat('#,##,###').format(amount)}",
+//             "${NumberFormat('#,##,###').format(amount)}",
 //             style: TextStyle(
 //               fontSize: 12,
 //               fontWeight: FontWeight.bold,

@@ -1022,7 +1022,7 @@ class _UpdateOrderScreenState extends State<UpdateOrderScreen> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          'Rate: ₹${item['rate']}',
+                          'Rate: Rs:${item['rate']}',
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.grey.shade600,
@@ -1043,7 +1043,7 @@ class _UpdateOrderScreenState extends State<UpdateOrderScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '₹${item['qty'] * item['rate']}',
+                  'Rs:${item['qty'] * item['rate']}',
                   style: TextStyle(
                     color: Colors.green.shade700,
                     fontWeight: FontWeight.w600,

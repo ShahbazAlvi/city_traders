@@ -955,7 +955,7 @@ class _RecoveryListScreenState extends State<RecoveryListScreen>
                                   Expanded(
                                     child: _buildChip(
                                       label: "Amount",
-                                      value: "₹${item.amount.toStringAsFixed(2)}",
+                                      value: "Rs:${item.amount.toStringAsFixed(2)}",
                                       icon: Icons.currency_rupee,
                                       color: AppColors.primary,
                                     ),

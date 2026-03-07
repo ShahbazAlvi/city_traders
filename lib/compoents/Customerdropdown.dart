@@ -1,134 +1,4 @@
-// import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
-// import '../Provider/CustomerProvider/CustomerProvider.dart';
-// import '../model/CustomerModel/CustomerModel.dart';
-// import '../model/CustomerModel/CustomerModel.dart';
-// import '../model/CustomerModel/CustomersDefineModel.dart'; // Your CustomerData model
-//
-// class CustomerDropdown extends StatefulWidget {
-//   final int? selectedCustomerId; // Pre-selected customer ID
-//   final ValueChanged<CustomerData?> onChanged; // Callback when selection changes
-//   final String label;
-//   final bool showDetails;
-//
-//   const CustomerDropdown({
-//     super.key,
-//     required this.onChanged,
-//     this.selectedCustomerId,
-//     this.label = "Select Customer",
-//     this.showDetails = true,
-//   });
-//
-//   @override
-//   State<CustomerDropdown> createState() => _CustomerDropdownState();
-// }
-//
-// class _CustomerDropdownState extends State<CustomerDropdown> {
-//   CustomerData? selectedCustomer;
-//
-//   @override
-//   void initState() {
-//     super.initState();
-//     // Fetch customers when widget loads
-//     Future.microtask(() =>
-//         Provider.of<CustomerProvider>(context, listen: false).fetchCustomers());
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     final provider = Provider.of<CustomerProvider>(context);
-//
-//     if (provider.isLoading) {
-//       return const Center(child: CircularProgressIndicator());
-//     }
-//
-//     if (provider.error!.isNotEmpty) {
-//       return Text(provider.error!, style: const TextStyle(color: Colors.red));
-//     }
-//
-//     if (provider.customers.isEmpty) {
-//       return const Text("No customers found");
-//     }
-//
-//     // Set initial selection if needed
-//     if (widget.selectedCustomerId != null && selectedCustomer == null) {
-//       selectedCustomer = provider.customers.firstWhere(
-//               (c) => c.id == widget.selectedCustomerId,
-//           orElse: () => provider.customers.first);
-//     }
-//
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         Text(widget.label,
-//             style: const TextStyle(fontWeight: FontWeight.bold)),
-//         const SizedBox(height: 8),
-//         DropdownButtonFormField<int>(
-//           isExpanded: true,
-//           value: selectedCustomer?.id,
-//           decoration: InputDecoration(
-//             filled: true,
-//             fillColor: Colors.grey.shade100,
-//             border: OutlineInputBorder(
-//               borderRadius: BorderRadius.circular(12),
-//             ),
-//           ),
-//           hint: const Text("Choose Customer"),
-//           items: provider.customers.map((customer) {
-//             return DropdownMenuItem<int>(
-//               value: customer.id,
-//               child: Text(customer.name),
-//             );
-//           }).toList(),
-//           onChanged: (id) {
-//             if (id != null) {
-//               selectedCustomer = provider.customers
-//                   .firstWhere((c) => c.id == id,);
-//               widget.onChanged(selectedCustomer);
-//               setState(() {});
-//             }
-//           },
-//         ),
-//         const SizedBox(height: 16),
-//         if (widget.showDetails && selectedCustomer != null)
-//           _buildCustomerInfo(selectedCustomer!),
-//       ],
-//     );
-//   }
-//
-//   Widget _buildCustomerInfo(CustomerData customer) {
-//     final openingBalance =
-//         double.tryParse(customer.openingBalance) ?? 0.0;
-//     final creditLimit =
-//         double.tryParse(customer.creditLimit) ?? 0.0;
-//
-//     return Card(
-//       elevation: 3,
-//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-//       child: Padding(
-//         padding: const EdgeInsets.all(14.0),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             Text(customer.name,
-//                 style: const TextStyle(
-//                     fontWeight: FontWeight.bold,
-//                     fontSize: 18,
-//                     color: Colors.black)),
-//             const SizedBox(height: 8),
-//             Text("📞 Phone: ${customer.phone}"),
-//             Text("🏠 Address: ${customer.address}"),
-//             Text("💰 Balance: ${openingBalance.toStringAsFixed(2)}"),
-//             Text("🕓 Credit Limit: ${creditLimit.toStringAsFixed(2)}"),
-//             Text("📅 Created At: ${customer.createdAt}"),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-//
-//
+
 
 
 import 'package:flutter/material.dart';
@@ -218,21 +88,7 @@ class _CustomerDropdownState extends State<CustomerDropdown>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Modern label with gradient effect
-        // Container(
-        //   margin: const EdgeInsets.only(bottom: 8, left: 4),
-        //   child: Text(
-        //     widget.label,
-        //     style: TextStyle(
-        //       fontSize: 14,
-        //       fontWeight: FontWeight.w600,
-        //       color: Colors.grey.shade800,
-        //       letterSpacing: 0.5,
-        //     ),
-        //   ),
-        // ),
 
-        // Modern dropdown
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
@@ -301,14 +157,7 @@ class _CustomerDropdownState extends State<CustomerDropdown>
                               color: Colors.black87,
                             ),
                           ),
-                          // if (customer.phone.isNotEmpty)
-                          //   Text(
-                          //     customer.phone,
-                          //     style: TextStyle(
-                          //       fontSize: 12,
-                          //       color: Colors.grey.shade600,
-                          //     ),
-                          //   ),
+
                         ],
                       ),
                     ),
@@ -425,7 +274,7 @@ class _CustomerDropdownState extends State<CustomerDropdown>
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: 2,
-              childAspectRatio: 1.8,
+              childAspectRatio: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
               children: [
@@ -444,13 +293,13 @@ class _CustomerDropdownState extends State<CustomerDropdown>
                 _buildInfoCard(
                   icon: Icons.account_balance_wallet_outlined,
                   label: "Balance",
-                  value: "₹ ${openingBalance.toStringAsFixed(2)}",
+                  value: "Rs ${openingBalance.toStringAsFixed(2)}",
                   color: Colors.green,
                 ),
                 _buildInfoCard(
                   icon: Icons.credit_card_outlined,
                   label: "Credit Limit",
-                  value: "₹ ${creditLimit.toStringAsFixed(2)}",
+                  value: "Rs ${creditLimit.toStringAsFixed(2)}",
                   color: Colors.purple,
                 ),
               ],
@@ -458,28 +307,7 @@ class _CustomerDropdownState extends State<CustomerDropdown>
 
             const SizedBox(height: 16),
 
-            // Created at with icon
-            // Container(
-            //   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            //   decoration: BoxDecoration(
-            //     color: Colors.grey.shade100,
-            //     borderRadius: BorderRadius.circular(12),
-            //   ),
-            //   child: Row(
-            //     children: [
-            //       Icon(Icons.calendar_today, size: 16, color: Colors.grey.shade700),
-            //       const SizedBox(width: 8),
-            //       Text(
-            //         "Member since: ${customer.createdAt}",
-            //         style: TextStyle(
-            //           fontSize: 13,
-            //           color: Colors.grey.shade700,
-            //           fontWeight: FontWeight.w500,
-            //         ),
-            //       ),
-            //     ],
-            //   ),
-            // ),
+
           ],
         ),
       ),

@@ -792,6 +792,7 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
         // Stats Cards
 
         // Add Order FAB for mobile-friendly experience
+        const SizedBox(height: 8),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
@@ -1044,7 +1045,7 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Items',
+                                    'Items ${order.totalItems}',
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: Colors.grey.shade500,
@@ -1073,6 +1074,13 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    Text(
+                      'Total Amount   Rs:${order.totalAmount}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 20),
                     if (canViewOrder)
                     _buildActionButton(
                       icon: Icons.visibility,
