@@ -1132,20 +1132,14 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
     required Color color,
     required VoidCallback onPressed,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10),
+    return IconButton(
+      icon: Icon(icon, color: color,),
+      onPressed: onPressed,
+      constraints: const BoxConstraints(
+        minWidth: 36,
+        minHeight: 36,
       ),
-      child: IconButton(
-        icon: Icon(icon, color: color, size: 20),
-        onPressed: onPressed,
-        constraints: const BoxConstraints(
-          minWidth: 36,
-          minHeight: 36,
-        ),
-        padding: EdgeInsets.zero,
-      ),
+      padding: EdgeInsets.zero,
     );
   }
 

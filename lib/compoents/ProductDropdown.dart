@@ -35,35 +35,35 @@ class _ItemDetailsDropdownState extends State<ItemDetailsDropdown> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Modern label with better styling
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Row(
-            children: [
-              Container(
-                width: 4,
-                height: 20,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Colors.blue, Colors.purple],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                "Select Product",
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
+        // Container(
+        //   padding: const EdgeInsets.symmetric(horizontal: 4),
+        //   child: Row(
+        //     children: [
+        //       Container(
+        //         width: 4,
+        //         height: 20,
+        //         decoration: BoxDecoration(
+        //           gradient: const LinearGradient(
+        //             colors: [Colors.blue, Colors.purple],
+        //             begin: Alignment.topCenter,
+        //             end: Alignment.bottomCenter,
+        //           ),
+        //           borderRadius: BorderRadius.circular(4),
+        //         ),
+        //       ),
+        //       // const SizedBox(width: 8),
+        //       // const Text(
+        //       //   "Select Product",
+        //       //   style: TextStyle(
+        //       //     fontWeight: FontWeight.w600,
+        //       //     fontSize: 16,
+        //       //     letterSpacing: 0.5,
+        //       //   ),
+        //       // ),
+        //     ],
+        //   ),
+        // ),
+        //const SizedBox(height: 10),
 
         // Modern dropdown with shimmer loading effect
         AnimatedContainer(

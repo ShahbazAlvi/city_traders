@@ -36,14 +36,14 @@ class AddOrderScreen extends StatefulWidget {
 class _AddOrderScreenState extends State<AddOrderScreen> {
   late String currentDate;
   bool isLoading = false;
-  String selectedStatus = "DRAFT";
+  String selectedStatus = "APPROVED";
 
-  final List<String> orderStatusList = [
-    "DRAFT",
-    "APPROVED",
-    "CLOSED",
-    "CANCELLED",
-  ];
+  // final List<String> orderStatusList = [
+  //   "DRAFT",
+  //   "APPROVED",
+  //   "CLOSED",
+  //   "CANCELLED",
+  // ];
 
   String? selectedSalesmanId;
   CustomerData? selectedCustomer;
@@ -63,7 +63,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
   @override
   void initState() {
     super.initState();
-    currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    currentDate = DateFormat('dd-MMM-yyyy').format(DateTime.now());
 
     Future.microtask(() => context.read<SaleManProvider>().fetchEmployees());
 
@@ -109,19 +109,19 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
     });
   }
 
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'APPROVED':
-        return Colors.green;
-      case 'CLOSED':
-        return Colors.blue;
-      case 'CANCELLED':
-        return Colors.red;
-      case 'DRAFT':
-      default:
-        return Colors.orange;
-    }
-  }
+  // Color _getStatusColor(String status) {
+  //   switch (status) {
+  //     case 'APPROVED':
+  //       return Colors.green;
+  //     case 'CLOSED':
+  //       return Colors.blue;
+  //     case 'CANCELLED':
+  //       return Colors.red;
+  //     case 'DRAFT':
+  //     default:
+  //       return Colors.orange;
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -210,10 +210,10 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
           const SizedBox(height: 24),
 
           // Order Status Section
-          _buildSectionTitle('Order Status'),
-          const SizedBox(height: 12),
-          _buildStatusField(),
-          const SizedBox(height: 24),
+          //_buildSectionTitle('Order Status'),
+          // const SizedBox(height: 12),
+          // _buildStatusField(),
+         // const SizedBox(height: 24),
 
           // Product Selection Section
           _buildSectionTitle('Add Products'),
@@ -400,62 +400,62 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
       ),
     );
   }
-
-  Widget _buildStatusField() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.08),
-            spreadRadius: 1,
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: selectedStatus,
-          isExpanded: true,
-          icon: Icon(
-            Icons.keyboard_arrow_down,
-            color: AppColors.primary,
-          ),
-          items: orderStatusList.map((status) {
-            return DropdownMenuItem(
-              value: status,
-              child: Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(status),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    status,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-          onChanged: (value) {
-            setState(() => selectedStatus = value!);
-          },
-        ),
-      ),
-    );
-  }
+   // status dropdown
+  // Widget _buildStatusField() {
+  //   return Container(
+  //     padding: const EdgeInsets.symmetric(horizontal: 16),
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(16),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.grey.withOpacity(0.08),
+  //           spreadRadius: 1,
+  //           blurRadius: 6,
+  //           offset: const Offset(0, 2),
+  //         ),
+  //       ],
+  //     ),
+  //     child: DropdownButtonHideUnderline(
+  //       child: DropdownButton<String>(
+  //         value: selectedStatus,
+  //         isExpanded: true,
+  //         icon: Icon(
+  //           Icons.keyboard_arrow_down,
+  //           color: AppColors.primary,
+  //         ),
+  //         items: orderStatusList.map((status) {
+  //           return DropdownMenuItem(
+  //             value: status,
+  //             child: Row(
+  //               children: [
+  //                 Container(
+  //                   width: 8,
+  //                   height: 8,
+  //                   decoration: BoxDecoration(
+  //                     color: _getStatusColor(status),
+  //                     shape: BoxShape.circle,
+  //                   ),
+  //                 ),
+  //                 const SizedBox(width: 12),
+  //                 Text(
+  //                   status,
+  //                   style: const TextStyle(
+  //                     fontSize: 15,
+  //                     fontWeight: FontWeight.w500,
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           );
+  //         }).toList(),
+  //         onChanged: (value) {
+  //           setState(() => selectedStatus = value!);
+  //         },
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildProductSelection() {
     return Column(
@@ -514,7 +514,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Code: ${selectedProduct!.id ?? 'N/A'}',
+                            'Stock: ${selectedProduct!.minLevelQty ?? 'N/A'}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey.shade600,

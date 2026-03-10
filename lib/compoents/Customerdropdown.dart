@@ -179,140 +179,140 @@ class _CustomerDropdownState extends State<CustomerDropdown>
         ),
 
         // Animated customer details section
-        if (widget.showDetails && selectedCustomer != null)
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: Container(
-              margin: const EdgeInsets.only(top: 16),
-              child: _buildCustomerInfo(selectedCustomer!),
-            ),
-          ),
+        // if (widget.showDetails && selectedCustomer != null)
+        //   FadeTransition(
+        //     opacity: _fadeAnimation,
+        //     child: Container(
+        //       margin: const EdgeInsets.only(top: 16),
+        //       child: _buildCustomerInfo(selectedCustomer!),
+        //     ),
+        //   ),
       ],
     );
   }
 
-  Widget _buildCustomerInfo(CustomerData customer) {
-    final openingBalance = double.tryParse(customer.openingBalance) ?? 0.0;
-    final creditLimit = double.tryParse(customer.creditLimit) ?? 0.0;
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            Colors.grey.shade50,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.15),
-            spreadRadius: 2,
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with avatar
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).primaryColor,
-                        Theme.of(context).primaryColor.withOpacity(0.7),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(
-                    Icons.business_center,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        customer.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Customer Details",
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // Info grid
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              childAspectRatio: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              children: [
-                _buildInfoCard(
-                  icon: Icons.phone_outlined,
-                  label: "Phone",
-                  value: customer.phone.isEmpty ? "N/A" : customer.phone,
-                  color: Colors.blue,
-                ),
-                _buildInfoCard(
-                  icon: Icons.location_on_outlined,
-                  label: "Address",
-                  value: customer.address.isEmpty ? "N/A" : customer.address,
-                  color: Colors.orange,
-                ),
-                _buildInfoCard(
-                  icon: Icons.account_balance_wallet_outlined,
-                  label: "Balance",
-                  value: "Rs ${openingBalance.toStringAsFixed(2)}",
-                  color: Colors.green,
-                ),
-                _buildInfoCard(
-                  icon: Icons.credit_card_outlined,
-                  label: "Credit Limit",
-                  value: "Rs ${creditLimit.toStringAsFixed(2)}",
-                  color: Colors.purple,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildCustomerInfo(CustomerData customer) {
+  //   final openingBalance = double.tryParse(customer.openingBalance) ?? 0.0;
+  //   final creditLimit = double.tryParse(customer.creditLimit) ?? 0.0;
+  //
+  //   return Container(
+  //     decoration: BoxDecoration(
+  //       gradient: LinearGradient(
+  //         begin: Alignment.topLeft,
+  //         end: Alignment.bottomRight,
+  //         colors: [
+  //           Colors.white,
+  //           Colors.grey.shade50,
+  //         ],
+  //       ),
+  //       borderRadius: BorderRadius.circular(20),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.grey.withOpacity(0.15),
+  //           spreadRadius: 2,
+  //           blurRadius: 12,
+  //           offset: const Offset(0, 4),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Padding(
+  //       padding: const EdgeInsets.all(20),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           // Header with avatar
+  //           Row(
+  //             children: [
+  //               Container(
+  //                 padding: const EdgeInsets.all(12),
+  //                 decoration: BoxDecoration(
+  //                   gradient: LinearGradient(
+  //                     colors: [
+  //                       Theme.of(context).primaryColor,
+  //                       Theme.of(context).primaryColor.withOpacity(0.7),
+  //                     ],
+  //                   ),
+  //                   borderRadius: BorderRadius.circular(16),
+  //                 ),
+  //                 child: const Icon(
+  //                   Icons.business_center,
+  //                   color: Colors.white,
+  //                   size: 24,
+  //                 ),
+  //               ),
+  //               const SizedBox(width: 16),
+  //               Expanded(
+  //                 child: Column(
+  //                   crossAxisAlignment: CrossAxisAlignment.start,
+  //                   children: [
+  //                     Text(
+  //                       customer.name,
+  //                       style: const TextStyle(
+  //                         fontWeight: FontWeight.bold,
+  //                         fontSize: 20,
+  //                         color: Colors.black87,
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 4),
+  //                     Text(
+  //                       "Customer Details",
+  //                       style: TextStyle(
+  //                         fontSize: 13,
+  //                         color: Colors.grey.shade600,
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //
+  //           // const SizedBox(height: 20),
+  //           //
+  //           // // Info grid
+  //           // GridView.count(
+  //           //   shrinkWrap: true,
+  //           //   physics: const NeverScrollableScrollPhysics(),
+  //           //   crossAxisCount: 2,
+  //           //   childAspectRatio: 2,
+  //           //   crossAxisSpacing: 12,
+  //           //   mainAxisSpacing: 12,
+  //           //   children: [
+  //           //     _buildInfoCard(
+  //           //       icon: Icons.phone_outlined,
+  //           //       label: "Phone",
+  //           //       value: customer.phone.isEmpty ? "N/A" : customer.phone,
+  //           //       color: Colors.blue,
+  //           //     ),
+  //           //     _buildInfoCard(
+  //           //       icon: Icons.location_on_outlined,
+  //           //       label: "Address",
+  //           //       value: customer.address.isEmpty ? "N/A" : customer.address,
+  //           //       color: Colors.orange,
+  //           //     ),
+  //           //     _buildInfoCard(
+  //           //       icon: Icons.account_balance_wallet_outlined,
+  //           //       label: "Balance",
+  //           //       value: "Rs ${openingBalance.toStringAsFixed(0)}",
+  //           //       color: Colors.green,
+  //           //     ),
+  //           //     _buildInfoCard(
+  //           //       icon: Icons.credit_card_outlined,
+  //           //       label: "Credit Limit",
+  //           //       value: "Rs ${creditLimit.toStringAsFixed(0)}",
+  //           //       color: Colors.purple,
+  //           //     ),
+  //           //   ],
+  //           // ),
+  //
+  //           const SizedBox(height: 16),
+  //
+  //
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildInfoCard({
     required IconData icon,

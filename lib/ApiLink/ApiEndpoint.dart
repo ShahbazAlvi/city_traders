@@ -5,7 +5,7 @@ class ApiEndpoints {
     if (isProduction) {
       return "https://api.citytradersmis.com/api";
     } else {
-     // return "http://192.168.100.145:5000/api"; // Android emulator localhost
+     // return "http://localhost:5000/api"; // Android emulator localhost
       return "https://api.citytradersmis.com/api";
     }
   }
