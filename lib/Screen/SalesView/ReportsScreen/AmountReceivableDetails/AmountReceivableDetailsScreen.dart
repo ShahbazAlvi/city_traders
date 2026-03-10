@@ -1,119 +1,4 @@
-// import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
-//
-// import '../../../../Provider/AmountReceivableDetailsProvider/AmountReceivableDetailsProvider.dart';
-// import '../../../../compoents/AppColors.dart';
-//
-//
-// class ReceivableScreen extends StatefulWidget {
-//   const ReceivableScreen({super.key});
-//
-//   @override
-//   State<ReceivableScreen> createState() => _ReceivableScreenState();
-// }
-//
-// class _ReceivableScreenState extends State<ReceivableScreen> {
-//   void initState() {
-//     super.initState();
-//
-//     Future.microtask(() {
-//       context.read<ReceivableProvider>().fetchReceivables();
-//     });
-//   }
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text("Amount Receivable Details",
-//             style: TextStyle(color: Colors.white, fontSize: 22)),
-//         centerTitle: true,
-//         iconTheme: const IconThemeData(color: Colors.white),
-//         flexibleSpace: Container(
-//           decoration: const BoxDecoration(
-//             gradient: LinearGradient(
-//               colors: [AppColors.secondary, AppColors.primary],
-//               begin: Alignment.topLeft,
-//               end: Alignment.bottomRight,
-//             ),
-//           ),
-//         ),
-//       ),
-//       body: Padding(
-//         padding: const EdgeInsets.all(12.0),
-//         child: Column(
-//           children: [
-//
-//             const SizedBox(height: 10),
-//
-//             // ✅ Search Bar
-//             TextField(
-//               decoration: InputDecoration(
-//                 hintText: 'Search Customer',
-//                 border: OutlineInputBorder(
-//                   borderRadius: BorderRadius.circular(10),
-//                 ),
-//                 prefixIcon: const Icon(Icons.search),
-//               ),
-//               onChanged: (value) {
-//                 context.read<ReceivableProvider>().updateSearch(value);
-//               },
-//             ),
-//
-//             const SizedBox(height: 15),
-//
-//             // ✅ List View
-//             Expanded(
-//               child: Consumer<ReceivableProvider>(
-//                 builder: (context, provider, child) {
-//                   if (provider.isLoading) {
-//                     return const Center(
-//                         child: CircularProgressIndicator());
-//                   }
-//
-//                   if (provider.filteredList.isEmpty) {
-//                     return const Center(child: Text("No Data Found"));
-//                   }
-//
-//                   return ListView.builder(
-//                     itemCount: provider.filteredList.length,
-//                     itemBuilder: (context, index) {
-//                       final item = provider.filteredList[index];
-//
-//                       return Card(
-//                         child: ListTile(
-//                           title: Text(item.customerName),
-//                           subtitle: Text('Balance: ${item.balance}'),
-//                           leading: CircleAvatar(
-//                             child: Text(item.status.toString()),
-//                           ),
-//                         ),
-//                       );
-//                     },
-//                   );
-//                 },
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-//
-//   Widget _radioItem(BuildContext context, bool value, String text) {
-//     final provider = context.watch<ReceivableProvider>();
-//
-//     return Row(
-//       children: [
-//         Radio(
-//           value: value,
-//           groupValue: provider.withZero,
-//           onChanged: (v) => provider.updateWithZero(v!),
-//         ),
-//         Text(text),
-//       ],
-//     );
-//   }
-// }
+
 
 
 import 'package:flutter/material.dart';
@@ -278,76 +163,76 @@ class _ReceivableScreenState extends State<ReceivableScreen>
       body: Column(
         children: [
           // Summary Card
-          Consumer<ReceivableProvider>(
-            builder: (context, provider, child) {
-              if (provider.isLoading || provider.filteredList.isEmpty) {
-                return const SizedBox.shrink();
-              }
-
-              final totalReceivable = provider.filteredList.fold<double>(
-                0,
-                    (sum, item) => sum + (double.tryParse(item.balance.toString()) ?? 0),
-              );
-
-              return Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primary, AppColors.secondary],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Total Receivable",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Rs:${NumberFormat('#,##,###').format(totalReceivable)}",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildSummaryItem(
-                          icon: Icons.people_outline,
-                          label: "Customers",
-                          value: "${provider.filteredList.length}",
-                        ),
-                        _buildSummaryItem(
-                          icon: Icons.pending_actions,
-                          label: "With Balance",
-                          value: "${provider.filteredList.where((item) => (double.tryParse(item.balance.toString()) ?? 0) > 0).length}",
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+          // Consumer<ReceivableProvider>(
+          //   builder: (context, provider, child) {
+          //     if (provider.isLoading || provider.filteredList.isEmpty) {
+          //       return const SizedBox.shrink();
+          //     }
+          //
+          //     final totalReceivable = provider.filteredList.fold<double>(
+          //       0,
+          //           (sum, item) => sum + (double.tryParse(item.balance.toString()) ?? 0),
+          //     );
+          //
+          //     // return Container(
+          //     //   margin: const EdgeInsets.all(16),
+          //     //   padding: const EdgeInsets.all(20),
+          //     //   decoration: BoxDecoration(
+          //     //     gradient: const LinearGradient(
+          //     //       colors: [AppColors.primary, AppColors.secondary],
+          //     //       begin: Alignment.topLeft,
+          //     //       end: Alignment.bottomRight,
+          //     //     ),
+          //     //     borderRadius: BorderRadius.circular(24),
+          //     //     boxShadow: [
+          //     //       BoxShadow(
+          //     //         color: AppColors.primary.withOpacity(0.3),
+          //     //         blurRadius: 20,
+          //     //         offset: const Offset(0, 8),
+          //     //       ),
+          //     //     ],
+          //     //   ),
+          //     //   child: Column(
+          //     //     crossAxisAlignment: CrossAxisAlignment.start,
+          //     //     children: [
+          //     //       // const Text(
+          //     //       //   "Total Receivable",
+          //     //       //   style: TextStyle(
+          //     //       //     color: Colors.white70,
+          //     //       //     fontSize: 14,
+          //     //       //     fontWeight: FontWeight.w500,
+          //     //       //   ),
+          //     //       // ),
+          //     //       // const SizedBox(height: 8),
+          //     //       // Text(
+          //     //       //   "Rs:${NumberFormat('#,##,###').format(totalReceivable)}",
+          //     //       //   style: const TextStyle(
+          //     //       //     color: Colors.white,
+          //     //       //     fontSize: 32,
+          //     //       //     fontWeight: FontWeight.bold,
+          //     //       //   ),
+          //     //       // ),
+          //     //       // const SizedBox(height: 16),
+          //     //       // Row(
+          //     //       //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          //     //       //   children: [
+          //     //       //     _buildSummaryItem(
+          //     //       //       icon: Icons.people_outline,
+          //     //       //       label: "Customers",
+          //     //       //       value: "${provider.filteredList.length}",
+          //     //       //     ),
+          //     //       //     _buildSummaryItem(
+          //     //       //       icon: Icons.pending_actions,
+          //     //       //       label: "With Balance",
+          //     //       //       value: "${provider.filteredList.where((item) => (double.tryParse(item.balance.toString()) ?? 0) > 0).length}",
+          //     //       //     ),
+          //     //       //   ],
+          //     //       // ),
+          //     //     ],
+          //     //   ),
+          //     // );
+          //   },
+          // ),
 
           // Search and Filter Section
           Container(
@@ -767,7 +652,7 @@ class _ReceivableScreenState extends State<ReceivableScreen>
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        "Rs:${NumberFormat('#,##,###').format(balance)}",
+                                        "Rs:${item.grossTotal}",
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 15,
