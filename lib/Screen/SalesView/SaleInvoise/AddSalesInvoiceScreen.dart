@@ -1271,7 +1271,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
       "location_id": selectedLocationId,
       "invoice_date": DateTime.now().toIso8601String().split("T").first,
       "invoice_type": "CASH",
-      "status": "DRAFT",
+      "status": "POSTED",
       "details": allDetails,
     };
 

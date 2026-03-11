@@ -141,8 +141,8 @@ class ItemDetailsProvider with ChangeNotifier {
         // refresh list from server
         fetchItems();
         final dashboardProvider =
-        Provider.of<DashBoardProvider>(context, listen: false);
-        await dashboardProvider.fetchDashboardData();
+        Provider.of<DashboardProvider>(context, listen: false);
+        await dashboardProvider.fetch();
         notifyListeners();
       }
     } catch (e) {
@@ -223,8 +223,8 @@ class ItemDetailsProvider with ChangeNotifier {
       if (response.statusCode == 200 || response.statusCode == 201) {
         await fetchItems();
         final dashboardProvider =
-        Provider.of<DashBoardProvider>(context, listen: false);
-        await dashboardProvider.fetchDashboardData();
+        Provider.of<DashboardProvider>(context, listen: false);
+        await dashboardProvider.fetch();
 
         _isLoading = false;
         notifyListeners();
@@ -290,8 +290,8 @@ class ItemDetailsProvider with ChangeNotifier {
         await fetchItems();
 
         final dashboardProvider =
-        Provider.of<DashBoardProvider>(context, listen: false);
-        await dashboardProvider.fetchDashboardData();
+        Provider.of<DashboardProvider>(context, listen: false);
+        await dashboardProvider.fetch();
 
         _isLoading = false;
         notifyListeners();

@@ -208,11 +208,11 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
               Provider.of<SaleManProvider>(context, listen: false);
 
               final dashProvider =
-              Provider.of<DashBoardProvider>(context, listen: false);
+              Provider.of<DashboardProvider>(context, listen: false);
 
               // ❗ Call async functions WITHOUT using context afterward
               await saleManProvider.deleteEmployee(id);
-              await dashProvider.fetchDashboardData();
+              await dashProvider.fetch();
 
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

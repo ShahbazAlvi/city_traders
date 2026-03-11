@@ -1,315 +1,178 @@
-class DashboardModel {
-  bool success;
-  Stats stats;
-  Charts charts;
-  List<RecentBooking> recentBookings;
+class KpiCards {
+  final double totalSales;
+  final double totalPurchases;
+  final double totalPaymentsIn;
+  final double totalPaymentsOut;
+  final double totalRecoveries;
+  final double totalCustomerPayments;
+  final double grossProfit;
+  final double netCash;
 
-  DashboardModel({
-    required this.success,
-    required this.stats,
-    required this.charts,
-    required this.recentBookings,
-  });
-
-  factory DashboardModel.fromJson(Map<String, dynamic> json) => DashboardModel(
-    success: json['success'] ?? false,
-    stats: Stats.fromJson(json['stats']),
-    charts: Charts.fromJson(json['charts']),
-    recentBookings: List<RecentBooking>.from(
-        json['recentBookings'].map((x) => RecentBooking.fromJson(x))),
-  );
-
-  Map<String, dynamic> toJson() => {
-    'success': success,
-    'stats': stats.toJson(),
-    'charts': charts.toJson(),
-    'recentBookings': List<dynamic>.from(recentBookings.map((x) => x.toJson())),
-  };
-}
-
-class Stats {
-  int totalCustomers;
-  int totalProducts;
-  int totalStaff;
-  int totalSales;
-  int totalBookings;
-
-  Stats({
-    required this.totalCustomers,
-    required this.totalProducts,
-    required this.totalStaff,
+  KpiCards({
     required this.totalSales,
-    required this.totalBookings,
+    required this.totalPurchases,
+    required this.totalPaymentsIn,
+    required this.totalPaymentsOut,
+    required this.totalRecoveries,
+    required this.totalCustomerPayments,
+    required this.grossProfit,
+    required this.netCash,
   });
 
-  factory Stats.fromJson(Map<String, dynamic> json) => Stats(
-    totalCustomers: json['totalCustomers'] ?? 0,
-    totalProducts: json['totalProducts'] ?? 0,
-    totalStaff: json['totalStaff'] ?? 0,
-    totalSales: json['totalSales'] ?? 0,
-    totalBookings: json['totalBookings'] ?? 0,
+  factory KpiCards.fromJson(Map<String, dynamic> j) => KpiCards(
+    totalSales: (j['total_sales'] as num).toDouble(),
+    totalPurchases: (j['total_purchases'] as num).toDouble(),
+    totalPaymentsIn: (j['total_payments_in'] as num).toDouble(),
+    totalPaymentsOut: (j['total_payments_out'] as num).toDouble(),
+    totalRecoveries: (j['total_recoveries'] as num).toDouble(),
+    totalCustomerPayments: (j['total_customer_payments'] as num).toDouble(),
+    grossProfit: (j['gross_profit'] as num).toDouble(),
+    netCash: (j['net_cash'] as num).toDouble(),
   );
-
-  Map<String, dynamic> toJson() => {
-    'totalCustomers': totalCustomers,
-    'totalProducts': totalProducts,
-    'totalStaff': totalStaff,
-    'totalSales': totalSales,
-    'totalBookings': totalBookings,
-  };
 }
 
-class Charts {
-  List<CustomerOrders> customerOrders;
-  List<SalesProfit> salesProfit;
-  List<CustomerBalance> customerBalance;
+class TrendPoint {
+  final String month;
+  final double sales;
+  final double purchases;
+  final double paymentsIn;
+  final double paymentsOut;
+  final double recoveries;
 
-  Charts({
-    required this.customerOrders,
-    required this.salesProfit,
-    required this.customerBalance,
+  TrendPoint({
+    required this.month,
+    required this.sales,
+    required this.purchases,
+    required this.paymentsIn,
+    required this.paymentsOut,
+    required this.recoveries,
   });
 
-  factory Charts.fromJson(Map<String, dynamic> json) => Charts(
-    customerOrders: List<CustomerOrders>.from(
-        json['customerOrders'].map((x) => CustomerOrders.fromJson(x))),
-    salesProfit: List<SalesProfit>.from(
-        json['salesProfit'].map((x) => SalesProfit.fromJson(x))),
-    customerBalance: List<CustomerBalance>.from(
-        json['customerBalance'].map((x) => CustomerBalance.fromJson(x))),
-  );
-
-  Map<String, dynamic> toJson() => {
-    'customerOrders': List<dynamic>.from(customerOrders.map((x) => x.toJson())),
-    'salesProfit': List<dynamic>.from(salesProfit.map((x) => x.toJson())),
-    'customerBalance': List<dynamic>.from(customerBalance.map((x) => x.toJson())),
-  };
+  factory TrendPoint.fromJson(Map<String, dynamic> j) {
+    final raw = j['month'] as String;
+    final dt = DateTime.tryParse(raw);
+    final label = dt != null ? 'Mar ${dt.day}' : raw.substring(5);
+    return TrendPoint(
+      month: label,
+      sales: (j['sales'] as num).toDouble(),
+      purchases: (j['purchases'] as num).toDouble(),
+      paymentsIn: (j['paymentsIn'] as num).toDouble(),
+      paymentsOut: (j['paymentsOut'] as num).toDouble(),
+      recoveries: (j['recoveries'] as num).toDouble(),
+    );
+  }
 }
 
-class CustomerOrders {
-  int id;
-  int totalOrders;
+class InvoiceGroup {
+  final int count;
+  final double amount;
+  InvoiceGroup({required this.count, required this.amount});
+  factory InvoiceGroup.fromJson(Map<String, dynamic> j) =>
+      InvoiceGroup(count: j['count'] as int, amount: (j['amount'] as num).toDouble());
+}
 
-  CustomerOrders({
+class InvoiceStatus {
+  final InvoiceGroup paid;
+  final InvoiceGroup receivable;
+  final InvoiceGroup overdue;
+  InvoiceStatus({required this.paid, required this.receivable, required this.overdue});
+  factory InvoiceStatus.fromJson(Map<String, dynamic> j) => InvoiceStatus(
+    paid: InvoiceGroup.fromJson(j['paid']),
+    receivable: InvoiceGroup.fromJson(j['receivable']),
+    overdue: InvoiceGroup.fromJson(j['overdue']),
+  );
+}
+
+class TopProduct {
+  final String name;
+  final int sold;
+  TopProduct({required this.name, required this.sold});
+  factory TopProduct.fromJson(Map<String, dynamic> j) =>
+      TopProduct(name: j['name'] as String, sold: j['sold'] as int);
+}
+
+class ActivityItem {
+  final int id;
+  final String type;
+  final String who;
+  final double amount;
+  final String date;
+  final String refNo;
+
+  ActivityItem({
     required this.id,
-    required this.totalOrders,
-  });
-
-  factory CustomerOrders.fromJson(Map<String, dynamic> json) => CustomerOrders(
-    id: json['_id'] ?? 0,
-    totalOrders: json['totalOrders'] ?? 0,
-  );
-
-  Map<String, dynamic> toJson() => {
-    '_id': id,
-    'totalOrders': totalOrders,
-  };
-}
-
-class SalesProfit {
-  String label;
-  int value;
-
-  SalesProfit({
-    required this.label,
-    required this.value,
-  });
-
-  factory SalesProfit.fromJson(Map<String, dynamic> json) => SalesProfit(
-    label: json['label'] ?? '',
-    value: json['value'] ?? 0,
-  );
-
-  Map<String, dynamic> toJson() => {
-    'label': label,
-    'value': value,
-  };
-}
-
-class CustomerBalance {
-  String label;
-  int value;
-
-  CustomerBalance({
-    required this.label,
-    required this.value,
-  });
-
-  factory CustomerBalance.fromJson(Map<String, dynamic> json) => CustomerBalance(
-    label: json['label'] ?? '',
-    value: json['value'] ?? 0,
-  );
-
-  Map<String, dynamic> toJson() => {
-    'label': label,
-    'value': value,
-  };
-}
-
-// class RecentBooking {
-//   String id;
-//   String orderId;
-//   DateTime date;
-//   String salesmanId;
-//   CustomerId customerId;
-//   List<Product> products;
-//   String status;
-//   DateTime createdAt;
-//   DateTime updatedAt;
-//
-//   RecentBooking({
-//     required this.id,
-//     required this.orderId,
-//     required this.date,
-//     required this.salesmanId,
-//     required this.customerId,
-//     required this.products,
-//     required this.status,
-//     required this.createdAt,
-//     required this.updatedAt,
-//   });
-//
-//   factory RecentBooking.fromJson(Map<String, dynamic> json) => RecentBooking(
-//     id: json['_id'] ?? '',
-//     orderId: json['orderId'] ?? '',
-//     date: DateTime.parse(json['date']),
-//     salesmanId: json['salesmanId'] ?? '',
-//     customerId: CustomerId.fromJson(json['customerId']),
-//     products:
-//     List<Product>.from(json['products'].map((x) => Product.fromJson(x))),
-//     status: json['status'] ?? '',
-//     createdAt: DateTime.parse(json['createdAt']),
-//     updatedAt: DateTime.parse(json['updatedAt']),
-//   );
-//
-//   Map<String, dynamic> toJson() => {
-//     '_id': id,
-//     'orderId': orderId,
-//     'date': date.toIso8601String(),
-//     'salesmanId': salesmanId,
-//     'customerId': customerId.toJson(),
-//     'products': List<dynamic>.from(products.map((x) => x.toJson())),
-//     'status': status,
-//     'createdAt': createdAt.toIso8601String(),
-//     'updatedAt': updatedAt.toIso8601String(),
-//   };
-// }
-class RecentBooking {
-  String id;
-  String orderId;
-  DateTime date;
-  String salesmanId;
-  CustomerId? customerId; // nullable
-  List<Product> products;
-  String status;
-  DateTime createdAt;
-  DateTime updatedAt;
-
-  RecentBooking({
-    required this.id,
-    required this.orderId,
+    required this.type,
+    required this.who,
+    required this.amount,
     required this.date,
-    required this.salesmanId,
-    this.customerId, // nullable
-    required this.products,
-    required this.status,
-    required this.createdAt,
-    required this.updatedAt,
+    required this.refNo,
   });
 
-  factory RecentBooking.fromJson(Map<String, dynamic> json) => RecentBooking(
-    id: json['_id'] ?? '',
-    orderId: json['orderId'] ?? '',
-    date: DateTime.parse(json['date']),
-    salesmanId: json['salesmanId'] ?? '',
-    customerId: json['customerId'] != null
-        ? CustomerId.fromJson(json['customerId'])
-        : null, // null check
-    products: List<Product>.from(
-        json['products'].map((x) => Product.fromJson(x))),
-    status: json['status'] ?? '',
-    createdAt: DateTime.parse(json['createdAt']),
-    updatedAt: DateTime.parse(json['updatedAt']),
-  );
-
-  Map<String, dynamic> toJson() => {
-    '_id': id,
-    'orderId': orderId,
-    'date': date.toIso8601String(),
-    'salesmanId': salesmanId,
-    'customerId': customerId?.toJson(), // safe access
-    'products': List<dynamic>.from(products.map((x) => x.toJson())),
-    'status': status,
-    'createdAt': createdAt.toIso8601String(),
-    'updatedAt': updatedAt.toIso8601String(),
-  };
+  factory ActivityItem.fromJson(Map<String, dynamic> j) {
+    final raw = j['date'] as String;
+    final dt = DateTime.tryParse(raw);
+    final label = dt != null ? 'Mar ${dt.day}' : raw.substring(5, 10);
+    return ActivityItem(
+      id: j['id'] as int,
+      type: j['type'] as String,
+      who: j['who'] as String,
+      amount: (j['amount'] as num).toDouble(),
+      date: label,
+      refNo: j['ref_no'] as String,
+    );
+  }
 }
 
+class RecoverySummary {
+  final double totalAmount;
+  final int totalCount;
+  final double cashAmount;
+  final double bankAmount;
 
-class CustomerId {
-  String id;
-  String customerName;
-  String address;
-  String phoneNumber;
-
-  CustomerId({
-    required this.id,
-    required this.customerName,
-    required this.address,
-    required this.phoneNumber,
-  });
-
-  factory CustomerId.fromJson(Map<String, dynamic> json) => CustomerId(
-    id: json['_id'] ?? '',
-    customerName: json['customerName'] ?? '',
-    address: json['address'] ?? '',
-    phoneNumber: json['phoneNumber'] ?? '',
-  );
-
-  Map<String, dynamic> toJson() => {
-    '_id': id,
-    'customerName': customerName,
-    'address': address,
-    'phoneNumber': phoneNumber,
-  };
-}
-
-class Product {
-  String categoryName;
-  String itemName;
-  int qty;
-  String itemUnit;
-  int rate;
-  int totalAmount;
-  String id;
-
-  Product({
-    required this.categoryName,
-    required this.itemName,
-    required this.qty,
-    required this.itemUnit,
-    required this.rate,
+  RecoverySummary({
     required this.totalAmount,
-    required this.id,
+    required this.totalCount,
+    required this.cashAmount,
+    required this.bankAmount,
   });
 
-  factory Product.fromJson(Map<String, dynamic> json) => Product(
-    categoryName: json['categoryName'] ?? '',
-    itemName: json['itemName'] ?? '',
-    qty: json['qty'] ?? 0,
-    itemUnit: json['itemUnit'] ?? '',
-    rate: json['rate'] ?? 0,
-    totalAmount: json['totalAmount'] ?? 0,
-    id: json['_id'] ?? '',
+  factory RecoverySummary.fromJson(Map<String, dynamic> j) => RecoverySummary(
+    totalAmount: (j['total_amount'] as num).toDouble(),
+    totalCount: j['total_count'] as int,
+    cashAmount: (j['cash_amount'] as num).toDouble(),
+    bankAmount: (j['bank_amount'] as num).toDouble(),
   );
+}
 
-  Map<String, dynamic> toJson() => {
-    'categoryName': categoryName,
-    'itemName': itemName,
-    'qty': qty,
-    'itemUnit': itemUnit,
-    'rate': rate,
-    'totalAmount': totalAmount,
-    '_id': id,
-  };
+class DashboardData {
+  final KpiCards kpiCards;
+  final List<TrendPoint> monthlyTrend;
+  final InvoiceStatus invoiceStatus;
+  final List<TopProduct> topProducts;
+  final List<ActivityItem> recentActivity;
+  final RecoverySummary recoverySummary;
+
+  DashboardData({
+    required this.kpiCards,
+    required this.monthlyTrend,
+    required this.invoiceStatus,
+    required this.topProducts,
+    required this.recentActivity,
+    required this.recoverySummary,
+  });
+
+  factory DashboardData.fromJson(Map<String, dynamic> data) => DashboardData(
+    kpiCards: KpiCards.fromJson(data['kpi_cards']),
+    monthlyTrend: (data['monthly_trend'] as List)
+        .map((e) => TrendPoint.fromJson(e))
+        .toList(),
+    invoiceStatus: InvoiceStatus.fromJson(data['invoice_status']),
+    topProducts: (data['top_products'] as List)
+        .map((e) => TopProduct.fromJson(e))
+        .toList(),
+    recentActivity: (data['recent_activity'] as List)
+        .map((e) => ActivityItem.fromJson(e))
+        .toList(),
+    recoverySummary: RecoverySummary.fromJson(data['recoveries']['summary']),
+  );
 }

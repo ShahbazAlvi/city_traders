@@ -150,8 +150,8 @@ bool get isLoading=>_isLoading;
         fetchCustomers();
 
         final dashboardProvider =
-        Provider.of<DashBoardProvider>(context, listen: false);
-        await dashboardProvider.fetchDashboardData();
+        Provider.of<DashboardProvider>(context, listen: false);
+        await dashboardProvider.fetch();
 
         _isLoading = false;
         notifyListeners();
@@ -185,7 +185,7 @@ bool get isLoading=>_isLoading;
 
 
 
-  Future<bool> DeleteCustomer(String idCustomer, DashBoardProvider dashProvider) async {
+  Future<bool> DeleteCustomer(String idCustomer, DashboardProvider dashProvider) async {
     try {
       _isLoading = true;
       notifyListeners();
@@ -209,7 +209,7 @@ bool get isLoading=>_isLoading;
         await fetchCustomers();
 
         // ⭐ Refresh dashboard immediately
-        await dashProvider.fetchDashboardData();
+        await dashProvider.fetch();
   
         _isLoading = false;
         notifyListeners();

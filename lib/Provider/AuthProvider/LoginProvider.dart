@@ -86,7 +86,7 @@ class LoginProvider with ChangeNotifier{
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const Dashboardscreen()),
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );
       }
 

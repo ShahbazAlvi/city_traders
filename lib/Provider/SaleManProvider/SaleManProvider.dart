@@ -231,8 +231,8 @@ class SaleManProvider with ChangeNotifier {
         clearFields();
         fetchEmployees();
         final dashboardProvider =
-        Provider.of<DashBoardProvider>(context, listen: false);
-        await dashboardProvider.fetchDashboardData();// refresh list
+        Provider.of<DashboardProvider>(context, listen: false);
+        await dashboardProvider.fetch();// refresh list
         notifyListeners();
       } else {
         print("${response.body}");

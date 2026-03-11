@@ -221,7 +221,7 @@ class _SplashOneState extends State<SplashOne> {
     if (token != null && token.isNotEmpty) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const Dashboardscreen()),
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
     } else {
       Navigator.pushReplacement(

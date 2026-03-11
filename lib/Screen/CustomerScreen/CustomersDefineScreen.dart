@@ -193,7 +193,7 @@ class _CustomersDefineScreenState extends State<CustomersDefineScreen> {
               Navigator.pop(context);
 
               final customerProvider = Provider.of<CustomerProvider>(context, listen: false);
-              final dashProvider = Provider.of<DashBoardProvider>(context, listen: false);
+              final dashProvider = Provider.of<DashboardProvider>(context, listen: false);
 
               bool success = await customerProvider.DeleteCustomer(customerId, dashProvider);
 
