@@ -10,26 +10,23 @@ class ReceivableProvider extends ChangeNotifier {
   AmountReceivableModel? receivableModel;
 
   bool isLoading = false;
-  bool withZero = true;
+  bool? withZero = false; // default: show with balance only
   String searchText = '';
   String token = "";
 
-  /// 🔐 Load token from SharedPreferences
   Future<void> loadToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     token = prefs.getString("token") ?? "";
   }
 
-  /// 📡 Fetch Receivables
   Future<void> fetchReceivables() async {
     await loadToken();
-
     try {
       isLoading = true;
       notifyListeners();
 
       final url = Uri.parse(
-        "${ApiEndpoints.baseUrl}/amount-receivables?withZero=$withZero",
+        "${ApiEndpoints.baseUrl}/amount-receivables?withZero=${withZero ?? false}",
       );
 
       final response = await http.get(
@@ -43,8 +40,6 @@ class ReceivableProvider extends ChangeNotifier {
       if (response.statusCode == 200) {
         receivableModel =
             AmountReceivableModel.fromJson(json.decode(response.body));
-      } else {
-        print("API Error: ${response.statusCode}");
       }
     } catch (e) {
       print("Error fetching receivables: $e");
@@ -54,32 +49,32 @@ class ReceivableProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 🔎 Filter list by search
-  List<ReceivableData> get filteredList {
+  /// ✅ Returns CustomerReceivable list (not invoices)
+  List<CustomerReceivable> get filteredList {
     if (receivableModel == null) return [];
 
-    final list = receivableModel!.data.invoices;
-
-    return list.where((e) {
-      final matchSearch = e.customerName
+    return receivableModel!.data.customers.where((customer) {
+      final matchSearch = customer.customerName
           .toLowerCase()
           .contains(searchText.toLowerCase());
 
-      final matchZero = withZero ? true : e.balance > 0;
+      final matchZero = withZero == true
+          ? true
+          : customer.grandBalance > 0;
 
       return matchSearch && matchZero;
     }).toList();
   }
 
-
+  /// ✅ Summary from API
+  ReceivableSummary? get summary => receivableModel?.data.summary;
 
   void updateSearch(String value) {
     searchText = value;
     notifyListeners();
   }
 
-  /// 🔁 Toggle With Zero
-  void updateWithZero(bool value) {
+  void updateWithZero(bool? value) {
     withZero = value;
     fetchReceivables();
   }
