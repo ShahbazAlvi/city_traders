@@ -157,44 +157,44 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
 
                       /// PO Number + Status
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
+                    children: [
                           Text(order.poNo,
                               style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold)),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: getStatusColor(order.status)
-                                  .withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(order.status,
-                                style: TextStyle(
-                                    color: getStatusColor(order.status),
-                                    fontWeight: FontWeight.bold)),
-                          )
+                          SizedBox(width: 5,),
+
+                      Text(
+                        (order.supplierName ?? '').toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+
                         ],
                       ),
 
                       const SizedBox(height: 6),
 
                       /// Supplier
-                      Text("Supplier: ${order.supplierName}"),
+
 
                       /// Date
-                      Text("Date: ${DateFormat('dd MMM yyyy').format(order.poDate)}"),
+                      Row(
+                        children: [
+                          Text("${DateFormat('dd MMM yyyy').format(order.poDate)}"),
+                          SizedBox(width: 10,),
+                          Text("Rs.${order.totalAmount}",
+                              ),
+                        ],
+                      ),
 
                       /// Quantity
-                      Text("Total Qty: ${order.totalQty}"),
+
 
                       /// Amount
-                      Text("Amount: Rs ${order.totalAmount}",
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15)),
+
 
                     ],
                   ),

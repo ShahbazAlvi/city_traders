@@ -128,15 +128,7 @@ class _PurchaseDashboardState extends State<PurchaseDashboard> {
                 _buildSectionTitle("⚙️ Functionalities"),
                 const SizedBox(height: 14),
                 _buildCardGrid([
-                  if(canViewgrn)
-                  DashboardCard(
-                    icon: Icons.receipt_long_rounded,
-                    title: "GRN",
-                    color: Colors.tealAccent,
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context)=>GRNScreen()));
-                    },
-                  ),
+
                   if(canViewPurchaseOrder)
                   DashboardCard(
                     icon: Icons.receipt_long_rounded,
@@ -146,6 +138,15 @@ class _PurchaseDashboardState extends State<PurchaseDashboard> {
                       Navigator.push(context, MaterialPageRoute(builder: (context)=>PurchaseOrderScreen()));
                     },
                   ),
+                  if(canViewgrn)
+                    DashboardCard(
+                      icon: Icons.receipt_long_rounded,
+                      title: "GRN",
+                      color: Colors.tealAccent,
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context)=>GRNScreen()));
+                      },
+                    ),
                   // DashboardCard(
                   //   icon: Icons.attach_money_rounded,
                   //   title: "Payment to Supplier",
