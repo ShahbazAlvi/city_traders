@@ -151,53 +151,6 @@ class _ReceivableScreenState extends State<ReceivableScreen>
                         context.read<ReceivableProvider>().updateSearch(v),
                   ),
                 ),
-                const SizedBox(height: 10),
-
-                // Filter Toggle
-                Consumer<ReceivableProvider>(
-                  builder: (context, provider, _) {
-                    return Row(
-                      children: [
-                        Text("Show:",
-                            style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey[600])),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey[50],
-                              borderRadius: BorderRadius.circular(30),
-                              border: Border.all(
-                                  color: Colors.grey.shade200),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: _buildFilterChip(
-                                    label: "With Balance",
-                                    isSelected: provider.withZero == false,
-                                    onTap: () =>
-                                        provider.updateWithZero(false),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: _buildFilterChip(
-                                    label: "Zero Balance",
-                                    isSelected: provider.withZero == true,
-                                    onTap: () =>
-                                        provider.updateWithZero(true),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
               ],
             ),
           ),
@@ -255,151 +208,7 @@ class _ReceivableScreenState extends State<ReceivableScreen>
     );
   }
 
-  // ── Summary Banner ────────────────────────────────────────────────────────
 
-  Widget _buildSummaryBanner(ReceivableSummary summary) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.secondary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Total Grand Balance — hero number
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                    Icons.account_balance_wallet_outlined,
-                    color: Colors.white,
-                    size: 22),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("Total Grand Balance",
-                        style: TextStyle(
-                            color: Colors.white70, fontSize: 12)),
-                    Text(
-                      "Rs ${_fmt.format(summary.totalGrandBalance)}",
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          // Stats row
-          Row(
-            children: [
-              _buildSummaryStat(
-                  label: "Customers",
-                  value: "${summary.totalCustomers}",
-                  icon: Icons.people_outline),
-              // _buildSummaryStat(
-              //     label: "Total Net",
-              //     value: "Rs ${_fmt.format(summary.totalNet)}",
-              //     icon: Icons.receipt_outlined),
-              // _buildSummaryStat(
-              //     label: "Received",
-              //     value: "Rs ${_fmt.format(summary.totalReceived)}",
-              //     icon: Icons.check_circle_outline),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // Status chips
-          Row(
-            children: [
-              _buildStatusBadge("Paid", summary.countPaid, Colors.green),
-              const SizedBox(width: 8),
-              _buildStatusBadge(
-                  "Partial", summary.countPartial, Colors.orange),
-              const SizedBox(width: 8),
-              _buildStatusBadge("Open", summary.countOpen, Colors.red),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryStat(
-      {required String label,
-        required String value,
-        required IconData icon}) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, color: Colors.white70, size: 16),
-          const SizedBox(height: 4),
-          Text(value,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold),
-              overflow: TextOverflow.ellipsis),
-          Text(label,
-              style: const TextStyle(
-                  color: Colors.white60, fontSize: 10)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(String label, int count, Color color) {
-    return Expanded(
-      child: Container(
-        padding:
-        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                    color: color, shape: BoxShape.circle)),
-            const SizedBox(width: 6),
-            Text("$count $label",
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Customer Card ─────────────────────────────────────────────────────────
 
   Widget _buildCustomerCard(CustomerReceivable customer) {
     final grandBalance = customer.grandBalance;
@@ -434,8 +243,8 @@ class _ReceivableScreenState extends State<ReceivableScreen>
                     Stack(
                       children: [
                         Container(
-                          width: 52,
-                          height: 52,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: hasPending
@@ -460,26 +269,12 @@ class _ReceivableScreenState extends State<ReceivableScreen>
                                   : "?",
                               style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 20,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.bold),
                             ),
                           ),
                         ),
-                        if (hasPending)
-                          Positioned(
-                            top: 0,
-                            right: 0,
-                            child: Container(
-                              width: 13,
-                              height: 13,
-                              decoration: BoxDecoration(
-                                color: Colors.orange,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                    color: Colors.white, width: 2),
-                              ),
-                            ),
-                          ),
+
                       ],
                     ),
                     const SizedBox(width: 14),
@@ -497,7 +292,9 @@ class _ReceivableScreenState extends State<ReceivableScreen>
                                 color: Color(0xFF1E293B)),
                           ),
                           const SizedBox(height: 4),
-                          _buildStatusPill(hasPending),
+
+
+
                         ],
                       ),
                     ),
@@ -506,11 +303,6 @@ class _ReceivableScreenState extends State<ReceivableScreen>
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text("Grand Balance",
-                            style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey[500])),
-                        const SizedBox(height: 2),
                         Text(
                           "Rs ${_fmt.format(grandBalance)}",
                           style: TextStyle(
@@ -537,68 +329,8 @@ class _ReceivableScreenState extends State<ReceivableScreen>
     );
   }
 
-  Widget _buildStatusPill(bool hasPending) {
-    return Container(
-      padding:
-      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(
-        color: hasPending
-            ? Colors.orange.withOpacity(0.1)
-            : Colors.green.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: hasPending ? Colors.orange : Colors.green),
-          ),
-          const SizedBox(width: 5),
-          Text(
-            hasPending ? "Pending" : "Cleared",
-            style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: hasPending ? Colors.orange : Colors.green),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildMiniStat(
-      {required String label,
-        required String value,
-        required Color color}) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(label,
-              style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.grey[500],
-                  fontWeight: FontWeight.w500)),
-          const SizedBox(height: 2),
-          Text(value,
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: color),
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildVerticalDivider() {
-    return Container(
-        width: 1, height: 32, color: Colors.grey.shade200);
-  }
 
   // ── Customer Detail Bottom Sheet ──────────────────────────────────────────
 

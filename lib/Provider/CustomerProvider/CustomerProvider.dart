@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../ApiLink/ApiEndpoint.dart';
+import '../../model/AmountReceivableDetailsModel/AmountReceivableDetailsModel.dart';
 import '../../model/CustomerModel/CustomersDefineModel.dart';
 import '../DashBoardProvider.dart';
 
@@ -17,6 +18,7 @@ import '../DashBoardProvider.dart';
   List<CustomerModel>_customer=[];
 
   List<CustomerData> _customers = [];
+  String searchText = '';
 
 
   bool _isLoading=false;
@@ -285,6 +287,24 @@ bool get isLoading=>_isLoading;
       return false;
     }
   }
+
+  void updateSearch(String value) {
+    searchText = value;
+    notifyListeners();
+  }
+
+  // Add this getter to CustomerProvider
+
+  List<CustomerData> get filteredCustomers {
+    if (searchText.isEmpty) return _customers;
+    return _customers
+        .where((c) =>
+    c.name.toLowerCase().contains(searchText.toLowerCase()) ||
+        c.phone.contains(searchText))
+        .toList();
+  }
+
+
 
 
 
