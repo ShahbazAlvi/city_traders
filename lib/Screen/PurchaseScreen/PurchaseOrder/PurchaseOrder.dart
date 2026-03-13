@@ -185,8 +185,9 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
                         children: [
                           Text("${DateFormat('dd MMM yyyy').format(order.poDate)}"),
                           SizedBox(width: 10,),
-                          Text("Rs.${order.totalAmount}",
-                              ),
+                          Text(
+                            "Rs. ${NumberFormat('#,##0').format(double.parse(order.totalAmount))}",
+                          )
                         ],
                       ),
 

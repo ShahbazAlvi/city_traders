@@ -1,348 +1,6 @@
-//
-// import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
-//
-// import '../../../Provider/SupplierProvider/supplierProvider.dart';
-// import '../../../compoents/AppColors.dart';
-// import '../../../compoents/ProductDropdown.dart';
-// import '../../../model/ProductModel/itemsdetailsModel.dart';
-//
-// class AddPurchaseOrder extends StatefulWidget {
-//   final String nextOrderId;
-//   const AddPurchaseOrder({super.key, required this.nextOrderId});
-//
-//   @override
-//   State<AddPurchaseOrder> createState() => _AddPurchaseOrderState();
-// }
-//
-// class _AddPurchaseOrderState extends State<AddPurchaseOrder> {
-//   String? selectedSupplierId;
-//   String supplierBalance = "0";
-//
-//   ItemDetails? selectedProduct;
-//   String selectedStatus = "DRAFT";
-//
-//   final List<String> orderStatusList = [
-//     "DRAFT",
-//     "APPROVED",
-//     "CLOSED",
-//     "CANCELLED",
-//   ];
-//
-//   final TextEditingController rateController = TextEditingController();
-//   final TextEditingController qtyController = TextEditingController();
-//
-//   List<Map<String, dynamic>> orderItems = [];
-//
-//   @override
-//   void initState() {
-//     super.initState();
-//     Future.microtask(() {
-//       Provider.of<SupplierProvider>(context, listen: false).loadSuppliers();
-//     });
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         iconTheme: const IconThemeData(color: Colors.white),
-//         title: const Text(
-//           "Add Purchase Order",
-//           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-//         ),
-//         centerTitle: true,
-//         flexibleSpace: Container(
-//           decoration: const BoxDecoration(
-//             gradient: LinearGradient(
-//               colors: [AppColors.secondary, AppColors.primary],
-//             ),
-//           ),
-//         ),
-//       ),
-//       body: SingleChildScrollView(
-//         padding: const EdgeInsets.all(14),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             Text("Order No: ${widget.nextOrderId}",
-//                 style: const TextStyle(fontWeight: FontWeight.bold)),
-//
-//             const SizedBox(height: 14),
-//
-//             /// SUPPLIER DROPDOWN
-//             Consumer<SupplierProvider>(
-//               builder: (context, supplierP, _) {
-//                 if (supplierP.isLoading) {
-//                   return const Center(child: CircularProgressIndicator());
-//                 }
-//
-//                 return DropdownButtonFormField<int>(
-//                   decoration: const InputDecoration(
-//                     labelText: "Select Supplier",
-//                     border: OutlineInputBorder(),
-//                   ),
-//                   items: supplierP.suppliers.map((s) {
-//                     return DropdownMenuItem(
-//                       value: s.id,
-//                       child: Text(s.name),
-//                     );
-//                   }).toList(),
-//                   onChanged: (value) {
-//                     setState(() {
-//                       selectedSupplierId = value.toString();
-//                       final supplier = supplierP.suppliers
-//                           .firstWhere((s) => s.id == value);
-//                       supplierBalance =
-//                           supplier.openingBalance?.toString() ?? "0";
-//                     });
-//                   },
-//                 );
-//               },
-//             ),
-//             const SizedBox(height: 20),
-//
-//
-//             const SizedBox(height: 8),
-//
-//             if (selectedSupplierId != null)
-//               Container(
-//                 padding: const EdgeInsets.all(10),
-//                 decoration: BoxDecoration(
-//                   color: Colors.blue.shade50,
-//                   borderRadius: BorderRadius.circular(10),
-//                 ),
-//                 child: Text(
-//                   "Supplier Balance: $supplierBalance",
-//                   style: const TextStyle(
-//                       fontWeight: FontWeight.bold, color: Colors.blue),
-//                 ),
-//               ),
-//             Text(
-//               "Order Status",
-//               style: TextStyle(fontWeight: FontWeight.bold),
-//             ),
-//             const SizedBox(height: 5),
-// // status
-//             Container(
-//               padding: const EdgeInsets.symmetric(horizontal: 12),
-//               decoration: BoxDecoration(
-//                 border: Border.all(color: Colors.grey.shade400),
-//                 borderRadius: BorderRadius.circular(8),
-//                 color: Colors.white,
-//               ),
-//               child: DropdownButton<String>(
-//                 value: selectedStatus,
-//                 isExpanded: true,
-//                 underline: const SizedBox(),
-//                 items: orderStatusList.map((status) {
-//                   return DropdownMenuItem(
-//                     value: status,
-//                     child: Text(status),
-//                   );
-//                 }).toList(),
-//                 onChanged: (value) {
-//                   setState(() => selectedStatus = value!);
-//                 },
-//               ),
-//             ),
-//
-//             const SizedBox(height: 20),
-//
-//             _buildSectionTitle("Add Products"),
-//             const SizedBox(height: 10),
-//
-//             _buildProductSelection(),
-//
-//             const SizedBox(height: 20),
-//
-//             if (orderItems.isNotEmpty) _buildOrderItemsList(),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-//
-//   /// PRODUCT SELECTION UI
-//   Widget _buildProductSelection() {
-//     return Column(
-//       children: [
-//         ItemDetailsDropdown(
-//           onItemSelected: (item) {
-//             setState(() => selectedProduct = item);
-//             if (item != null) {
-//               rateController.text = item.purchasePrice?.toString() ?? '';
-//             }
-//           },
-//         ),
-//
-//         if (selectedProduct != null) ...[
-//           const SizedBox(height: 12),
-//
-//           Row(
-//             children: [
-//               Expanded(
-//                 child: _buildInputField(
-//                   controller: qtyController,
-//                   label: "Quantity",
-//                   icon: Icons.format_list_numbered,
-//                 ),
-//               ),
-//               const SizedBox(width: 10),
-//               Expanded(
-//                 child: _buildInputField(
-//                   controller: rateController,
-//                   label: "Rate",
-//                   icon: Icons.currency_rupee,
-//                 ),
-//               ),
-//             ],
-//           ),
-//
-//           const SizedBox(height: 10),
-//
-//           SizedBox(
-//             width: double.infinity,
-//             child: ElevatedButton(
-//               onPressed: addProductToOrder,
-//               style: ElevatedButton.styleFrom(
-//                 backgroundColor: AppColors.primary,
-//               ),
-//               child: const Text("Add to Order"),
-//             ),
-//           )
-//         ]
-//       ],
-//     );
-//   }
-//
-//   /// ORDER ITEMS LIST
-//   Widget _buildOrderItemsList() {
-//     double grandTotal = 0;
-//     for (var item in orderItems) {
-//       grandTotal += item["total"];
-//     }
-//
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         _buildSectionTitle("Order Items"),
-//         const SizedBox(height: 10),
-//
-//         ListView.builder(
-//           shrinkWrap: true,
-//           physics: const NeverScrollableScrollPhysics(),
-//           itemCount: orderItems.length,
-//           itemBuilder: (context, index) {
-//             final item = orderItems[index];
-//             final product = item["product"] as ItemDetails;
-//
-//             return Card(
-//               child: ListTile(
-//                 title: Text(product.name ?? "Product"),
-//                 subtitle: Text(
-//                     "Qty: ${item["qty"]} | Rate: Rs ${item["price"]}"),
-//                 trailing: Row(
-//                   mainAxisSize: MainAxisSize.min,
-//                   children: [
-//                     Text("Rs ${item["total"].toStringAsFixed(2)}"),
-//                     IconButton(
-//                       icon: const Icon(Icons.delete, color: Colors.red),
-//                       onPressed: () => removeProduct(index),
-//                     )
-//                   ],
-//                 ),
-//               ),
-//             );
-//           },
-//         ),
-//
-//         const SizedBox(height: 10),
-//
-//         Container(
-//           padding: const EdgeInsets.all(12),
-//           decoration: BoxDecoration(
-//             color: Colors.green.shade50,
-//             borderRadius: BorderRadius.circular(10),
-//           ),
-//           child: Row(
-//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//             children: [
-//               const Text("Grand Total",
-//                   style: TextStyle(fontWeight: FontWeight.bold)),
-//               Text("Rs ${grandTotal.toStringAsFixed(2)}",
-//                   style: const TextStyle(fontWeight: FontWeight.bold)),
-//             ],
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-//
-//   Widget _buildSectionTitle(String title) {
-//     return Text(title,
-//         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold));
-//   }
-//
-//   Widget _buildInputField({
-//     required TextEditingController controller,
-//     required String label,
-//     required IconData icon,
-//   }) {
-//     return TextField(
-//       controller: controller,
-//       keyboardType: TextInputType.number,
-//       decoration: InputDecoration(
-//         labelText: label,
-//         prefixIcon: Icon(icon),
-//         border: const OutlineInputBorder(),
-//       ),
-//     );
-//   }
-//
-//   /// ADD PRODUCT
-//   void addProductToOrder() {
-//     if (selectedProduct == null || qtyController.text.isEmpty) return;
-//
-//     bool alreadyExists = orderItems.any(
-//             (item) => item["product"].id == selectedProduct!.id);
-//
-//     if (alreadyExists) {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         const SnackBar(content: Text("Product already added")),
-//       );
-//       return;
-//     }
-//
-//     final qty = double.tryParse(qtyController.text) ?? 0;
-//     final price =
-//         double.tryParse(rateController.text) ??
-//             selectedProduct!.purchasePrice?.toDouble() ??
-//             0;
-//
-//     final total = qty * price;
-//
-//     setState(() {
-//       orderItems.add({
-//         "product": selectedProduct!,
-//         "qty": qty,
-//         "price": price,
-//         "total": total,
-//       });
-//
-//       selectedProduct = null;
-//       qtyController.clear();
-//       rateController.clear();
-//     });
-//   }
-//
-//   void removeProduct(int index) {
-//     setState(() {
-//       orderItems.removeAt(index);
-//     });
-//   }
-// }
+
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../Provider/Purchase_Order_Provider/Purchase_order_provider.dart';
@@ -364,7 +22,8 @@ class _AddPurchaseOrderState extends State<AddPurchaseOrder> {
   String supplierBalance = "0";
 
   ItemDetails? selectedProduct;
-  String selectedStatus = "DRAFT";
+  String selectedStatus = "APPROVED";
+  DateTime selectedDate = DateTime.now();
 
   final List<String> orderStatusList = [
     "DRAFT",
@@ -409,8 +68,29 @@ class _AddPurchaseOrderState extends State<AddPurchaseOrder> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Order No: ${widget.nextOrderId}",
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Order No: ${widget.nextOrderId}",
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+
+                InkWell(
+                  onTap: _pickDate,
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 18),
+                      const SizedBox(width: 5),
+                      Text(
+                        DateFormat('dd MMM yyyy').format(selectedDate),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+
+
+              ],
+            ),
 
             const SizedBox(height: 14),
 
@@ -460,38 +140,6 @@ class _AddPurchaseOrderState extends State<AddPurchaseOrder> {
                       fontWeight: FontWeight.bold, color: Colors.blue),
                 ),
               ),
-
-            const SizedBox(height: 12),
-
-            const Text(
-              "Order Status",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 5),
-
-            /// STATUS DROPDOWN
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade400),
-                borderRadius: BorderRadius.circular(8),
-                color: Colors.white,
-              ),
-              child: DropdownButton<String>(
-                value: selectedStatus,
-                isExpanded: true,
-                underline: const SizedBox(),
-                items: orderStatusList.map((status) {
-                  return DropdownMenuItem(
-                    value: status,
-                    child: Text(status),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() => selectedStatus = value!);
-                },
-              ),
-            ),
 
             const SizedBox(height: 20),
 
@@ -569,6 +217,7 @@ class _AddPurchaseOrderState extends State<AddPurchaseOrder> {
     final bool success = await poProvider.addPurchaseOrder(
       poNo: widget.nextOrderId,
       supplierId: int.parse(selectedSupplierId!),
+      selectedDate: selectedDate,
       status: selectedStatus,
       products: details,
     );
@@ -659,11 +308,11 @@ class _AddPurchaseOrderState extends State<AddPurchaseOrder> {
               child: ListTile(
                 title: Text(product.name ?? "Product"),
                 subtitle:
-                Text("Qty: ${item["qty"]} | Rate: Rs ${item["price"]}"),
+                Text("Qty: ${item["qty"]} | Rate: Rs ${item["price"]}",style: TextStyle(fontWeight: FontWeight.bold),),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text("Rs ${item["total"].toStringAsFixed(2)}"),
+                    Text("Rs ${NumberFormat('#,##0').format(item['total'])}",),
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () => removeProduct(index),
@@ -753,5 +402,19 @@ class _AddPurchaseOrderState extends State<AddPurchaseOrder> {
     setState(() {
       orderItems.removeAt(index);
     });
+  }
+  Future<void> _pickDate() async {
+    DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (pickedDate != null) {
+      setState(() {
+        selectedDate = pickedDate;
+      });
+    }
   }
 }

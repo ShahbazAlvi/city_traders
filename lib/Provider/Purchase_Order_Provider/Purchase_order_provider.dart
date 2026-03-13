@@ -55,7 +55,7 @@ class PurchaseOrderProvider with ChangeNotifier {
     required String poNo,
     required int supplierId,
     required String status,
-    required List<Map<String, dynamic>> products,
+    required List<Map<String, dynamic>> products, required DateTime selectedDate,
   }) async {
     try {
       _isLoading = true;
@@ -72,8 +72,8 @@ class PurchaseOrderProvider with ChangeNotifier {
         return false;
       }
 
-      final String poDate =
-      DateTime.now().toIso8601String().substring(0, 10); // "yyyy-MM-dd"
+
+      final String poDate = selectedDate.toIso8601String().substring(0, 10);// "yyyy-MM-dd"
 
       /// BUILD BODY matching API format:
       /// { po_no, supplier_id, po_date, status, details: [{item_id, qty, rate}] }

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../Provider/Purchase_Provider/Payment_TO_Supplier_Provider/PaymentSupplierProvider.dart';
 import '../../../compoents/AppColors.dart';
 
 class PaymentToSupplierScreen extends StatefulWidget {
-  const PaymentToSupplierScreen({super.key});
+  final String? supplierId;       // ✅ new
+  final String? supplierName;
+  const PaymentToSupplierScreen({super.key, this.supplierId, this.supplierName});
 
   @override
   State<PaymentToSupplierScreen> createState() =>
@@ -20,7 +23,7 @@ class _PaymentToSupplierScreenState extends State<PaymentToSupplierScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<PaymentToSupplierProvider>(context, listen: false)
-          .loadPayments();
+          .loadPayments();  // ✅ just load payments normally
     });
   }
 
@@ -71,7 +74,7 @@ class _PaymentToSupplierScreenState extends State<PaymentToSupplierScreen> {
                 child: ListTile(
 
                   title: Text(
-                    "Payment No: ${data.paymentNo}",
+                    "${data.paymentNo}   ${data.supplierName}",
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
 
@@ -79,17 +82,8 @@ class _PaymentToSupplierScreenState extends State<PaymentToSupplierScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
 
-                      Text("Supplier: ${data.supplierName}"),
-
-                      Text("Payment Mode: ${data.paymentMode}"),
-
-
-
-                      Text("Amount: ₨ ${data.amount}"),
-
-
-
-                      Text("Status: ${data.status}"),
+                      Text("Mode: ${data.paymentMode}"),
+                      Text("Rs : ${NumberFormat('#,##0').format(double.parse(data.amount.toString()))}",),
 
                     ],
                   ),
