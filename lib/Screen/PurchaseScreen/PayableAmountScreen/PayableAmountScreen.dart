@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../../Provider/Purchase_Provider/PayaAmountProvider/PayaAmountProvider.dart';
 import '../../../compoents/AppColors.dart';
+import '../SupplierLedgerScreen/SupplierLedgerScreen.dart';
 
 class PayableAmountScreen extends StatefulWidget {
   const PayableAmountScreen({super.key});
@@ -115,7 +116,31 @@ class _PayableAmountScreenState extends State<PayableAmountScreen> {
 
                               DataCell(Text("${index + 1}")),
 
-                              DataCell(Text(p.supplierName)),
+                              DataCell(
+                                GestureDetector(
+                                  onTap: () {
+
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => SupplierLedgerScreen(
+                                          supplierId: p.supplierId.toString(),
+                                          supplierName: p.supplierName,
+                                        ),
+                                      ),
+                                    );
+
+                                  },
+                                  child: Text(
+                                    p.supplierName.toUpperCase(),
+                                    style: const TextStyle(
+                                      // color: Colors.blue,
+                                      // fontWeight: FontWeight.w600,
+                                      // decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ),
 
                               DataCell(
                                 Text(

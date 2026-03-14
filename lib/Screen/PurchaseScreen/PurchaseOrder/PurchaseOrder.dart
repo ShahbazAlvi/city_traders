@@ -14,15 +14,38 @@ class PurchaseOrderScreen extends StatefulWidget {
   State<PurchaseOrderScreen> createState() => _PurchaseOrderScreenState();
 }
 
-class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
+class _PurchaseOrderScreenState extends State<PurchaseOrderScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _shimmerController;
+  final TextEditingController _searchController = TextEditingController();
+  final NumberFormat _fmt = NumberFormat('#,##,###');
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+    _shimmerController = AnimationController.unbounded(vsync: this)
+      ..repeat(min: 0, max: 1, period: const Duration(milliseconds: 1500));
+
+    Future.microtask(() {
       context.read<PurchaseOrderProvider>().fetchPurchaseOrder();
     });
   }
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  //@override
+
+  // void initState() {
+  //   super.initState();
+  //   WidgetsBinding.instance.addPostFrameCallback((_) {
+  //     context.read<PurchaseOrderProvider>().fetchPurchaseOrder();
+  //   });
+  // }
 
 
   Color getStatusColor(String status) {
@@ -36,6 +59,35 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
       default:
         return Colors.grey;
     }
+  }
+  // ── Shimmer ───────────────────────────────────────────────────────────────
+
+  Widget _buildShimmerEffect({required Widget child}) {
+    return ShaderMask(
+      shaderCallback: (bounds) => LinearGradient(
+        colors: const [Color(0xFFE0E0E0), Color(0xFFF5F5F5), Color(0xFFE0E0E0)],
+        stops: const [0.0, 0.5, 1.0],
+        transform:
+        GradientRotation(_shimmerController.value * 2 * 3.14159),
+      ).createShader(bounds),
+      blendMode: BlendMode.srcATop,
+      child: child,
+    );
+  }
+
+  Widget _buildShimmerLoading() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 6,
+      itemBuilder: (_, __) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        height: 90,
+        decoration: BoxDecoration(
+          color: Colors.grey[300],
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+    );
   }
 
   @override
@@ -191,10 +243,7 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen> {
                         ],
                       ),
 
-                      /// Quantity
 
-
-                      /// Amount
 
 
                     ],

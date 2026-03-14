@@ -6,7 +6,15 @@ import '../../../compoents/SupplierDropdown.dart';
 import '../../../compoents/AppColors.dart';
 
 class SupplierLedgerScreen extends StatefulWidget {
-  const SupplierLedgerScreen({super.key});
+
+  final String? supplierId;
+  final String? supplierName;
+
+  const SupplierLedgerScreen({
+    super.key,
+    this.supplierId,
+    this.supplierName,
+  });
 
   @override
   State<SupplierLedgerScreen> createState() => _SupplierLedgerScreenState();
@@ -17,6 +25,18 @@ class _SupplierLedgerScreenState extends State<SupplierLedgerScreen> {
   String? selectedSupplierId;
   DateTime? fromDate;
   DateTime? toDate;
+  @override
+  void initState() {
+    super.initState();
+
+    selectedSupplierId = widget.supplierId;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (selectedSupplierId != null) {
+        _fetchLedger();
+      }
+    });
+  }
 
 
 
@@ -29,9 +49,9 @@ class _SupplierLedgerScreenState extends State<SupplierLedgerScreen> {
 
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(
-          "Supplier Ledger",
-          style: TextStyle(
+        title: Text(
+          widget.supplierName ?? "Supplier Ledger",
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),

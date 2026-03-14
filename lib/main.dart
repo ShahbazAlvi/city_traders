@@ -34,6 +34,7 @@ import 'Provider/Purchase_Provider/itemWisePurchaseProvider/ItemWisePurchaseProv
 import 'Provider/RecoveryProvider/RecoveryProvider.dart';
 import 'Provider/SaleInvoiceProvider/SaleInvoicesProvider.dart';
 import 'Provider/SaleManProvider/SaleManProvider.dart';
+import 'Provider/SalemanRecoveryReport/salemanReport.dart';
 import 'Provider/SalessProvider/SalessProvider.dart';
 import 'Provider/SupplierProvider/supplierProvider.dart';
 import 'Provider/customer_Payment/customer_payment_provider.dart';
@@ -105,6 +106,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => LocationProvider(),
         ),
+        ChangeNotifierProvider(create: (_) => SaleManRecoveryProvider()),
 
 
 

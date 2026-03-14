@@ -136,21 +136,7 @@ class _GRNScreenState extends State<GRNScreen> {
                               fontWeight: FontWeight.bold,
                               fontSize: 16),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: grn.status == "POSTED"
-                                ? Colors.green
-                                : Colors.orange,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            grn.status,
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12),
-                          ),
-                        ),
+                        Text("${grn.supplierName}"),
                       ],
                     ),
 
@@ -160,23 +146,22 @@ class _GRNScreenState extends State<GRNScreen> {
 
                         const SizedBox(height: 6),
 
-                        Text(
-                          "Date: ${DateFormat('yyyy-MM-dd').format(grn.grnDate)}",
+                        // Text(
+                        //   "Date: ${DateFormat('yyyy-MM-dd').format(grn.grnDate)}",
+                        // ),
+
+
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("Items: ${grn.totalItems}"),
+                            Text("Total Qty: ${grn.totalQty}"),
+                          ],
                         ),
+                        // Text("Location: ${grn.locationName}"),
+                        Text("Rs: ${NumberFormat("#,##0").format(grn.totalAmount)}"),
 
-                        Text("Supplier: ${grn.supplierName}"),
-
-                        Text("Location: ${grn.locationName}"),
-
-                        Text("Items: ${grn.totalItems}"),
-
-                        Text("Total Qty: ${grn.totalQty}"),
-
-                        Text(
-                          "Total Amount: ${grn.totalAmount.toStringAsFixed(2)}",
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold),
-                        ),
                       ],
                     ),
 

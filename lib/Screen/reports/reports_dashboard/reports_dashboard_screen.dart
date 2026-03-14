@@ -9,6 +9,7 @@ import '../../PurchaseScreen/SupplierLedgerScreen/SupplierLedgerScreen.dart';
 import '../../SalesView/DailysaleScreen/DailySaleScreen.dart';
 import '../../SalesView/ReportsScreen/AgingScreen/AgingScreen.dart';
 import '../../SalesView/ReportsScreen/CustomerLedgerScreen/LedgerScreen.dart';
+import '../SalesmanRecoveryReportScreen.dart';
 
 
 
@@ -119,6 +120,15 @@ class _SalesDashboardState extends State<ReportsDashboardScreen> {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerLedgerScreen()));
                     },
                   ),
+               // SaleManRecoveryScreen
+                DashboardCard(
+                  icon: Icons.newspaper,
+                  title: "SalesMan Recovery Report",
+                  color: Colors.purpleAccent,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SaleManRecoveryScreen()));
+                  },
+                ),
                   if(canViewAging)
                   DashboardCard(
                     icon: Icons.add_chart_rounded,
