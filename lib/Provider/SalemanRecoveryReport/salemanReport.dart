@@ -16,7 +16,7 @@ class SaleManRecoveryProvider extends ChangeNotifier {
   List<RecoveryEntry> recoveries = [];
   RecoverySummary? summary;
 
-  Future<void> fetchRecoveries({String? date}) async {
+  Future<void> fetchRecoveries({String? date, int? salesmanId}) async {
     isLoading = true;
     error = '';
     notifyListeners();
@@ -25,11 +25,15 @@ class SaleManRecoveryProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
 
-      final selectedDate = date ??
-          DateTime.now().toIso8601String().split('T').first;
+      final selectedDate = date ?? DateTime.now().toIso8601String().split('T').first;
 
-      final url = Uri.parse(
-          '${ApiEndpoints.baseUrl}/recoveries?date=$selectedDate');
+      // Build URL with optional salesman_id filter
+      String endpoint = '${ApiEndpoints.baseUrl}/recoveries?date=$selectedDate';
+      if (salesmanId != null) {
+        endpoint += '&salesman_id=$salesmanId';
+      }
+
+      final url = Uri.parse(endpoint);
 
       final response = await http.get(url, headers: {
         "Authorization": "Bearer $token",

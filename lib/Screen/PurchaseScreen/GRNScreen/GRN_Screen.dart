@@ -1,3 +1,4 @@
+import 'package:demo_distribution/Screen/PurchaseScreen/GRNScreen/GRN_update.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -137,6 +138,7 @@ class _GRNScreenState extends State<GRNScreen> {
                               fontSize: 16),
                         ),
                         Text("${grn.supplierName}"),
+
                       ],
                     ),
 
@@ -165,12 +167,32 @@ class _GRNScreenState extends State<GRNScreen> {
                       ],
                     ),
 
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () {
-                        _showDeleteDialog(context, provider, grn.id);
-                      },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Edit Button
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: AppColors.primary),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => GrnUpdate(grn: grn),
+                              ),
+                            );
+                          },
+                        ),
+
+                        // Delete Button
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            _showDeleteDialog(context, provider, grn.id);
+                          },
+                        ),
+                      ],
                     ),
+
                   ),
                 );
               },

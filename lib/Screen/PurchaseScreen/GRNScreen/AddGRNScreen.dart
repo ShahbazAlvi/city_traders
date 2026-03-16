@@ -114,7 +114,7 @@ class _AddGRNScreenState extends State<AddGRNScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Order No: ${widget.nextOrderId}",
+            Text("GRN No: ${widget.nextOrderId}",
                 style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 15),
 

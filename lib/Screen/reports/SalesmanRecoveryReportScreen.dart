@@ -5,8 +5,10 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 
+import '../../Provider/SaleManProvider/SaleManProvider.dart';
 import '../../Provider/SalemanRecoveryReport/salemanReport.dart';
 import '../../compoents/AppColors.dart';
+import '../../compoents/SaleManDropdown.dart';
 import 'SalemanRecoveryReportShimmer.dart';
 
 
@@ -19,21 +21,58 @@ class SaleManRecoveryScreen extends StatefulWidget {
 
 class _RecoveryScreenState extends State<SaleManRecoveryScreen> {
   DateTime selectedDate = DateTime.now();
+  String? selectedSalesmanId;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchData();
+      Future.microtask(() => context.read<SaleManProvider>().fetchEmployees());
+
+      // if (widget.isUpdate && widget.existingOrder != null) {
+      //   final order = widget.existingOrder!;
+      //   selectedSalesmanId = order.salesmanId?.toString();
+      // }
     });
   }
 
+  // Update _fetchData to pass salesmanId
   void _fetchData() {
     final date = selectedDate.toIso8601String().split('T').first;
     Provider.of<SaleManRecoveryProvider>(context, listen: false)
-        .fetchRecoveries(date: date);
+        .fetchRecoveries(
+      date: date,
+      salesmanId: selectedSalesmanId != null
+          ? int.tryParse(selectedSalesmanId!)
+          : null,
+    );
   }
 
+// Update _buildSalesmanField — call _fetchData on change
+  Widget _buildSalesmanField() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.08),
+            spreadRadius: 1,
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: SalesmanDropdown(
+        selectedId: selectedSalesmanId,
+        onChanged: (value) {
+          setState(() => selectedSalesmanId = value);
+          _fetchData(); // ← trigger filtered fetch
+        },
+      ),
+    );
+  }
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -92,124 +131,186 @@ class _RecoveryScreenState extends State<SaleManRecoveryScreen> {
         ],
       ),
 
-      body: Consumer<SaleManRecoveryProvider>(
-        builder: (context, provider, _) {
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            const SizedBox(height: 24),
 
-          /// Shimmer
-          if (provider.isLoading) return const RecoveryShimmer();
+           // Salesman Section
+            _buildSectionTitle('Salesman Information'),
+            const SizedBox(height: 12),
+            _buildSalesmanField(),
+            const SizedBox(height: 24),
+            Expanded(
+              child: Consumer<SaleManRecoveryProvider>(
+                builder: (context, provider, _) {
 
-          /// Error
-          if (provider.error.isNotEmpty) {
-            return Center(
-              child: Text(provider.error,
-                  style: const TextStyle(color: Colors.red)),
-            );
-          }
+                  /// Shimmer
+                  if (provider.isLoading) return const RecoveryShimmer();
 
-          /// Empty
-          if (provider.recoveries.isEmpty) {
-            return const Center(child: Text("No Recovery Data Found"));
-          }
+                  /// Error
+                  if (provider.error.isNotEmpty) {
+                    return Center(
+                      child: Text(provider.error,
+                          style: const TextStyle(color: Colors.red)),
+                    );
+                  }
 
-          return Column(
-            children: [
+                  /// Empty
+                  if (provider.recoveries.isEmpty) {
+                    return const Center(child: Text("No Recovery Data Found"));
+                  }
 
-              /// -------- SUMMARY CARD --------
-              if (provider.summary != null)
-                Container(
-                  margin: const EdgeInsets.all(14),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.secondary, AppColors.primary],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  return Column(
                     children: [
-                      _summaryTile("Salesmen",
-                          "${provider.summary!.totalSalesmen}"),
-                      _divider(),
-                      _summaryTile("Recoveries",
-                          "${provider.summary!.totalRecoveries}"),
-                      _divider(),
-                      _summaryTile("Total",
-                          "₨ ${NumberFormat('#,##0').format(provider.summary!.totalRecovered)}"),
-                    ],
-                  ),
-                ),
 
-              /// -------- LIST --------
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  itemCount: provider.recoveries.length,
-                  itemBuilder: (context, index) {
-                    final item = provider.recoveries[index];
-                    return GestureDetector(
-                      onTap: () => _showDetailSheet(context, item.salesmanId, item.salesmanName),
-                      child: Card(
-                        elevation: 3,
-                        margin: const EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(14),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+
+
+                      /// -------- SUMMARY CARD --------
+                      if (provider.summary != null)
+                        Container(
+                          margin: const EdgeInsets.all(14),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [AppColors.secondary, AppColors.primary],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-
-                              /// Salesman Name
-                              Row(
-                                children: [
-                                  const Icon(Icons.person,
-                                      color: AppColors.primary, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    item.salesmanName,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16),
-                                  ),
-                                ],
-                              ),
-
-                              const Divider(height: 16),
-
-                              /// Stats Row
-                              Row(
-                                mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
-                                children: [
-                                  _statChip(Icons.receipt_long,
-                                      "Recoveries", "${item.recoveryCount}",
-                                      Colors.blue),
-                                  _statChip(Icons.people,
-                                      "Customers", "${item.customerCount}",
-                                      Colors.orange),
-                                  _statChip(Icons.attach_money,
-                                      "Total",
-                                      "₨ ${NumberFormat('#,##0').format(item.totalRecovered)}",
-                                      Colors.green),
-                                ],
-                              ),
+                              _summaryTile("Salesmen",
+                                  "${provider.summary!.totalSalesmen}"),
+                              _divider(),
+                              _summaryTile("Recoveries",
+                                  "${provider.summary!.totalRecoveries}"),
+                              _divider(),
+                              _summaryTile("Total",
+                                  "₨ ${NumberFormat('#,##0').format(provider.summary!.totalRecovered)}"),
                             ],
                           ),
                         ),
+
+                      /// -------- LIST --------
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          itemCount: provider.recoveries.length,
+                          itemBuilder: (context, index) {
+                            final item = provider.recoveries[index];
+                            return GestureDetector(
+                              onTap: () => _showDetailSheet(context, item.salesmanId, item.salesmanName),
+                              child: Card(
+                                elevation: 3,
+                                margin: const EdgeInsets.only(bottom: 12),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+
+                                      /// Salesman Name
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.person,
+                                              color: AppColors.primary, size: 20),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            item.salesmanName,
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16),
+                                          ),
+                                        ],
+                                      ),
+
+                                      const Divider(height: 16),
+
+                                      /// Stats Row
+                                      Row(
+                                        mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          _statChip(Icons.receipt_long,
+                                              "Recoveries", "${item.recoveryCount}",
+                                              Colors.blue),
+                                          _statChip(Icons.people,
+                                              "Customers", "${item.customerCount}",
+                                              Colors.orange),
+                                          _statChip(Icons.attach_money,
+                                              "Total",
+                                              "₨ ${NumberFormat('#,##0').format(item.totalRecovered)}",
+                                              Colors.green),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                    );
-                  },
-                ),
+                    ],
+                  );
+                },
               ),
-            ],
-          );
-        },
+            ),
+          ],
+        ),
       ),
     );
   }
+  Widget _buildSectionTitle(String title) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 24,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+  // Widget _buildSalesmanField() {
+  //   return Container(
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(16),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.grey.withOpacity(0.08),
+  //           spreadRadius: 1,
+  //           blurRadius: 6,
+  //           offset: const Offset(0, 2),
+  //         ),
+  //       ],
+  //     ),
+  //     child: SalesmanDropdown(
+  //       selectedId: selectedSalesmanId,
+  //       onChanged: (value) {
+  //         setState(() => selectedSalesmanId = value);
+  //       },
+  //     ),
+  //   );
+  // }
 
   Widget _summaryTile(String label, String value) {
     return Column(
@@ -394,5 +495,6 @@ class _SalesmanDetailSheet extends StatelessWidget {
       ],
     );
   }
+
 }
 
