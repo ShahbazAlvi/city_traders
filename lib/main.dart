@@ -23,14 +23,13 @@ import 'Provider/ProductProvider/ProducProvider.dart';
 import 'Provider/ProductProvider/manufactures_provider.dart';
 import 'Provider/ProductProvider/sub_category.dart';
 import 'Provider/Purchase_Order_Provider/Purchase_order_provider.dart';
-import 'Provider/Purchase_Provider/DateWisePurchaseProvider/DateWisePurchaseProvider.dart';
+
 import 'Provider/Purchase_Provider/GRNProvider/GRN_Provider.dart';
 import 'Provider/Purchase_Provider/PayaAmountProvider/PayaAmountProvider.dart';
 import 'Provider/Purchase_Provider/Payment_TO_Supplier_Provider/PaymentSupplierProvider.dart';
 import 'Provider/Purchase_Provider/StockPositionProvider/StockPositionProvider.dart';
 import 'Provider/Purchase_Provider/SupplierLedgerProvider/SupplierLedgerProvider.dart';
-import 'Provider/Purchase_Provider/SupplierWisePurchaseProvider/SupplierWisePurchaseProvider.dart';
-import 'Provider/Purchase_Provider/itemWisePurchaseProvider/ItemWisePurchaseProvider.dart';
+
 import 'Provider/RecoveryProvider/RecoveryProvider.dart';
 import 'Provider/SaleInvoiceProvider/SaleInvoicesProvider.dart';
 import 'Provider/SaleManProvider/SaleManProvider.dart';
@@ -81,10 +80,6 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PaymentToSupplierProvider()),
         ChangeNotifierProvider(create: (_) => SupplierProvider()),
         ChangeNotifierProvider(create: (_) => SupplierLedgerProvider()),
-        ChangeNotifierProvider(create: (_) => DatewisePurchaseProvider()),
-        ChangeNotifierProvider(create: (_) => SupplierwisePurchaseProvider()),
-        ChangeNotifierProvider(create: (_) => ItemWisePurchaseProvider()),
-        //ChangeNotifierProvider(create: (_)=>StockPositionProvider()),
         ChangeNotifierProvider(create: (_)=>PayableAmountProvider()),
         ChangeNotifierProvider(create: (_) => CategoriesProvider()),
         ChangeNotifierProvider(create: (_) => ItemTypeProvider()),

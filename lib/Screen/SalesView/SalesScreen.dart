@@ -206,15 +206,15 @@ class _SalesDashboardState extends State<SalesDashboard> {
                 //     Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerLedgerScreen()));
                 //   },
                 // ),
-                // if (canViewAging)
-                // DashboardCard(
-                //   icon: Icons.add_chart_rounded,
-                //   title: "Credit Aging",
-                //   color: Colors.cyanAccent,
-                //   onTap: () {
-                //     Navigator.push(context, MaterialPageRoute(builder: (_) => const CreditAgingScreen()));
-                //   },
-                // ),
+               // if (canViewAging)
+                DashboardCard(
+                  icon: Icons.add_chart_rounded,
+                  title: "Credit Aging",
+                  color: Colors.cyanAccent,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CreditAgingScreen()));
+                  },
+                ),
                 // if (canViewDailySales)
                 // DashboardCard(
                 //   icon: Icons.sim_card_alert_rounded,

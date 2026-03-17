@@ -4,16 +4,16 @@ import '../../compoents/AppColors.dart';
 import '../../utils/access_control.dart';
 import '../SalesView/AnimationCard.dart';
 import '../SalesView/SetUp/supplier/SupplierScreen.dart';
-import 'DateWisePurchaseScreen/DateWisePurchaseScreen.dart';
+
 import 'GRNScreen/GRN_Screen.dart';
 import 'ItemWisePurchase/ItemWisePurchaseScreen.dart';
-import 'ItemWisePurchaseScreen/ItemWisePurchaseScreen.dart';
+
 import 'PayableAmountScreen/PayableAmountScreen.dart';
 import 'Payment_Supplier_Screen/PaymentSupplierScreen.dart';
 import 'PurchaseOrder/PurchaseOrder.dart';
 import 'StockPositionScreen/StockPositionScreen.dart';
 import 'SupplierLedgerScreen/SupplierLedgerScreen.dart';
-import 'SupplierWisePurchaseScreen/SupplierWisePurchaseScreen.dart';
+
 
 import 'dart:ui';
 import 'package:flutter/material.dart';

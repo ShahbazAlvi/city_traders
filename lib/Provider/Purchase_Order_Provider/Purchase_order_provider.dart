@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -115,4 +116,51 @@ class PurchaseOrderProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // In Provider: add a separate flag
+  bool _isDeleting = false;
+  bool get isDeleting => _isDeleting;
+
+  Future<bool> deletePurchaseOrder(int orderId) async {
+    _isDeleting = true;        // ← separate flag, NOT _isLoading
+    _error = '';
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString("token");
+
+      if (token == null) {
+        _error = 'Token is null, please login again';
+        return false;
+      }
+
+      final response = await http.delete(
+        Uri.parse('${ApiEndpoints.baseUrl}/purchase-orders/$orderId'),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+          "x-company-id": "2",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Remove locally instead of re-fetching to avoid _isLoading conflict
+        _orders.removeWhere((o) => o.id == orderId);
+        return true;
+      } else {
+        _error = "Failed to delete: ${response.statusCode}";
+        return false;
+      }
+
+    } catch (e) {
+      _error = "Error deleting order: $e";
+      return false;
+    } finally {
+      _isDeleting = false;     // ← only this flag changes
+      notifyListeners();
+    }
+  }
+
+
 }
