@@ -31,6 +31,7 @@ import 'Provider/Purchase_Provider/StockPositionProvider/StockPositionProvider.d
 import 'Provider/Purchase_Provider/SupplierLedgerProvider/SupplierLedgerProvider.dart';
 
 import 'Provider/RecoveryProvider/RecoveryProvider.dart';
+import 'Provider/Report/Pending Report.dart';
 import 'Provider/SaleInvoiceProvider/SaleInvoicesProvider.dart';
 import 'Provider/SaleManProvider/SaleManProvider.dart';
 import 'Provider/SalemanRecoveryReport/salemanReport.dart';
@@ -94,6 +95,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ManufacturesProvider()),
         ChangeNotifierProvider(create: (_) => CustomerPaymentProvider()),
         ChangeNotifierProvider(create: (_) => StockPositionProvider(),),
+    ChangeNotifierProvider(create: (_) => RecoveryPendingReportProvider(),),
         ChangeNotifierProvider(
           create: (_) => TaxTypesProvider(),
         ),

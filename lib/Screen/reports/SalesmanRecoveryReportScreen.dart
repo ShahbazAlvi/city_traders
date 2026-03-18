@@ -108,33 +108,29 @@ class _RecoveryScreenState extends State<SaleManRecoveryScreen> {
             ),
           ),
         ),
-        actions: [
-          /// Date Picker Button
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: InkWell(
-              onTap: _pickDate,
-              child: Row(
-                children: [
-                  const Icon(Icons.calendar_today,
-                      color: Colors.white, size: 18),
-                  const SizedBox(width: 5),
-                  Text(
-                    DateFormat('dd MMM yyyy').format(selectedDate),
-                    style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+
       ),
 
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: _pickDate,
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_today,
+                      color: Colors.blue, size: 18),
+                  const SizedBox(width: 5),
+                  Text(
+                    DateFormat('dd MMM yyyy').format(selectedDate),
+                    style: const TextStyle(
+                        color: Colors.blue, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 24),
 
            // Salesman Section

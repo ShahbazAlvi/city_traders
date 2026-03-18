@@ -1,4 +1,4 @@
-package com.shahbaz.citytrader
+package com.siddiqu.mis
 
 import io.flutter.embedding.android.FlutterActivity
 
