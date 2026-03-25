@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../Provider/OrderTakingProvider/OrderTakingProvider.dart';
-import '../../../Provider/SaleInvoiceProvider/SaleInvoicesProvider.dart';
 import '../../../Provider/setup/location_provider.dart';
 import '../../../Provider/CustomerProvider/CustomerProvider.dart';
 import '../../../Provider/SaleManProvider/SaleManProvider.dart';
@@ -22,15 +21,15 @@ import '../../../ApiLink/ApiEndpoint.dart';
 import 'package:http/http.dart' as http;
 import '../../../model/setup/tax_Types_model.dart';
 
-class AddSalesInvoiceScreen extends StatefulWidget {
+class AddTaxSalesInvoiceScreen extends StatefulWidget {
   final String nextOrderId;
-  const AddSalesInvoiceScreen({super.key, required this.nextOrderId});
+  const AddTaxSalesInvoiceScreen({super.key, required this.nextOrderId});
 
   @override
-  State<AddSalesInvoiceScreen> createState() => _AddSalesInvoiceScreenState();
+  State<AddTaxSalesInvoiceScreen> createState() => _AddTaxSalesInvoiceScreenState();
 }
 
-class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
+class _AddTaxSalesInvoiceScreenState extends State<AddTaxSalesInvoiceScreen>
     with SingleTickerProviderStateMixin {
   int? selectedOrderId;
   int? selectedLocationId;
@@ -284,8 +283,6 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         _showSnack(res["message"] ?? "Invoice created successfully", Colors.green);
-        Provider.of<SaleInvoicesProvider>(context, listen: false)
-            .fetchOrders();
         Navigator.pop(context, true);
       } else {
         final errorMsg = res["message"] ??
@@ -324,11 +321,11 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
           children: [
             _buildSalesOrderDropdown(provider),
             const SizedBox(height: 12),
-            //
-            // TaxTypeDropdown(
-            //   onSelected: (tax) => setState(() => selectedTax = tax),
-            // ),
-            // const SizedBox(height: 12),
+
+            TaxTypeDropdown(
+              onSelected: (tax) => setState(() => selectedTax = tax),
+            ),
+            const SizedBox(height: 12),
 
             Consumer<LocationProvider>(
               builder: (context, locProvider, _) {

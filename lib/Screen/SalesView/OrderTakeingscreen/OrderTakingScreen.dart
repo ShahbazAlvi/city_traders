@@ -114,6 +114,7 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
+      iconTheme: IconThemeData(color:AppColors.text),
       elevation: 0,
       backgroundColor: Colors.transparent,
       flexibleSpace: Container(
@@ -130,7 +131,7 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
         ),
       ),
       title: const Text(
-        "Order Management",
+        "Order Booking",
         style: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,

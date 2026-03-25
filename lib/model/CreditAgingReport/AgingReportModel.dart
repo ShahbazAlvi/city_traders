@@ -34,15 +34,17 @@ class CreditAgingData {
   final String customerName;
   final String invoiceNo;
   final String invoiceKind;
-  final String deliveryDate; // stored as formatted string
+  final String deliveryDate;
   final int allowDays;
   final int billDays;
-  final int debit;
-  final int credit;
-  final int outstanding;
-  final int underCredit;
-  final int due;
-  final String dueDate;     // stored as formatted string
+
+  final double debit;
+  final double credit;
+  final double outstanding;
+  final double underCredit;
+  final double due;
+
+  final String dueDate;
   final int salesmanId;
   final String salesmanName;
 
@@ -66,7 +68,11 @@ class CreditAgingData {
   });
 
   factory CreditAgingData.fromJson(Map<String, dynamic> json) {
-    // ✅ Fix: parse ISO timestamp and format to readable date
+    double toDouble(dynamic value) {
+      if (value == null) return 0.0;
+      return (value as num).toDouble();
+    }
+
     String formatDate(String? raw) {
       if (raw == null || raw.isEmpty) return '-';
       try {
@@ -80,32 +86,34 @@ class CreditAgingData {
     }
 
     return CreditAgingData(
-      sr:           json['sr']            ?? 0,
-      customerId:   json['customer_id']   ?? 0,
+      sr: json['sr'] ?? 0,
+      customerId: json['customer_id'] ?? 0,
       customerName: json['customer_name'] ?? '',
-      invoiceNo:    json['invoice_no']    ?? '',
-      invoiceKind:  json['invoice_kind']  ?? '',
-      deliveryDate: formatDate(json['delivery_date']),  // ✅ parse ISO
-      allowDays:    json['allow_days']    ?? 0,
-      billDays:     json['bill_days']     ?? 0,
-      debit:        json['debit']         ?? 0,
-      credit:       json['credit']        ?? 0,
-      outstanding:  json['outstanding']   ?? 0,
-      underCredit:  json['under_credit']  ?? 0,
-      due:          json['due']           ?? 0,
-      dueDate:      formatDate(json['due_date']),        // ✅ parse ISO
-      salesmanId:   json['salesman_id']   ?? 0,
+      invoiceNo: json['invoice_no'] ?? '',
+      invoiceKind: json['invoice_kind'] ?? '',
+      deliveryDate: formatDate(json['delivery_date']),
+      allowDays: json['allow_days'] ?? 0,
+      billDays: json['bill_days'] ?? 0,
+
+      debit: toDouble(json['debit']),
+      credit: toDouble(json['credit']),
+      outstanding: toDouble(json['outstanding']),
+      underCredit: toDouble(json['under_credit']),
+      due: toDouble(json['due']),
+
+      dueDate: formatDate(json['due_date']),
+      salesmanId: json['salesman_id'] ?? 0,
       salesmanName: json['salesman_name'] ?? '',
     );
   }
 }
 
 class Totals {
-  final int debit;
-  final int credit;
-  final int outstanding;
-  final int underCredit;
-  final int due;
+  final double debit;
+  final double credit;
+  final double outstanding;
+  final double underCredit;
+  final double due;
 
   Totals({
     required this.debit,
@@ -117,11 +125,11 @@ class Totals {
 
   factory Totals.fromJson(Map<String, dynamic> json) {
     return Totals(
-      debit:        json['debit']         ?? 0,
-      credit:       json['credit']        ?? 0,
-      outstanding:  json['outstanding']   ?? 0,
-      underCredit:  json['under_credit']  ?? 0,
-      due:          json['due']           ?? 0,
+      debit: (json['debit'] ?? 0).toDouble(),
+      credit: (json['credit'] ?? 0).toDouble(),
+      outstanding: (json['outstanding'] ?? 0).toDouble(),
+      underCredit: (json['under_credit'] ?? 0).toDouble(),
+      due: (json['due'] ?? 0).toDouble(),
     );
   }
 }

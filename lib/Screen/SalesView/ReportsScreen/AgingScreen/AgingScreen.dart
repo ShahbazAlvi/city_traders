@@ -538,9 +538,9 @@ class _CreditAgingScreenState extends State<CreditAgingScreen> {
                 final customerId = grouped.keys.elementAt(index);
                 final invoices = grouped[customerId]!;
                 final customerName = invoices.first.customerName;
-                final custOutstanding = invoices.fold<int>(
+                final custOutstanding = invoices.fold<double>(
                     0, (sum, i) => sum + i.outstanding);
-                final custDue = invoices.fold<int>(
+                final custDue = invoices.fold<double>(
                     0, (sum, i) => sum + i.due);
 
                 return Container(
@@ -933,7 +933,7 @@ class _CreditAgingScreenState extends State<CreditAgingScreen> {
   }
 
   Widget _amountItem(
-      String label, int value, Color color, bool isDark) {
+      String label, double value, Color color, bool isDark) {
     return Column(
       children: [
         Text(label,
