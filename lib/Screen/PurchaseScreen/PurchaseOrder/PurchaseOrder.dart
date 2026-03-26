@@ -1,8 +1,8 @@
+
 import 'package:demo_distribution/Screen/PurchaseScreen/PurchaseOrder/AddPurchaseOrder.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-
 
 import '../../../Provider/Purchase_Order_Provider/Purchase_order_provider.dart';
 import '../../../compoents/AppColors.dart';
@@ -15,10 +15,14 @@ class PurchaseOrderScreen extends StatefulWidget {
 }
 
 class _PurchaseOrderScreenState extends State<PurchaseOrderScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _shimmerController;
+  late AnimationController _fabController;
+  late Animation<double> _fabScaleAnimation;
+
   final TextEditingController _searchController = TextEditingController();
   final NumberFormat _fmt = NumberFormat('#,##,###');
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -27,1036 +31,844 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen>
     _shimmerController = AnimationController.unbounded(vsync: this)
       ..repeat(min: 0, max: 1, period: const Duration(milliseconds: 1500));
 
+    _fabController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fabScaleAnimation = CurvedAnimation(
+      parent: _fabController,
+      curve: Curves.elasticOut,
+    );
+
     Future.microtask(() {
-      context.read<PurchaseOrderProvider>().fetchPurchaseOrder();
+      context.read<PurchaseOrderProvider>().fetchPurchaseOrder().then((_) {
+        _fabController.forward();
+      });
+    });
+
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text.toLowerCase());
     });
   }
+
   @override
   void dispose() {
     _shimmerController.dispose();
+    _fabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-
-
-
   Color getStatusColor(String status) {
     switch (status.toUpperCase()) {
       case "APPROVED":
-        return Colors.green;
+        return const Color(0xFF00C896);
       case "PENDING":
-        return Colors.orange;
+        return const Color(0xFFFFAB00);
       case "REJECTED":
-        return Colors.red;
+        return const Color(0xFFFF4D4F);
       default:
-        return Colors.grey;
+        return const Color(0xFF8C8C8C);
     }
   }
-  // ── Shimmer ───────────────────────────────────────────────────────────────
 
-  Widget _buildShimmerEffect({required Widget child}) {
-    return ShaderMask(
-      shaderCallback: (bounds) => LinearGradient(
-        colors: const [Color(0xFFE0E0E0), Color(0xFFF5F5F5), Color(0xFFE0E0E0)],
-        stops: const [0.0, 0.5, 1.0],
-        transform:
-        GradientRotation(_shimmerController.value * 2 * 3.14159),
-      ).createShader(bounds),
-      blendMode: BlendMode.srcATop,
-      child: child,
+  IconData getStatusIcon(String status) {
+    switch (status.toUpperCase()) {
+      case "APPROVED":
+        return Icons.check_circle_rounded;
+      case "PENDING":
+        return Icons.schedule_rounded;
+      case "REJECTED":
+        return Icons.cancel_rounded;
+      default:
+        return Icons.help_outline_rounded;
+    }
+  }
+
+  // ── Shimmer Loading ───────────────────────────────────────────────────────
+
+  Widget _buildShimmerCard() {
+    return AnimatedBuilder(
+      animation: _shimmerController,
+      builder: (_, __) {
+        return ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: const [
+              Color(0xFFEEEEEE),
+              Color(0xFFFAFAFA),
+              Color(0xFFEEEEEE)
+            ],
+            stops: const [0.0, 0.5, 1.0],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            transform: GradientRotation(
+                _shimmerController.value * 2 * 3.14159),
+          ).createShader(bounds),
+          blendMode: BlendMode.srcATop,
+          child: Container(
+            height: 110,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEEEEEE),
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildShimmerLoading() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: 6,
-      itemBuilder: (_, __) => Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        height: 90,
-        decoration: BoxDecoration(
-          color: Colors.grey[300],
-          borderRadius: BorderRadius.circular(20),
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+      itemCount: 5,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (_, __) => _buildShimmerCard(),
+    );
+  }
+
+  // ── Next Order ID ─────────────────────────────────────────────────────────
+
+  String _getNextOrderId(PurchaseOrderProvider provider) {
+    if (provider.orders.isEmpty) return "PO-0001";
+    final allNumbers = provider.orders.map((order) {
+      final match = RegExp(r'PO-(\d+)$').firstMatch(order.poNo ?? '');
+      return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
+    }).toList();
+    final max = allNumbers.reduce((a, b) => a > b ? a : b);
+    return "PO-${(max + 1).toString().padLeft(4, '0')}";
+  }
+
+
+  Widget _summaryItem({
+    required String label,
+    required String value,
+    required Color color,
+    required IconData icon,
+  }) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: color,
+              letterSpacing: -0.3,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF9E9E9E),
+              letterSpacing: 0.2,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryDivider() {
+    return Container(
+      height: 36,
+      width: 1,
+      color: const Color(0xFFE0E0E0),
+    );
+  }
+
+  // ── Search Bar ────────────────────────────────────────────────────────────
+
+  Widget _buildSearchBar() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      height: 50,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F6FA),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8E8F0), width: 1),
+      ),
+      child: TextField(
+        controller: _searchController,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF1A1A2E),
+        ),
+        decoration: InputDecoration(
+          hintText: "Search by PO number or supplier...",
+          hintStyle: const TextStyle(
+            fontSize: 13.5,
+            color: Color(0xFFB0B0C0),
+            fontWeight: FontWeight.w400,
+          ),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            color: Color(0xFF9E9EC0),
+            size: 20,
+          ),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? GestureDetector(
+            onTap: () => _searchController.clear(),
+            child: const Icon(
+              Icons.close_rounded,
+              color: Color(0xFFB0B0C0),
+              size: 18,
+            ),
+          )
+              : null,
+          border: InputBorder.none,
+          contentPadding:
+          const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
         ),
       ),
     );
   }
 
+  // ── Order Card ────────────────────────────────────────────────────────────
+
+  Widget _buildOrderCard(dynamic order, int index) {
+    final statusColor = getStatusColor(order.status ?? '');
+    final statusIcon = getStatusIcon(order.status ?? '');
+    final amount = double.tryParse(order.totalAmount ?? '0') ?? 0;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 250 + (index * 60)),
+      curve: Curves.easeOutCubic,
+      builder: (_, value, child) => Transform.translate(
+        offset: Offset(0, 20 * (1 - value)),
+        child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.055),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            splashColor: AppColors.primary.withOpacity(0.06),
+            highlightColor: AppColors.primary.withOpacity(0.03),
+            onTap: () {},
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Top row: PO badge + status + actions ──
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.09),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          order.poNo,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 9, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.calendar_month,
+                                size: 12, color: statusColor),
+                            const SizedBox(width: 4),
+                            Text(
+                              DateFormat('dd MMM yyyy').format(order.poDate),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: statusColor,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      // Actions
+                      _actionButton(
+                        icon: Icons.edit_outlined,
+                        color: const Color(0xFF4A90D9),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AddPurchaseOrder(
+                                nextOrderId: order.poNo,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      _actionButton(
+                        icon: Icons.delete_outline_rounded,
+                        color: const Color(0xFFFF4D4F),
+                        onTap: () => _showDeleteDialog(
+                            context, order.id, order.poNo),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 14),
+                  const Divider(height: 1, color: Color(0xFFF0F0F6)),
+                  const SizedBox(height: 14),
+
+                  // ── Supplier ──
+                  Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0F0FA),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.storefront_rounded,
+                          size: 18,
+                          color: Color(0xFF7B7BB5),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Supplier",
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFFAAAAAA),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              (order.supplierName ?? '').toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1A1A2E),
+                                letterSpacing: 0.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 7),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color(0xFF00C896),
+                              Color(0xFF00A37A)
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                              const Color(0xFF00C896).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          "Rs. ${NumberFormat('#,##0').format(amount)}",
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 14),
+
+
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _actionButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.09),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, size: 17, color: color),
+      ),
+    );
+  }
+
+  // ── Delete Dialog ─────────────────────────────────────────────────────────
+
+  Future<void> _showDeleteDialog(
+      BuildContext context, int orderId, String poNo) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF4D4F).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline_rounded,
+                    size: 30,
+                    color: Color(0xFFFF4D4F),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  "Delete Order",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A2E),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Are you sure you want to delete $poNo? This action cannot be undone.",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    color: Color(0xFF888899),
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        style: OutlinedButton.styleFrom(
+                          padding:
+                          const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                          side: const BorderSide(
+                              color: Color(0xFFE0E0E0), width: 1.5),
+                        ),
+                        child: const Text(
+                          "Cancel",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF555566),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          Navigator.pop(dialogContext);
+                          final provider =
+                          Provider.of<PurchaseOrderProvider>(
+                              context,
+                              listen: false);
+                          bool success =
+                          await provider.deletePurchaseOrder(orderId);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  success
+                                      ? '$poNo deleted successfully'
+                                      : (provider.error ?? 'Delete failed'),
+                                ),
+                                backgroundColor:
+                                success ? const Color(0xFF00C896) : const Color(0xFFFF4D4F),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF4D4F),
+                          padding:
+                          const EdgeInsets.symmetric(vertical: 13),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: const Text(
+                          "Delete",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Empty State ───────────────────────────────────────────────────────────
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 90,
+            height: 90,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.receipt_long_outlined,
+              size: 44,
+              color: AppColors.primary.withOpacity(0.5),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            "No Purchase Orders",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1A2E),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            "Tap \"Add Order\" to create your first\npurchase order",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13.5,
+              color: Color(0xFF9E9EB0),
+              height: 1.6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<PurchaseOrderProvider>();
 
+    final filteredOrders = _searchQuery.isEmpty
+        ? provider.orders
+        : provider.orders.where((o) {
+      return (o.poNo ?? '').toLowerCase().contains(_searchQuery) ||
+          (o.supplierName ?? '').toLowerCase().contains(_searchQuery);
+    }).toList();
+
     return Scaffold(
-      appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: Center(child: const Text("Purchase Order",
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              letterSpacing: 1.2,
-            )),
-        ),
-        centerTitle: true,
-        elevation: 6,
-        flexibleSpace: Container(
+      backgroundColor: const Color(0xFFF4F5F9),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(64),
+        child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [AppColors.secondary, AppColors.primary],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: ElevatedButton.icon(
-              onPressed: () {
-                final provider =
-                Provider.of<PurchaseOrderProvider>(context, listen: false);
-
-                String nextOrderId = "PO-0001";
-
-                if (provider.orders.isNotEmpty) {
-                  final allNumbers = provider.orders.map((order) {
-                    final id = order.poNo;
-                    final regex = RegExp(r'PO-(\d+)$');
-                    final match = regex.firstMatch(id);
-                    return match != null
-                        ? int.tryParse(match.group(1)!) ?? 0
-                        : 0;
-                  }).toList();
-
-                  final maxNumber = allNumbers.reduce((a, b) => a > b ? a : b);
-                  final incremented = maxNumber + 1;
-
-                  nextOrderId = "PO-${incremented.toString().padLeft(4, '0')}";
-                }
-
-                print("✅ Next Order ID: $nextOrderId");
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        AddPurchaseOrder(nextOrderId: nextOrderId),
-                  ),
-                );
-              },
-
-              icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-              label: const Text(
-                "Add Order",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 12,
+                offset: Offset(0, 4),
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
+            ],
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const Expanded(
+                    child: Text(
+                      "Purchase Orders",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 19,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  // Add Order button
+                  GestureDetector(
+                    onTap: () {
+                      final p = Provider.of<PurchaseOrderProvider>(
+                          context,
+                          listen: false);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AddPurchaseOrder(
+                            nextOrderId: _getNextOrderId(p),
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.35),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.add_rounded,
+                              color: Colors.white, size: 18),
+                          SizedBox(width: 5),
+                          Text(
+                            "Add",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
-
-
-
-
-
+        ),
       ),
+      body: Builder(builder: (_) {
+        if (provider.isLoading) {
+          return Column(
+            children: [
 
-      body: Builder(
-        builder: (_) {
+              const SizedBox(height: 12),
+              _buildSearchBar(),
+              const SizedBox(height: 12),
+              Expanded(child: _buildShimmerLoading()),
+            ],
+          );
+        }
 
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+        if ((provider.error ?? '').isNotEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.cloud_off_rounded,
+                    size: 56, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  provider.error ?? 'Something went wrong',
+                  style: const TextStyle(
+                      fontSize: 15, color: Color(0xFF888899)),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: () =>
+                      context.read<PurchaseOrderProvider>().fetchPurchaseOrder(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text("Retry",
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
+          );
+        }
 
-          if (provider.error.isNotEmpty) {
-            return Center(child: Text(provider.error));
-          }
-
-          if (provider.orders.isEmpty) {
-            return const Center(child: Text("No Purchase Orders"));
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: provider.orders.length,
-            itemBuilder: (context, index) {
-              final order = provider.orders[index];
-
-              return Card(
-                elevation: 4,
-                margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-
-                      /// PO Number + Status
-                      Row(
-                    children: [
-                          Text(order.poNo,
-                              style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold)),
-                          SizedBox(width: 5,),
-
-                      Text(
-                        (order.supplierName ?? '').toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-
-                        ],
-                      ),
-
-                      const SizedBox(height: 6),
-
-                      /// Supplier
-
-
-                      /// Date
-                      Row(
+        return RefreshIndicator(
+          onRefresh: () =>
+              context.read<PurchaseOrderProvider>().fetchPurchaseOrder(),
+          color: AppColors.primary,
+          backgroundColor: Colors.white,
+          displacement: 30,
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSearchBar(),
+                    if (provider.orders.isNotEmpty)
+                    //  _buildSummaryStrip(provider),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding:
+                      const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
                         children: [
-                          Text("${DateFormat('dd MMM yyyy').format(order.poDate)}"),
-                          SizedBox(width: 10,),
                           Text(
-                            "Rs. ${NumberFormat('#,##0').format(double.parse(order.totalAmount))}",
-                          )
+                            filteredOrders.isEmpty
+                                ? "No results"
+                                : "${filteredOrders.length} Order${filteredOrders.length != 1 ? 's' : ''}",
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF888899),
+                              letterSpacing: 0.2,
+                            ),
+                          ),
                         ],
                       ),
-
-
-
-
-                    ],
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              ),
+              if (provider.orders.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _buildEmptyState(),
+                )
+              else if (filteredOrders.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.search_off_rounded,
+                            size: 48, color: Colors.grey[400]),
+                        const SizedBox(height: 12),
+                        const Text(
+                          "No matching orders",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF888899),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                          (context, index) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child:
+                        _buildOrderCard(filteredOrders[index], index),
+                      ),
+                      childCount: filteredOrders.length,
+                    ),
                   ),
                 ),
-              );
-            },
-          );
-        },
-      ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }
-// import 'package:demo_distribution/Screen/PurchaseScreen/PurchaseOrder/AddPurchaseOrder.dart';
-// import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
-// import 'package:intl/intl.dart';
-// import 'package:shimmer/shimmer.dart';
-//
-// import '../../../Provider/Purchase_Order_Provider/Purchase_order_provider.dart';
-// import '../../../compoents/AppColors.dart';
-//
-// class PurchaseOrderScreen extends StatefulWidget {
-//   const PurchaseOrderScreen({super.key});
-//
-//   @override
-//   State<PurchaseOrderScreen> createState() => _PurchaseOrderScreenState();
-// }
-//
-// class _PurchaseOrderScreenState extends State<PurchaseOrderScreen>
-//     with SingleTickerProviderStateMixin {
-//   final TextEditingController _searchController = TextEditingController();
-//   final NumberFormat _fmt = NumberFormat('#,##,###');
-//   final FocusNode _searchFocusNode = FocusNode();
-//
-//   // Animation for search bar
-//   late AnimationController _animationController;
-//   late Animation<double> _searchAnimation;
-//
-//   @override
-//   void initState() {
-//     super.initState();
-//
-//     _animationController = AnimationController(
-//       vsync: this,
-//       duration: const Duration(milliseconds: 300),
-//     );
-//     _searchAnimation = CurvedAnimation(
-//       parent: _animationController,
-//       curve: Curves.easeInOut,
-//     );
-//
-//     Future.microtask(() {
-//       context.read<PurchaseOrderProvider>().fetchPurchaseOrder();
-//     });
-//   }
-//
-//   @override
-//   void dispose() {
-//     _searchController.dispose();
-//     _searchFocusNode.dispose();
-//     _animationController.dispose();
-//     super.dispose();
-//   }
-//
-//   Color getStatusColor(String status) {
-//     switch (status.toUpperCase()) {
-//       case "APPROVED":
-//         return const Color(0xFF10B981);
-//       case "PENDING":
-//         return const Color(0xFFF59E0B);
-//       case "REJECTED":
-//         return const Color(0xFFEF4444);
-//       default:
-//         return Colors.grey;
-//     }
-//   }
-//
-//   String getStatusText(String status) {
-//     switch (status.toUpperCase()) {
-//       case "APPROVED":
-//         return "Approved";
-//       case "PENDING":
-//         return "Pending";
-//       case "REJECTED":
-//         return "Rejected";
-//       default:
-//         return status;
-//     }
-//   }
-//
-//   // Delete confirmation dialog
-//   Future<void> _showDeleteDialog(BuildContext context, int orderId, String poNo) async {
-//     return showDialog(
-//       context: context,
-//       builder: (BuildContext dialogContext) {
-//         return AlertDialog(
-//           title: const Text('Delete Order'),
-//           content: Text('Are you sure you want to delete $poNo?'),
-//           actions: [
-//             TextButton(
-//               onPressed: () => Navigator.pop(dialogContext),
-//               child: const Text('Cancel'),
-//             ),
-//             ElevatedButton(
-//               onPressed: () async {
-//                 Navigator.pop(dialogContext); // close confirm dialog
-//
-//                 final provider = Provider.of<PurchaseOrderProvider>(
-//                     context, listen: false
-//                 );
-//
-//                 // No manual loading dialog — provider handles state
-//                 bool success = await provider.deletePurchaseOrder(orderId);
-//
-//                 if (context.mounted) {
-//                   ScaffoldMessenger.of(context).showSnackBar(
-//                     SnackBar(
-//                       content: Text(
-//                         success
-//                             ? 'Order $poNo deleted successfully'
-//                             : provider.error,
-//                       ),
-//                       backgroundColor: success ? Colors.green : Colors.red,
-//                       behavior: SnackBarBehavior.floating,
-//                     ),
-//                   );
-//                 }
-//               },
-//               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-//               child: const Text('Delete'),
-//             ),
-//           ],
-//         );
-//       },
-//     );
-//   }
-//
-//   Widget _buildShimmerLoading() {
-//     return ListView.builder(
-//       padding: const EdgeInsets.all(16),
-//       itemCount: 6,
-//       itemBuilder: (_, __) => Shimmer.fromColors(
-//         baseColor: Colors.grey[300]!,
-//         highlightColor: Colors.grey[100]!,
-//         child: Container(
-//           margin: const EdgeInsets.only(bottom: 16),
-//           height: 180,
-//           decoration: BoxDecoration(
-//             color: Colors.white,
-//             borderRadius: BorderRadius.circular(20),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     final provider = context.watch<PurchaseOrderProvider>();
-//     final isDark = Theme.of(context).brightness == Brightness.dark;
-//
-//     return Scaffold(
-//       backgroundColor: isDark ? const Color(0xFF1A1F2E) : const Color(0xFFF8FAFC),
-//       appBar: AppBar(
-//         elevation: 0,
-//         backgroundColor: Colors.transparent,
-//         flexibleSpace: Container(
-//           decoration: const BoxDecoration(
-//             gradient: LinearGradient(
-//               colors: [AppColors.secondary, AppColors.primary],
-//               begin: Alignment.topLeft,
-//               end: Alignment.bottomRight,
-//             ),
-//             borderRadius: BorderRadius.only(
-//               bottomLeft: Radius.circular(30),
-//               bottomRight: Radius.circular(30),
-//             ),
-//           ),
-//         ),
-//         title: const Text(
-//           "Purchase Orders",
-//           style: TextStyle(
-//             color: Colors.white,
-//             fontWeight: FontWeight.w700,
-//             fontSize: 22,
-//             letterSpacing: 0.5,
-//           ),
-//         ),
-//         centerTitle: false,
-//         leading: IconButton(
-//           icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-//           onPressed: () => Navigator.pop(context),
-//         ),
-//         actions: [
-//           Container(
-//             margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
-//             decoration: BoxDecoration(
-//               borderRadius: BorderRadius.circular(16),
-//               color: Colors.white.withOpacity(0.2),
-//             ),
-//             child: IconButton(
-//               onPressed: () {
-//                 _animationController.isCompleted
-//                     ? _animationController.reverse()
-//                     : _animationController.forward();
-//                 _searchFocusNode.requestFocus();
-//               },
-//               icon: const Icon(Icons.search, color: Colors.white),
-//             ),
-//           ),
-//         ],
-//       ),
-//       body: Column(
-//         children: [
-//           // Animated Search Bar
-//           SizeTransition(
-//             sizeFactor: _searchAnimation,
-//             axisAlignment: -1.0,
-//             child: Container(
-//               margin: const EdgeInsets.all(16),
-//               decoration: BoxDecoration(
-//                 boxShadow: [
-//                   BoxShadow(
-//                     color: Colors.black.withOpacity(0.05),
-//                     blurRadius: 10,
-//                     offset: const Offset(0, 5),
-//                   ),
-//                 ],
-//               ),
-//               child: TextField(
-//                 controller: _searchController,
-//                 focusNode: _searchFocusNode,
-//                 decoration: InputDecoration(
-//                   hintText: "Search by PO number or supplier...",
-//                   hintStyle: TextStyle(
-//                     color: isDark ? Colors.white38 : Colors.black38,
-//                     fontSize: 14,
-//                   ),
-//                   prefixIcon: Icon(
-//                     Icons.search,
-//                     color: isDark ? Colors.white54 : Colors.black54,
-//                   ),
-//                   suffixIcon: _searchController.text.isNotEmpty
-//                       ? IconButton(
-//                     icon: Icon(
-//                       Icons.clear,
-//                       color: isDark ? Colors.white54 : Colors.black54,
-//                     ),
-//                     onPressed: () {
-//                       _searchController.clear();
-//                       // Add search functionality here
-//                     },
-//                   )
-//                       : null,
-//                   filled: true,
-//                   fillColor: isDark ? const Color(0xFF2D3447) : Colors.white,
-//                   border: OutlineInputBorder(
-//                     borderRadius: BorderRadius.circular(20),
-//                     borderSide: BorderSide.none,
-//                   ),
-//                   enabledBorder: OutlineInputBorder(
-//                     borderRadius: BorderRadius.circular(20),
-//                     borderSide: BorderSide.none,
-//                   ),
-//                   focusedBorder: OutlineInputBorder(
-//                     borderRadius: BorderRadius.circular(20),
-//                     borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-//                   ),
-//                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
-//                 ),
-//                 style: TextStyle(
-//                   color: isDark ? Colors.white : Colors.black87,
-//                   fontSize: 15,
-//                 ),
-//                 onChanged: (value) {
-//                   // Add search functionality here
-//                 },
-//               ),
-//             ),
-//           ),
-//
-//           // Stats Cards
-//           Padding(
-//             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-//             child: Row(
-//               children: [
-//                 Expanded(
-//                   child: _buildStatCard(
-//                     title: "Total Orders",
-//                     value: provider.orders.length.toString(),
-//                     icon: Icons.shopping_cart_outlined,
-//                     color: AppColors.primary,
-//                     isDark: isDark,
-//                   ),
-//                 ),
-//                 const SizedBox(width: 12),
-//                 Expanded(
-//                   child: _buildStatCard(
-//                     title: "Total Amount",
-//                     value: "Rs ${_fmt.format(provider.orders.fold(0.0, (sum, order) => sum + (double.tryParse(order.totalAmount) ?? 0)))}",
-//                     icon: Icons.currency_rupee,
-//                     color: Colors.green,
-//                     isDark: isDark,
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-//
-//           // Orders List
-//           Expanded(
-//             child: Builder(
-//               builder: (_) {
-//                 if (provider.isLoading) {
-//                   return _buildShimmerLoading();
-//                 }
-//
-//                 if (provider.error.isNotEmpty) {
-//                   return Center(
-//                     child: Column(
-//                       mainAxisAlignment: MainAxisAlignment.center,
-//                       children: [
-//                         Icon(
-//                           Icons.error_outline,
-//                           size: 60,
-//                           color: Colors.red[300],
-//                         ),
-//                         const SizedBox(height: 16),
-//                         Text(
-//                           provider.error,
-//                           style: const TextStyle(fontSize: 16),
-//                           textAlign: TextAlign.center,
-//                         ),
-//                         const SizedBox(height: 16),
-//                         ElevatedButton(
-//                           onPressed: () {
-//                             context.read<PurchaseOrderProvider>().fetchPurchaseOrder();
-//                           },
-//                           style: ElevatedButton.styleFrom(
-//                             backgroundColor: AppColors.primary,
-//                             foregroundColor: Colors.white,
-//                             shape: RoundedRectangleBorder(
-//                               borderRadius: BorderRadius.circular(12),
-//                             ),
-//                           ),
-//                           child: const Text("Retry"),
-//                         ),
-//                       ],
-//                     ),
-//                   );
-//                 }
-//
-//                 if (provider.orders.isEmpty) {
-//                   return Center(
-//                     child: Column(
-//                       mainAxisAlignment: MainAxisAlignment.center,
-//                       children: [
-//                         Container(
-//                           padding: const EdgeInsets.all(20),
-//                           decoration: BoxDecoration(
-//                             color: Colors.grey.withOpacity(0.1),
-//                             shape: BoxShape.circle,
-//                           ),
-//                           child: Icon(
-//                             Icons.inventory_2_outlined,
-//                             size: 60,
-//                             color: Colors.grey[400],
-//                           ),
-//                         ),
-//                         const SizedBox(height: 16),
-//                         Text(
-//                           "No Purchase Orders Found",
-//                           style: TextStyle(
-//                             fontSize: 18,
-//                             fontWeight: FontWeight.w600,
-//                             color: isDark ? Colors.white70 : Colors.black87,
-//                           ),
-//                         ),
-//                         const SizedBox(height: 8),
-//                         Text(
-//                           "Click the + button to create your first order",
-//                           style: TextStyle(
-//                             fontSize: 14,
-//                             color: isDark ? Colors.white38 : Colors.black54,
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                   );
-//                 }
-//
-//                 return RefreshIndicator(
-//                   onRefresh: () => context.read<PurchaseOrderProvider>().fetchPurchaseOrder(),
-//                   color: AppColors.primary,
-//                   backgroundColor: isDark ? const Color(0xFF2D3447) : Colors.white,
-//                   child: ListView.builder(
-//                     padding: const EdgeInsets.all(16),
-//                     itemCount: provider.orders.length,
-//                     itemBuilder: (context, index) {
-//                       final order = provider.orders[index];
-//
-//                       return TweenAnimationBuilder(
-//                         tween: Tween<double>(begin: 0, end: 1),
-//                         duration: Duration(milliseconds: 300 + (index * 100)),
-//                         curve: Curves.easeOut,
-//                         builder: (context, double value, child) {
-//                           return Transform.translate(
-//                             offset: Offset(0, 50 * (1 - value)),
-//                             child: Opacity(
-//                               opacity: value,
-//                               child: child,
-//                             ),
-//                           );
-//                         },
-//                         child: Container(
-//                           margin: const EdgeInsets.only(bottom: 16),
-//                           decoration: BoxDecoration(
-//                             borderRadius: BorderRadius.circular(24),
-//                             gradient: LinearGradient(
-//                               begin: Alignment.topLeft,
-//                               end: Alignment.bottomRight,
-//                               colors: isDark
-//                                   ? [const Color(0xFF2D3447), const Color(0xFF1F2538)]
-//                                   : [Colors.white, Colors.grey[50]!],
-//                             ),
-//                             boxShadow: [
-//                               BoxShadow(
-//                                 color: Colors.black.withOpacity(0.03),
-//                                 blurRadius: 20,
-//                                 offset: const Offset(0, 8),
-//                               ),
-//                             ],
-//                           ),
-//                           child: Material(
-//                             color: Colors.transparent,
-//                             child: InkWell(
-//                               borderRadius: BorderRadius.circular(24),
-//                               onTap: () {
-//                                 // Navigate to order details
-//                               },
-//                               child: Padding(
-//                                 padding: const EdgeInsets.all(20),
-//                                 child: Column(
-//                                   crossAxisAlignment: CrossAxisAlignment.start,
-//                                   children: [
-//                                     // Header Row with PO Number and Action Buttons
-//                                     Row(
-//                                       children: [
-//                                         Container(
-//                                           padding: const EdgeInsets.symmetric(
-//                                             horizontal: 12,
-//                                             vertical: 6,
-//                                           ),
-//                                           decoration: BoxDecoration(
-//                                             color: AppColors.primary.withOpacity(0.1),
-//                                             borderRadius: BorderRadius.circular(12),
-//                                           ),
-//                                           child: Text(
-//                                             order.poNo,
-//                                             style: TextStyle(
-//                                               fontSize: 14,
-//                                               fontWeight: FontWeight.w600,
-//                                               color: AppColors.primary,
-//                                             ),
-//                                           ),
-//                                         ),
-//                                         const Spacer(),
-//
-//                                         // Edit Button
-//                                         Container(
-//                                           margin: const EdgeInsets.only(right: 8),
-//                                           decoration: BoxDecoration(
-//                                             color: Colors.blue.withOpacity(0.1),
-//                                             borderRadius: BorderRadius.circular(12),
-//                                           ),
-//                                           child: IconButton(
-//                                             icon: Icon(
-//                                               Icons.edit_outlined,
-//                                               size: 20,
-//                                               color: Colors.blue[700],
-//                                             ),
-//                                             onPressed: () {
-//                                              // Navigate to edit screen with order data
-//                                               Navigator.push(
-//                                                 context,
-//                                                 MaterialPageRoute(
-//                                                   builder: (context) => AddPurchaseOrder(
-//                                                     nextOrderId: order.poNo,
-//
-//                                                   ),
-//                                                 ),
-//                                               );
-//                                             },
-//                                             padding: const EdgeInsets.all(8),
-//                                             constraints: const BoxConstraints(),
-//                                           ),
-//                                         ),
-//
-//                                         // Delete Button
-//                                         Container(
-//                                           decoration: BoxDecoration(
-//                                             color: Colors.red.withOpacity(0.1),
-//                                             borderRadius: BorderRadius.circular(12),
-//                                           ),
-//                                           child: IconButton(
-//                                             icon: Icon(
-//                                               Icons.delete_outline,
-//                                               size: 20,
-//                                               color: Colors.red[700],
-//                                             ),
-//                                             onPressed: () {
-//                                               _showDeleteDialog(context, order.id, order.poNo);
-//                                             },
-//                                             padding: const EdgeInsets.all(8),
-//                                             constraints: const BoxConstraints(),
-//                                           ),
-//                                         ),
-//                                       ],
-//                                     ),
-//                                     const SizedBox(height: 16),
-//
-//                                     // Status Badge
-//                                     Row(
-//                                       children: [
-//                                         Container(
-//                                           padding: const EdgeInsets.symmetric(
-//                                             horizontal: 12,
-//                                             vertical: 6,
-//                                           ),
-//                                           decoration: BoxDecoration(
-//                                             color: getStatusColor(order.status).withOpacity(0.1),
-//                                             borderRadius: BorderRadius.circular(20),
-//                                           ),
-//                                           child: Row(
-//                                             mainAxisSize: MainAxisSize.min,
-//                                             children: [
-//                                               Container(
-//                                                 width: 8,
-//                                                 height: 8,
-//                                                 decoration: BoxDecoration(
-//                                                   color: getStatusColor(order.status),
-//                                                   shape: BoxShape.circle,
-//                                                 ),
-//                                               ),
-//                                               const SizedBox(width: 6),
-//                                               Text(
-//                                                 getStatusText(order.status),
-//                                                 style: TextStyle(
-//                                                   fontSize: 12,
-//                                                   fontWeight: FontWeight.w500,
-//                                                   color: getStatusColor(order.status),
-//                                                 ),
-//                                               ),
-//                                             ],
-//                                           ),
-//                                         ),
-//                                       ],
-//                                     ),
-//                                     const SizedBox(height: 16),
-//
-//                                     // Supplier Info
-//                                     Row(
-//                                       children: [
-//                                         Container(
-//                                           padding: const EdgeInsets.all(10),
-//                                           decoration: BoxDecoration(
-//                                             color: Colors.grey.withOpacity(0.1),
-//                                             borderRadius: BorderRadius.circular(14),
-//                                           ),
-//                                           child: const Icon(
-//                                             Icons.business_outlined,
-//                                             size: 20,
-//                                             color: AppColors.primary,
-//                                           ),
-//                                         ),
-//                                         const SizedBox(width: 12),
-//                                         Expanded(
-//                                           child: Column(
-//                                             crossAxisAlignment: CrossAxisAlignment.start,
-//                                             children: [
-//                                               Text(
-//                                                 "Supplier",
-//                                                 style: TextStyle(
-//                                                   fontSize: 12,
-//                                                   color: isDark ? Colors.white38 : Colors.black45,
-//                                                 ),
-//                                               ),
-//                                               const SizedBox(height: 2),
-//                                               Text(
-//                                                 order.supplierName.toUpperCase(),
-//                                                 style: TextStyle(
-//                                                   fontSize: 15,
-//                                                   fontWeight: FontWeight.w600,
-//                                                   color: isDark ? Colors.white : Colors.black87,
-//                                                 ),
-//                                                 maxLines: 1,
-//                                                 overflow: TextOverflow.ellipsis,
-//                                               ),
-//                                             ],
-//                                           ),
-//                                         ),
-//                                       ],
-//                                     ),
-//                                     const SizedBox(height: 16),
-//
-//                                     // Date, Items, and Amount Row
-//                                     Row(
-//                                       children: [
-//                                         // Date
-//                                         Expanded(
-//                                           child: Row(
-//                                             children: [
-//                                               Icon(
-//                                                 Icons.calendar_today_outlined,
-//                                                 size: 16,
-//                                                 color: isDark ? Colors.white38 : Colors.black45,
-//                                               ),
-//                                               const SizedBox(width: 8),
-//                                               Text(
-//                                                 DateFormat('dd MMM yyyy').format(order.poDate),
-//                                                 style: TextStyle(
-//                                                   fontSize: 14,
-//                                                   color: isDark ? Colors.white70 : Colors.black54,
-//                                                 ),
-//                                               ),
-//                                             ],
-//                                           ),
-//                                         ),
-//
-//                                         // Total Items
-//                                         Container(
-//                                           margin: const EdgeInsets.only(right: 12),
-//                                           padding: const EdgeInsets.symmetric(
-//                                             horizontal: 8,
-//                                             vertical: 4,
-//                                           ),
-//                                           decoration: BoxDecoration(
-//                                             color: Colors.orange.withOpacity(0.1),
-//                                             borderRadius: BorderRadius.circular(8),
-//                                           ),
-//                                           child: Row(
-//                                             children: [
-//                                               Icon(
-//                                                 Icons.inventory_2_outlined,
-//                                                 size: 14,
-//                                                 color: Colors.orange[700],
-//                                               ),
-//                                               const SizedBox(width: 4),
-//                                               Text(
-//                                                 '${order.totalItems} items',
-//                                                 style: TextStyle(
-//                                                   fontSize: 12,
-//                                                   color: Colors.orange[700],
-//                                                   fontWeight: FontWeight.w500,
-//                                                 ),
-//                                               ),
-//                                             ],
-//                                           ),
-//                                         ),
-//
-//                                         // Amount
-//                                         Container(
-//                                           padding: const EdgeInsets.symmetric(
-//                                             horizontal: 12,
-//                                             vertical: 6,
-//                                           ),
-//                                           decoration: BoxDecoration(
-//                                             color: Colors.green.withOpacity(0.1),
-//                                             borderRadius: BorderRadius.circular(12),
-//                                           ),
-//                                           child: Text(
-//                                             "₹ ${NumberFormat('#,##0').format(double.parse(order.totalAmount))}",
-//                                             style: const TextStyle(
-//                                               fontSize: 16,
-//                                               fontWeight: FontWeight.w700,
-//                                               color: Color(0xFF10B981),
-//                                             ),
-//                                           ),
-//                                         ),
-//                                       ],
-//                                     ),
-//                                   ],
-//                                 ),
-//                               ),
-//                             ),
-//                           ),
-//                         ),
-//                       );
-//                     },
-//                   ),
-//                 );
-//               },
-//             ),
-//           ),
-//         ],
-//       ),
-//       floatingActionButton: Container(
-//         decoration: BoxDecoration(
-//           gradient: const LinearGradient(
-//             colors: [AppColors.secondary, AppColors.primary],
-//             begin: Alignment.topLeft,
-//             end: Alignment.bottomRight,
-//           ),
-//           borderRadius: BorderRadius.circular(30),
-//           boxShadow: [
-//             BoxShadow(
-//               color: AppColors.primary.withOpacity(0.3),
-//               blurRadius: 15,
-//               offset: const Offset(0, 5),
-//             ),
-//           ],
-//         ),
-//         child: FloatingActionButton(
-//           onPressed: () {
-//             final provider = Provider.of<PurchaseOrderProvider>(context, listen: false);
-//
-//             String nextOrderId = "PO-0001";
-//
-//             if (provider.orders.isNotEmpty) {
-//               final allNumbers = provider.orders.map((order) {
-//                 final id = order.poNo;
-//                 final regex = RegExp(r'PO-(\d+)$');
-//                 final match = regex.firstMatch(id);
-//                 return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
-//               }).toList();
-//
-//               final maxNumber = allNumbers.reduce((a, b) => a > b ? a : b);
-//               final incremented = maxNumber + 1;
-//               nextOrderId = "PO-${incremented.toString().padLeft(4, '0')}";
-//             }
-//
-//             Navigator.push(
-//               context,
-//               MaterialPageRoute(
-//                 builder: (context) => AddPurchaseOrder(
-//                   nextOrderId: nextOrderId,
-//
-//                 ),
-//               ),
-//             );
-//           },
-//           backgroundColor: Colors.transparent,
-//           elevation: 0,
-//           child: const Icon(
-//             Icons.add,
-//             color: Colors.white,
-//             size: 28,
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-//
-//   Widget _buildStatCard({
-//     required String title,
-//     required String value,
-//     required IconData icon,
-//     required Color color,
-//     required bool isDark,
-//   }) {
-//     return Container(
-//       padding: const EdgeInsets.all(16),
-//       decoration: BoxDecoration(
-//         gradient: LinearGradient(
-//           colors: isDark
-//               ? [const Color(0xFF2D3447), const Color(0xFF1F2538)]
-//               : [Colors.white, Colors.grey[50]!],
-//         ),
-//         borderRadius: BorderRadius.circular(20),
-//         boxShadow: [
-//           BoxShadow(
-//             color: Colors.black.withOpacity(0.03),
-//             blurRadius: 10,
-//             offset: const Offset(0, 5),
-//           ),
-//         ],
-//       ),
-//       child: Row(
-//         children: [
-//           Container(
-//             padding: const EdgeInsets.all(10),
-//             decoration: BoxDecoration(
-//               color: color.withOpacity(0.1),
-//               borderRadius: BorderRadius.circular(14),
-//             ),
-//             child: Icon(
-//               icon,
-//               color: color,
-//               size: 20,
-//             ),
-//           ),
-//           const SizedBox(width: 12),
-//           Expanded(
-//             child: Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 Text(
-//                   title,
-//                   style: TextStyle(
-//                     fontSize: 12,
-//                     color: isDark ? Colors.white38 : Colors.black45,
-//                   ),
-//                 ),
-//                 const SizedBox(height: 4),
-//                 Text(
-//                   value,
-//                   style: TextStyle(
-//                     fontSize: 16,
-//                     fontWeight: FontWeight.w700,
-//                     color: isDark ? Colors.white : Colors.black87,
-//                   ),
-//                   maxLines: 1,
-//                   overflow: TextOverflow.ellipsis,
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
