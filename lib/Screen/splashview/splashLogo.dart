@@ -38,7 +38,7 @@ class _SplashLogoState extends State<SplashLogo> {
             const Spacer(),
             Center(
               child: Image.asset(
-                "assets/images/city.png",
+                "assets/images/logo.jpg",
                 width: 180,
                 height: 180,
               ),

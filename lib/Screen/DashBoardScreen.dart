@@ -4,6 +4,7 @@ import 'package:demo_distribution/Screen/setup/setup_dashboard.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Provider/DashBoardProvider.dart';
 import '../model/DashBoardModel.dart';
@@ -624,7 +625,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  int _navIndex = 0;
+  int _navIndex = 1;
 
   @override
   void initState() {
@@ -657,6 +658,111 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _loaded          = true;
       _navIndex        = 0;
     });
+  }
+
+  void _handleLogout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        title: const Text('Confirm Logout', style: TextStyle(color: AppTheme.textPrimary)),
+        content: const Text('Are you sure you want to logout?', style: TextStyle(color: AppTheme.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Logout', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout ?? false) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear(); // Clear all user data
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
+  void _showFilterOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Select Date Range', style: TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 15),
+            _buildFilterTile('This Week', () {
+              final now = DateTime.now();
+              final monday = now.subtract(Duration(days: now.weekday - 1));
+              final sunday = monday.add(const Duration(days: 6));
+              _updateDates(monday, sunday);
+            }),
+            _buildFilterTile('This Month', () {
+              final now = DateTime.now();
+              final first = DateTime(now.year, now.month, 1);
+              final last = DateTime(now.year, now.month + 1, 0);
+              _updateDates(first, last);
+            }),
+            _buildFilterTile('This Year', () {
+              final now = DateTime.now();
+              _updateDates(DateTime(now.year, 1, 1), DateTime(now.year, 12, 31));
+            }),
+            _buildFilterTile('Custom Range', () async {
+              Navigator.pop(context);
+              final picked = await showDateRangePicker(
+                context: context,
+                firstDate: DateTime(2020),
+                lastDate: DateTime(2030),
+                builder: (context, child) => Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: const ColorScheme.dark(
+                      primary: AppColors.primary,
+                      onPrimary: Colors.white,
+                      surface: AppTheme.surface,
+                      onSurface: AppTheme.textPrimary,
+                    ),
+                  ),
+                  child: child!,
+                ),
+              );
+              if (picked != null) {
+                _updateDates(picked.start, picked.end);
+              }
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _updateDates(DateTime start, DateTime end) {
+    final sStr = start.toIso8601String().split('T')[0];
+    final eStr = end.toIso8601String().split('T')[0];
+    context.read<DashboardProvider>().fetch(from: sStr, to: eStr);
+    Navigator.pop(context);
+  }
+
+  Widget _buildFilterTile(String title, VoidCallback onTap) {
+    return ListTile(
+      title: Text(title, style: const TextStyle(color: AppTheme.textPrimary)),
+      trailing: const Icon(Icons.chevron_right, color: AppTheme.textMuted),
+      onTap: onTap,
+    );
   }
 
   // ── Navigate to a screen on nav item tap ──
@@ -718,6 +824,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 builder: (_, prov, __) {
                   if (!_loaded || prov.state == LoadState.loading)
                     return _buildLoading();
+                  if (prov.state == LoadState.error)
+                    return _buildError(prov.errorMsg, prov.refresh);
                   if (prov.data == null) return _buildEmpty();
                   return _buildBody(prov.data!, isTablet, isDesktop);
                 },
@@ -779,7 +887,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ShaderMask(
                       shaderCallback: (b) =>
                           AppTheme.brandGradient.createShader(b),
-                      child: const Text('Siddiqu Traders',
+                      child: const Text('City Traders',
                           style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w800,
@@ -1104,9 +1212,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
-          const Text(
-            'Feb 28 – Mar 30, 2026',
-            style: TextStyle(color: AppTheme.textMuted, fontSize: 11),
+          Consumer<DashboardProvider>(
+            builder: (context, prov, child) {
+              return Text(
+                '${prov.fromDate} – ${prov.toDate}',
+                style: const TextStyle(color: AppTheme.textMuted, fontSize: 11),
+              );
+            },
           ),
         ],
       ),
@@ -1130,21 +1242,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
 
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          margin: const EdgeInsets.only(right: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-          ),
-          child: const Center(
-            child: Text(
-              '● Live',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-            ),
-          ),
+        IconButton(
+          onPressed: _showFilterOptions,
+          icon: const Icon(Icons.calendar_month_outlined),
         ),
-
+        IconButton(
+          onPressed: _handleLogout,
+          icon: const Icon(Icons.logout_outlined, color: AppTheme.red),
+        ),
         Consumer<DashboardProvider>(
           builder: (_, prov, __) => IconButton(
             onPressed: prov.state == LoadState.loading ? null : prov.refresh,
@@ -1223,6 +1328,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildEmpty() => const Center(
     child: Text('No data available',
         style: TextStyle(color: AppTheme.textMuted)),
+  );
+
+  Widget _buildError(String msg, VoidCallback retry) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 48, color: AppTheme.red),
+          const SizedBox(height: 16),
+          Text(
+            'API Error',
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            msg,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: retry,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Try Again'),
+          ),
+        ],
+      ),
+    ),
   );
 
   // ─── Body ─────────────────────────────────────────────────────────────────

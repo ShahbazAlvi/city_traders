@@ -50,10 +50,21 @@ class TrendPoint {
 
   factory TrendPoint.fromJson(Map<String, dynamic> j) {
     final raw = j['month'] as String;
-    final dt = DateTime.tryParse(raw);
-    final label = dt != null ? 'Mar ${dt.day}' : raw.substring(5);
+    final dt = DateTime.tryParse(raw.length == 7 ? '$raw-01' : raw);
+    if (dt != null) {
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final month = months[dt.month - 1];
+      return TrendPoint(
+        month: raw.length == 7 ? month : '$month ${dt.day}',
+        sales: (j['sales'] as num).toDouble(),
+        purchases: (j['purchases'] as num).toDouble(),
+        paymentsIn: (j['paymentsIn'] as num).toDouble(),
+        paymentsOut: (j['paymentsOut'] as num).toDouble(),
+        recoveries: (j['recoveries'] as num).toDouble(),
+      );
+    }
     return TrendPoint(
-      month: label,
+      month: raw.length > 5 ? raw.substring(5) : raw,
       sales: (j['sales'] as num).toDouble(),
       purchases: (j['purchases'] as num).toDouble(),
       paymentsIn: (j['paymentsIn'] as num).toDouble(),
@@ -111,7 +122,11 @@ class ActivityItem {
   factory ActivityItem.fromJson(Map<String, dynamic> j) {
     final raw = j['date'] as String;
     final dt = DateTime.tryParse(raw);
-    final label = dt != null ? 'Mar ${dt.day}' : raw.substring(5, 10);
+    String label = raw.length > 10 ? raw.substring(5, 10) : raw;
+    if (dt != null) {
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      label = '${months[dt.month - 1]} ${dt.day}';
+    }
     return ActivityItem(
       id: j['id'] as int,
       type: j['type'] as String,
