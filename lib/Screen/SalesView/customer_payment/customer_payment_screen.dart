@@ -207,7 +207,7 @@ class _CustomerPaymentScreenState extends State<CustomerPaymentScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  "Rs ${payment.paymentAmount.toStringAsFixed(0)}",
+                  "Rs ${payment.paymentAmount}",
                   style: const TextStyle(
                     color: Colors.green,
                     fontWeight: FontWeight.bold,

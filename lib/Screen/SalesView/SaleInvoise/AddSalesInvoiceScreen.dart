@@ -3,6 +3,7 @@
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../Provider/OrderTakingProvider/OrderTakingProvider.dart';
@@ -41,6 +42,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   // Customer & Salesman override
   int? selectedCustomerId;
   String? selectedSalesmanId;
+  final formatted =NumberFormat("#,##,###");
 
   // Add New Product state
   bool _showAddProduct = false;
@@ -471,7 +473,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            "Rs${total.toStringAsFixed(2)}",
+            "Rs${formatted.format(total)}",
             style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -698,7 +700,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
                         Colors.orange.shade50, Colors.orange.shade700),
                     const Spacer(),
                     Text(
-                      "Rs${item.total.toStringAsFixed(2)}",
+                      "Rs${item.total}",
                       style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -895,7 +897,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
                   fontSize: 10,
                   fontWeight: FontWeight.w500)),
           Text(
-            "Rs${amount.toStringAsFixed(2)}",
+            "Rs${formatted.format(amount)}",
             style: const TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 12,
@@ -930,7 +932,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF64748B))),
               Text(
-                "Rs:${total.toStringAsFixed(2)}",
+                "Rs:${formatted.format(total)}",
                 style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,

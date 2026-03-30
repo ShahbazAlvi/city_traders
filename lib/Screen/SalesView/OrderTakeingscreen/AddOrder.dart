@@ -48,6 +48,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
   String? selectedSalesmanId;
   CustomerData? selectedCustomer;
   ItemDetails? selectedProduct;
+  final formatted=NumberFormat("#,##,###");
 
   final TextEditingController qtyController = TextEditingController();
   final TextEditingController rateController = TextEditingController();
@@ -109,19 +110,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
     });
   }
 
-  // Color _getStatusColor(String status) {
-  //   switch (status) {
-  //     case 'APPROVED':
-  //       return Colors.green;
-  //     case 'CLOSED':
-  //       return Colors.blue;
-  //     case 'CANCELLED':
-  //       return Colors.red;
-  //     case 'DRAFT':
-  //     default:
-  //       return Colors.orange;
-  //   }
-  // }
+
 
   @override
   Widget build(BuildContext context) {
@@ -209,13 +198,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
           _buildCustomerField(),
           const SizedBox(height: 24),
 
-          // Order Status Section
-          //_buildSectionTitle('Order Status'),
-          // const SizedBox(height: 12),
-          // _buildStatusField(),
-         // const SizedBox(height: 24),
 
-          // Product Selection Section
           _buildSectionTitle('Add Products'),
           const SizedBox(height: 12),
           _buildProductSelection(),
@@ -400,62 +383,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
       ),
     );
   }
-   // status dropdown
-  // Widget _buildStatusField() {
-  //   return Container(
-  //     padding: const EdgeInsets.symmetric(horizontal: 16),
-  //     decoration: BoxDecoration(
-  //       color: Colors.white,
-  //       borderRadius: BorderRadius.circular(16),
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: Colors.grey.withOpacity(0.08),
-  //           spreadRadius: 1,
-  //           blurRadius: 6,
-  //           offset: const Offset(0, 2),
-  //         ),
-  //       ],
-  //     ),
-  //     child: DropdownButtonHideUnderline(
-  //       child: DropdownButton<String>(
-  //         value: selectedStatus,
-  //         isExpanded: true,
-  //         icon: Icon(
-  //           Icons.keyboard_arrow_down,
-  //           color: AppColors.primary,
-  //         ),
-  //         items: orderStatusList.map((status) {
-  //           return DropdownMenuItem(
-  //             value: status,
-  //             child: Row(
-  //               children: [
-  //                 Container(
-  //                   width: 8,
-  //                   height: 8,
-  //                   decoration: BoxDecoration(
-  //                     color: _getStatusColor(status),
-  //                     shape: BoxShape.circle,
-  //                   ),
-  //                 ),
-  //                 const SizedBox(width: 12),
-  //                 Text(
-  //                   status,
-  //                   style: const TextStyle(
-  //                     fontSize: 15,
-  //                     fontWeight: FontWeight.w500,
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           );
-  //         }).toList(),
-  //         onChanged: (value) {
-  //           setState(() => selectedStatus = value!);
-  //         },
-  //       ),
-  //     ),
-  //   );
-  // }
+
 
   Widget _buildProductSelection() {
     return Column(
@@ -533,7 +461,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        'Rs${selectedProduct!.salePrice?.toStringAsFixed(2) ?? '0.00'}',
+                        'Rs${formatted.format(selectedProduct!.salePrice?? '0.00')}',
                         style: TextStyle(
                           color: Colors.green.shade700,
                           fontWeight: FontWeight.w600,
@@ -723,7 +651,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                             ),
                             const SizedBox(width: 12),
                             Text(
-                              'Rate: $price',
+                              'Rate: ${formatted.format(price)}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey.shade600,
@@ -767,7 +695,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      '${total.toStringAsFixed(2)}',
+                      '${formatted.format(total)}',
                       style: TextStyle(
                         color: Colors.green.shade700,
                         fontWeight: FontWeight.w600,
@@ -822,7 +750,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
             ],
           ),
           Text(
-            '${grandTotal.toStringAsFixed(2)}',
+            '${formatted.format(grandTotal)}',
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,

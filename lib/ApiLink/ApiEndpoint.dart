@@ -3,8 +3,8 @@ class ApiEndpoints {
 
   static String get baseUrl {
     if (isProduction) {
-      //return "https://api.siddiquitd.com/api";
-     return "https://api.citytradersmis.com/api";
+      return "https://api.siddiquitd.com/api";
+     //return "https://api.citytradersmis.com/api";
     } else {
       return "https://api.citytradersmis.com/api";
       //return "http://localhost:5000/api"; // Android emulator localhost

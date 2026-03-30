@@ -1,6 +1,7 @@
 
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../Provider/OrderTakingProvider/OrderTakingProvider.dart';
 import '../../../compoents/AppColors.dart';
@@ -21,6 +22,8 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
   int itemsPerPage = 10;
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
+  final formatter = NumberFormat('#,##,###');
+  final formatedDate=DateFormat("dd,MMM,yyyy");
   String searchQuery = '';
 
   bool canAddOrder    = false;
@@ -436,7 +439,8 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  order.orderDate.toLocal().toString().split(' ')[0],
+                                  formatedDate.format(order.orderDate),
+                                 // order.orderDate.toLocal().toString().split(' ')[0],
                                   style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -561,7 +565,7 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
                     // Amount — takes remaining space
                     Expanded(
                       child: Text(
-                        'Rs: ${order.totalAmount}',
+                   'Rs: ${formatter.format(order.totalAmount)}',
                         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                         overflow: TextOverflow.ellipsis,
                       ),

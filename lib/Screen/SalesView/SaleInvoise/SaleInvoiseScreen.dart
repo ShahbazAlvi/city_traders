@@ -1071,6 +1071,7 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
   String? selectedSalesmanId;
   int currentPage = 1;
   int itemsPerPage = 5;
+  final formatted=NumberFormat("#,##,###");
 
   final TextEditingController _searchController = TextEditingController();
   String searchQuery = '';
@@ -1122,7 +1123,10 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
     }).length;
   }
 
-  String formatCurrency(double amount) => 'Rs:${amount.toStringAsFixed(2)}';
+  String formatCurrency(double amount) {
+    final formatter = NumberFormat('#,##,###');
+    return 'Rs: ${formatter.format(amount)}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1918,9 +1922,16 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
 // Invoice Details Bottom Sheet
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _InvoiceDetailsSheet extends StatelessWidget {
+class _InvoiceDetailsSheet extends StatefulWidget {
   final dynamic invoice;
-  const _InvoiceDetailsSheet({required this.invoice});
+   _InvoiceDetailsSheet({required this.invoice});
+
+  @override
+  State<_InvoiceDetailsSheet> createState() => _InvoiceDetailsSheetState();
+}
+
+class _InvoiceDetailsSheetState extends State<_InvoiceDetailsSheet> {
+  final formatted=NumberFormat('#,##,###');
 
   @override
   Widget build(BuildContext context) {
@@ -1973,7 +1984,7 @@ class _InvoiceDetailsSheet extends StatelessWidget {
                                 fontSize: 17, fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            invoice.invNo ?? 'N/A',
+                            widget.invoice.invNo ?? 'N/A',
                             style: TextStyle(
                                 color: Colors.grey.shade600, fontSize: 13),
                             overflow: TextOverflow.ellipsis,
@@ -1991,30 +2002,30 @@ class _InvoiceDetailsSheet extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
                     _buildDetailRow(
-                        Icons.receipt, 'Invoice Number', invoice.invNo ?? 'N/A'),
+                        Icons.receipt, 'Invoice Number', widget.invoice.invNo ?? 'N/A'),
                     const SizedBox(height: 14),
                     _buildDetailRow(
                       Icons.calendar_today,
                       'Invoice Date',
-                      DateFormat('dd MMMM yyyy').format(invoice.invoiceDate),
+                      DateFormat('dd MMMM yyyy').format(widget.invoice.invoiceDate),
                     ),
                     const SizedBox(height: 14),
                     _buildDetailRow(Icons.business, 'Customer',
-                        invoice.customerName ?? 'N/A'),
+                        widget.invoice.customerName ?? 'N/A'),
                     const SizedBox(height: 14),
                     _buildDetailRow(Icons.person_outline, 'Salesman',
-                        invoice.salesmanName ?? 'N/A'),
+                        widget.invoice.salesmanName ?? 'N/A'),
                     const SizedBox(height: 14),
                     _buildDetailRow(Icons.shopping_bag, 'Total Items',
-                        invoice.totalItems.toString()),
+                        widget.invoice.totalItems.toString()),
                     const SizedBox(height: 14),
                     _buildDetailRow(Icons.format_list_numbered, 'Total Quantity',
-                        invoice.totalQty.toString()),
+                        widget.invoice.totalQty.toString()),
                     const SizedBox(height: 14),
                     _buildDetailRow(
                       Icons.money,
                       'Gross Total',
-                      'Rs:${invoice.grossTotal?.toStringAsFixed(2) ?? '0.00'}',
+                      'Rs:${formatted.format(widget.invoice.grossTotal) ?? '0.00'}',
                     ),
                     const SizedBox(height: 16),
                     // Net total banner
@@ -2044,7 +2055,7 @@ class _InvoiceDetailsSheet extends StatelessWidget {
                               fit: BoxFit.scaleDown,
                               alignment: Alignment.centerRight,
                               child: Text(
-                                'Rs:${invoice.netTotal?.toStringAsFixed(2) ?? '0.00'}',
+                                'Rs:${widget.invoice.netTotal?.toStringAsFixed(2) ?? '0.00'}',
                                 style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 20,

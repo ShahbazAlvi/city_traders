@@ -203,6 +203,7 @@
 
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../Provider/Purchase_Provider/PayaAmountProvider/PayaAmountProvider.dart';
@@ -220,6 +221,7 @@ class _PayableAmountScreenState extends State<PayableAmountScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  final formatted=NumberFormat("#,##,###");
 
   @override
   void initState() {
@@ -367,7 +369,7 @@ class _PayableAmountScreenState extends State<PayableAmountScreen>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  "₨ ${provider.totalGrandBalance.toStringAsFixed(2)}",
+                  "₨ ${formatted.format(provider.totalGrandBalance)}",
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 22,
@@ -515,7 +517,7 @@ class _PayableAmountScreenState extends State<PayableAmountScreen>
             ],
           ),
           Text(
-            "₨ ${provider.totalGrandBalance.toStringAsFixed(2)}",
+            "₨ ${formatted.format(provider.totalGrandBalance)}",
             style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 17,
@@ -578,6 +580,7 @@ class _PayableListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final formatter = NumberFormat('#,###');
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(13),
@@ -625,21 +628,6 @@ class _PayableListItem extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 17,
-                      backgroundColor: _avatarColor.withOpacity(0.12),
-                      child: Text(
-                        supplierName.isNotEmpty
-                            ? supplierName[0].toUpperCase()
-                            : "?",
-                        style: TextStyle(
-                          color: _avatarColor,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
                     Flexible(
                       child: Text(
                         supplierName.toUpperCase(),
@@ -663,7 +651,7 @@ class _PayableListItem extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        "₨ ${grandBalance.toStringAsFixed(2)}",
+              "₨ ${formatter.format(grandBalance)}",
                         style: TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
