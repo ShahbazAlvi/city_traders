@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../Provider/Purchase_Provider/SupplierLedgerProvider/SupplierLedgerProvider.dart';
@@ -23,6 +24,8 @@ class SupplierLedgerScreen extends StatefulWidget {
 class _SupplierLedgerScreenState extends State<SupplierLedgerScreen> {
 
   String? selectedSupplierId;
+  final formatted=NumberFormat("#,##,###");
+  final formattedDate=DateFormat("dd,MMM,yyyy");
   DateTime? fromDate;
   DateTime? toDate;
   @override
@@ -130,77 +133,55 @@ class _SupplierLedgerScreenState extends State<SupplierLedgerScreen> {
                   ? const Center(child: Text("No Ledger Data Found"))
                   : SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: Column(
-                  children: [
-
-                    /// Header
-                    Container(
-                      color: Colors.grey.shade200,
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: const Row(
-                        children: [
-                          _HeaderCell("Date", 120),
-                          _HeaderCell("Ref No", 200),
-                          _HeaderCell("Debit", 100),
-                          _HeaderCell("Credit", 100),
-                          _HeaderCell("Balance", 120),
-                        ],
+                child: SizedBox(
+                  width: 640,
+                  child: Column(
+                    children: [
+                      // Header — unchanged
+                      Container(
+                        color: Colors.grey.shade200,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: const Row(
+                          children: [
+                            _HeaderCell("Date", 120),
+                            _HeaderCell("Ref No", 200),
+                            _HeaderCell("Debit", 100),
+                            _HeaderCell("Credit", 100),
+                            _HeaderCell("Balance", 120),
+                          ],
+                        ),
                       ),
-                    ),
 
-                    const Divider(height: 1),
+                      const Divider(height: 1),
 
-                    /// Ledger Rows
-                    SizedBox(
-                      width: 640,
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: provider.ledgerList.length,
-                        itemBuilder: (context, index) {
-
-                          final data = provider.ledgerList[index];
-
-                          return Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: Colors.grey.shade300,
+                      // ✅ ListView now inside Expanded properly
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: provider.ledgerList.length,
+                          itemBuilder: (context, index) {
+                            final data = provider.ledgerList[index];
+                            return Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(color: Colors.grey.shade300),
                                 ),
                               ),
-                            ),
-                            child: Row(
-                              children: [
-
-                                _Cell(data.date, 120),
-
-                                _Cell(data.refNo, 200),
-
-                                _Cell(
-                                  data.debit.toString(),
-                                  100,
-                                  color: Colors.red,
-                                ),
-
-                                _Cell(
-                                  data.credit.toString(),
-                                  100,
-                                  color: Colors.green,
-                                ),
-
-                                _Cell(
-                                  data.balance.toString(),
-                                  120,
-                                  isBold: true,
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                              child: Row(
+                                children: [
+                                  _Cell(_formatDate(data.date), 120),
+                                  _Cell(data.refNo, 200),
+                                  _Cell(data.debit.toString(), 100, color: Colors.red),
+                                  _Cell(data.credit.toString(), 100, color: Colors.green),
+                                  _Cell(data.balance.toString(), 120, isBold: true),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                    )
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -245,6 +226,27 @@ class _SupplierLedgerScreenState extends State<SupplierLedgerScreen> {
       firstDate: DateTime(2024),
       lastDate: DateTime(2030),
     );
+  }
+
+  String _formatDate(String rawDate) {
+    // Try ISO format first: "2025-03-13"
+    try {
+      return DateFormat('dd MMM yyyy').format(DateTime.parse(rawDate));
+    } catch (_) {}
+
+    // Try "Fri Mar 13" or "Fri Mar 13 2025" style
+    try {
+      // Append current year if missing
+      final parts = rawDate.trim().split(' ');
+      final withYear = parts.length == 3
+          ? '$rawDate ${DateTime.now().year}'
+          : rawDate;
+      return DateFormat('dd MMM yyyy')
+          .format(DateFormat('EEE MMM d yyyy').parse(withYear));
+    } catch (_) {}
+
+    // Final fallback — return as-is
+    return rawDate;
   }
 
   /// Date Field
