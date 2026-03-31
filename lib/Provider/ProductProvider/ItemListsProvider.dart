@@ -28,123 +28,52 @@ class ItemDetailsProvider with ChangeNotifier {
 
   String get baseUrl => "${ApiEndpoints.baseUrl}/items";
 
-  // ─── FETCH ALL ITEMS ────────────────────────────────────────────────────────
-  // Future<void> fetchItems() async {
-  //   try {
-  //     _isLoading = true;
-  //     notifyListeners();
-  //
-  //     final storedToken = await getToken();
-  //     if (storedToken == null) {
-  //       _errorMessage = "Token not found";
-  //       _isLoading = false;
-  //       notifyListeners();
-  //       return;
-  //     }
-  //
-  //     final response = await http.get(
-  //       Uri.parse(baseUrl),
-  //       headers: {
-  //         "Authorization": "Bearer $storedToken",
-  //         "Content-Type": "application/json",
-  //       },
-  //     );
-  //
-  //     if (response.statusCode == 200) {
-  //       final Map<String, dynamic> decoded = jsonDecode(response.body);
-  //       final List dataList = decoded['data']['data'] ?? [];
-  //       _items = dataList.map((e) => ItemDetails.fromJson(e)).toList();
-  //     } else if (response.statusCode == 401) {
-  //       _errorMessage = "Unauthorized: Please login again";
-  //     } else if (response.statusCode == 404) {
-  //       _errorMessage = "Endpoint not found";
-  //     } else {
-  //       _errorMessage = "Error: ${response.body}";
-  //     }
-  //   } catch (e) {
-  //     _errorMessage = "Fetch Error: $e";
-  //     print("Fetch Exception: $e");
-  //   }
-  //
-  //   _isLoading = false;
-  //   notifyListeners();
-  // }
-
-
+ // ─── FETCH ALL ITEMS ────────────────────────────────────────────────────────
   Future<void> fetchItems() async {
     try {
       _isLoading = true;
       notifyListeners();
 
-      final db = await DBHelper().db;
+      final storedToken = await getToken();
+      if (storedToken == null) {
+        _errorMessage = "Token not found";
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
 
-      if (await hasInternet()) {
-        // 🌐 ONLINE → API CALL
-        final storedToken = await getToken();
+      final response = await http.get(
+        Uri.parse(baseUrl),
+        headers: {
+          "Authorization": "Bearer $storedToken",
+          "Content-Type": "application/json",
+        },
+      );
 
-        final response = await http.get(
-          Uri.parse(baseUrl),
-          headers: {
-            "Authorization": "Bearer $storedToken",
-          },
-        );
-
-        if (response.statusCode == 200) {
-          final decoded = jsonDecode(response.body);
-          final List dataList = decoded['data']['data'];
-
-          _items = dataList.map((e) => ItemDetails.fromJson(e)).toList();
-
-          // 🔥 SAVE TO SQLITE
-          for (var item in _items) {
-            await db.insert(
-              'items',
-              {
-                'id': item.id,
-                'name': item.name,
-                'salePrice': item.salePrice,
-                'minLevelQty': item.minLevelQty,
-                'image': item.image,
-                'isSynced': 1,
-                'createdAt': item.createdAt,
-              },
-              conflictAlgorithm: ConflictAlgorithm.replace,
-            );
-          }
-        }
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> decoded = jsonDecode(response.body);
+        final List dataList = decoded['data']['data'] ?? [];
+        _items = dataList.map((e) => ItemDetails.fromJson(e)).toList();
+      } else if (response.statusCode == 401) {
+        _errorMessage = "Unauthorized: Please login again";
+      } else if (response.statusCode == 404) {
+        _errorMessage = "Endpoint not found";
       } else {
-        // 📴 OFFLINE → SQLITE DATA
-        final data = await db.query('items');
-
-        _items = data.map((e) => ItemDetails(
-          id: e['id'].toString(),
-          name: e['name'].toString(),
-          salePrice: e['salePrice'] as double,
-          minLevelQty: e['minLevelQty'] as double,
-          image: e['image']?.toString(),
-          sku: '',
-          itemDate: '',
-          generatedBarcode: '',
-          itemTypeId: 0,
-          categoryId: 0,
-          manufacturerId: 0,
-          supplierId: 0,
-          unitId: 0,
-          purchasePrice: 0,
-          isActive: true,
-          createdAt: e['createdAt'].toString(),
-          updatedAt: '',
-        )).toList();
+        _errorMessage = "Error: ${response.body}";
       }
     } catch (e) {
-      print("Error: $e");
+      _errorMessage = "Fetch Error: $e";
+      print("Fetch Exception: $e");
     }
 
     _isLoading = false;
     notifyListeners();
   }
 
-  // ─── GET TOKEN ───────────────────────────────────────────────────────────────
+
+
+
+ // ─── GET TOKEN ───────────────────────────────────────────────────────────────
   Future<String?> getToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();

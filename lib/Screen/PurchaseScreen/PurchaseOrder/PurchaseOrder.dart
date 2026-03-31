@@ -363,7 +363,7 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen>
                         child: const Icon(
                           Icons.storefront_rounded,
                           size: 18,
-                          color: Color(0xFF7B7BB5),
+                          color: AppColors.primary,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -401,8 +401,9 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen>
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [
-                              Color(0xFF00C896),
-                              Color(0xFF00A37A)
+                             AppColors.secondary,
+                              AppColors.primary,
+
                             ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
@@ -411,7 +412,7 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen>
                           boxShadow: [
                             BoxShadow(
                               color:
-                              const Color(0xFF00C896).withOpacity(0.3),
+                              AppColors.primary.withOpacity(0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
