@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 
 import '../../../Provider/Purchase_Order_Provider/Purchase_order_provider.dart';
 import '../../../compoents/AppColors.dart';
+import '../../../model/Purchase_Order_Model/purchaseOrderDetails.dart';
+import 'EditPurchaseOrder.dart';
 
 class PurchaseOrderScreen extends StatefulWidget {
   const PurchaseOrderScreen({super.key});
@@ -268,7 +270,14 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen>
             borderRadius: BorderRadius.circular(20),
             splashColor: AppColors.primary.withOpacity(0.06),
             highlightColor: AppColors.primary.withOpacity(0.03),
-            onTap: () {},
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => _PurchaseOrderDetailSheet(orderId: order.id),
+              );
+            },
             child: Padding(
               padding: const EdgeInsets.all(18),
               child: Column(
@@ -326,14 +335,19 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen>
                         icon: Icons.edit_outlined,
                         color: const Color(0xFF4A90D9),
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AddPurchaseOrder(
-                                nextOrderId: order.poNo,
+                          // In _buildOrderCard, replace the edit _actionButton onTap:
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => EditPurchaseOrder(orderId: order.id),
                               ),
-                            ),
-                          );
+                            ).then((updated) {
+                              if (updated == true) {
+                                context.read<PurchaseOrderProvider>().fetchPurchaseOrder();
+                              }
+                            });
+
                         },
                       ),
                       const SizedBox(width: 8),
@@ -870,6 +884,438 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen>
           ),
         );
       }),
+    );
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// Purchase Order Detail Bottom Sheet
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PurchaseOrderDetailSheet extends StatefulWidget {
+  final int orderId;
+  const _PurchaseOrderDetailSheet({required this.orderId});
+
+  @override
+  State<_PurchaseOrderDetailSheet> createState() =>
+      _PurchaseOrderDetailSheetState();
+}
+
+class _PurchaseOrderDetailSheetState
+    extends State<_PurchaseOrderDetailSheet> {
+  final _fmt = NumberFormat('#,##,###');
+  final _dateFmt = DateFormat('dd MMM yyyy');
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() =>
+        Provider.of<PurchaseOrderProvider>(context, listen: false)
+            .fetchSinglePurchaseOrder(widget.orderId));
+  }
+
+  Color _statusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'APPROVED':
+        return const Color(0xFF00C896);
+      case 'PENDING':
+        return const Color(0xFFFFAB00);
+      case 'REJECTED':
+        return const Color(0xFFFF4D4F);
+      default:
+        return const Color(0xFF8C8C8C);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<PurchaseOrderProvider>(
+      builder: (context, provider, _) {
+        final order = provider.selectedOrder;
+
+        return DraggableScrollableSheet(
+          initialChildSize: 0.75,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (_, controller) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius:
+                BorderRadius.vertical(top: Radius.circular(30)),
+              ),
+              child: Column(
+                children: [
+                  // ── Handle ──
+                  Container(
+                    margin: const EdgeInsets.only(top: 12),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ── Header ──
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(11),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(Icons.receipt_long_rounded,
+                              color: AppColors.primary, size: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Purchase Order',
+                                  style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold)),
+                              if (order != null)
+                                Text(order.poNo,
+                                    style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 13),
+                                    overflow: TextOverflow.ellipsis),
+                            ],
+                          ),
+                        ),
+                        if (order != null) _statusBadge(order.status),
+                      ],
+                    ),
+                  ),
+
+                  const Divider(height: 24),
+
+                  // ── Body ──
+                  Expanded(
+                    child: provider.isDetailLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : order == null
+                        ? Center(
+                        child: Text('No data found',
+                            style: TextStyle(
+                                color: Colors.grey.shade500)))
+                        : _buildContent(order, controller),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildContent(
+      PurchaseOrderDetailData order, ScrollController controller) {
+    return ListView(
+      controller: controller,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      children: [
+        // ── Info block ──
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8F9FC),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFF0F0F6)),
+          ),
+          child: Column(
+            children: [
+              _infoRow(Icons.calendar_today_outlined, 'PO Date',
+                  _dateFmt.format(order.poDate)),
+              const Divider(height: 20),
+              _infoRow(Icons.storefront_rounded, 'Supplier',
+                  order.supplierName),
+              const Divider(height: 20),
+              _infoRow(Icons.info_outline_rounded, 'Status',
+                  order.status),
+              if (order.taxPercent > 0) ...[
+                const Divider(height: 20),
+                _infoRow(Icons.percent_rounded, 'Tax %',
+                    '${order.taxPercent.toStringAsFixed(2)}%'),
+              ],
+              if (order.remarks != null &&
+                  order.remarks!.isNotEmpty) ...[
+                const Divider(height: 20),
+                _infoRow(Icons.notes_rounded, 'Remarks',
+                    order.remarks!),
+              ],
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 18),
+
+        // ── Items header ──
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Order Items',
+                style: TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.bold)),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.09),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '${order.details.length} item${order.details.length != 1 ? 's' : ''}',
+                style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 10),
+
+        // ── Item cards ──
+        ...order.details.asMap().entries.map(
+              (e) => _itemCard(e.value, e.key + 1),
+        ),
+
+        const SizedBox(height: 16),
+
+        // ── Sub total (if tax present) ──
+        if (order.taxAmount > 0) ...[
+          _totalRow('Sub Total', order.subTotal, isGray: true),
+          const SizedBox(height: 8),
+          _totalRow(
+              'Tax (${order.taxPercent.toStringAsFixed(2)}%)',
+              order.taxAmount,
+              isGray: true),
+          const SizedBox(height: 8),
+        ],
+
+        // ── Grand Total banner ──
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+                colors: [AppColors.secondary, AppColors.primary]),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.25),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Grand Total',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500)),
+              Text(
+                'Rs ${_fmt.format(order.grandTotal)}',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _itemCard(PurchaseOrderDetailItem item, int index) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF0F0F6)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Index badge
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.09),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            alignment: Alignment.center,
+            child: Text('$index',
+                style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13)),
+          ),
+          const SizedBox(width: 10),
+
+          // Name + SKU
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.itemName,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 13),
+                    overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                Text(item.itemSku,
+                    style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFFAAAAAA))),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // Chips + line total
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Row(
+                children: [
+                  _chip(
+                    '${item.qty.toStringAsFixed(item.qty % 1 == 0 ? 0 : 2)} ${item.unitName}',
+                    const Color(0xFFEEF4FF),
+                    const Color(0xFF4A90D9),
+                  ),
+                  const SizedBox(width: 4),
+                  _chip(
+                    'Rs ${_fmt.format(item.rate)}',
+                    const Color(0xFFFFF3E0),
+                    const Color(0xFFFF8C00),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 5),
+              Text(
+                'Rs ${_fmt.format(item.lineTotal)}',
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: Color(0xFF00C896)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _chip(String text, Color bg, Color fg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration:
+      BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      child: Text(text,
+          style: TextStyle(
+              fontSize: 10, fontWeight: FontWeight.w600, color: fg)),
+    );
+  }
+
+  Widget _infoRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+              color: const Color(0xFFF0F0F6),
+              borderRadius: BorderRadius.circular(9)),
+          child: Icon(icon, size: 16, color: const Color(0xFF888899)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style: const TextStyle(
+                      fontSize: 11, color: Color(0xFFAAAAAA))),
+              const SizedBox(height: 2),
+              Text(value,
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _totalRow(String label, double amount,
+      {bool isGray = false}) {
+    return Container(
+      padding:
+      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: isGray ? const Color(0xFFF8F9FC) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF0F0F6)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 14, color: Color(0xFF888899))),
+          Text('Rs ${_fmt.format(amount)}',
+              style: const TextStyle(
+                  fontSize: 14, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+
+  Widget _statusBadge(String status) {
+    final color = _statusColor(status);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(
+                  color: color, shape: BoxShape.circle)),
+          const SizedBox(width: 5),
+          Text(status,
+              style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12)),
+        ],
+      ),
     );
   }
 }

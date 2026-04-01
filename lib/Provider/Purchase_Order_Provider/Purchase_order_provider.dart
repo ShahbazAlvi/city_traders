@@ -8,16 +8,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../ApiLink/ApiEndpoint.dart';
 import '../../model/Purchase_Order_Model/Purchase_order_Model.dart';
+import '../../model/Purchase_Order_Model/purchaseOrderDetails.dart';
 
 class PurchaseOrderProvider with ChangeNotifier {
   List<PurchaseOrder> _orders = [];
   bool _isLoading = false;
-  String _error = '';
+  String? _error;
+
 
   // Gets
   List<PurchaseOrder> get orders => _orders;
   bool get isLoading => _isLoading;
-  String get error => _error;
+  String? get error => _error;
+
 
   Future<void> fetchPurchaseOrder() async {
     _isLoading = true;
@@ -161,6 +164,132 @@ class PurchaseOrderProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+  // Add import at top
+
+
+// Add inside the class
+  PurchaseOrderDetailData? _selectedOrder;
+  PurchaseOrderDetailData? get selectedOrder => _selectedOrder;
+
+  void clearSelectedOrder() {
+    _selectedOrder = null;
+    notifyListeners();
+  }
+
+  // Add this field
+  bool _isDetailLoading = false;
+  bool get isDetailLoading => _isDetailLoading;
+
+// Replace fetchSinglePurchaseOrder — use _isDetailLoading instead of _isLoading
+  Future<void> fetchSinglePurchaseOrder(int orderId) async {
+    _isDetailLoading = true;   // ✅ separate flag — does NOT affect list screen
+    _error = null;
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString("token");
+
+      if (token == null) {
+        _error = "Token not found!";
+        _isDetailLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      final response = await http.get(
+        Uri.parse('${ApiEndpoints.baseUrl}/purchase-orders/$orderId'),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+          "x-company-id": "2",
+          "Cache-Control": "no-cache",
+          "Pragma": "no-cache",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _selectedOrder = PurchaseOrderDetailModel.fromJson(data).data;
+        _error = null;
+      } else if (response.statusCode == 304 && _selectedOrder != null) {
+        // cached — do nothing
+      } else {
+        _error = "Failed to fetch order (${response.statusCode})";
+      }
+    } catch (e) {
+      _error = "Error: $e";
+    } finally {
+      _isDetailLoading = false;  // ✅
+      notifyListeners();
+    }
+  }
+
+  // Replace updatePurchaseOrder — use _isDetailLoading instead of _isLoading
+  Future<bool> updatePurchaseOrder({
+    required int orderId,
+    required String poNo,
+    required int supplierId,
+    required String status,
+    required DateTime poDate,
+    required List<Map<String, dynamic>> details,
+  }) async {
+    _isDetailLoading = true;   // ✅ won't freeze list screen
+    _error = null;
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString("token");
+
+      if (token == null) {
+        _error = "Token not found!";
+        _isDetailLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      final body = {
+        "po_no": poNo,
+        "supplier_id": supplierId,
+        "po_date": poDate.toIso8601String().substring(0, 10),
+        "status": status,
+        "details": details,
+      };
+
+      debugPrint("📦 Update PO Body: ${jsonEncode(body)}");
+
+      final response = await http.put(
+        Uri.parse('${ApiEndpoints.baseUrl}/purchase-orders/$orderId'),
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+          "x-company-id": "2",
+        },
+        body: jsonEncode(body),
+      );
+
+      debugPrint("📡 Status: ${response.statusCode}");
+      debugPrint("📡 Body: ${response.body}");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await fetchPurchaseOrder();
+        return true;
+      } else {
+        final res = jsonDecode(response.body);
+        _error = res["message"] ?? "Failed (${response.statusCode})";
+        return false;
+      }
+    } catch (e) {
+      _error = "Error: $e";
+      return false;
+    } finally {
+      _isDetailLoading = false;  // ✅
+      notifyListeners();
+    }
+  }
+
 
 
 }
