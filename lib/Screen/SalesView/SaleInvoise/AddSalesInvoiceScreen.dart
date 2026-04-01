@@ -137,10 +137,10 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
       rateController.clear();
     });
 
-    await Provider.of<OrderTakingProvider>(context, listen: false)
+    await Provider.of<SaleInvoicesProvider>(context, listen: false)
         .fetchSingleOrder(orderId);
 
-    final provider = Provider.of<OrderTakingProvider>(context, listen: false);
+    final provider = Provider.of<SaleInvoicesProvider>(context, listen: false);
     if (provider.selectedOrder != null) {
       setState(() {
         selectedCustomerId = provider.selectedOrder!.customerId;
@@ -215,7 +215,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   }
 
   Future<void> createInvoice() async {
-    final provider = Provider.of<OrderTakingProvider>(context, listen: false);
+    final provider = Provider.of<SaleInvoicesProvider>(context, listen: false);
     if (provider.selectedOrder == null) return;
 
     // Pre-flight: validate extra item IDs
@@ -307,7 +307,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<OrderTakingProvider>(context);
+    final provider = Provider.of<SaleInvoicesProvider>(context);
     final orderTotal = provider.selectedOrder?.details
         .fold(0.0, (sum, item) => sum + item.lineTotal) ??
         0.0;
@@ -355,8 +355,8 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
               const SizedBox(height: 12),
             ],
 
-            if (provider.orderData?.data == null ||
-                provider.orderData!.data.isEmpty)
+            if (provider.orderData?.invoices == null ||
+                provider.orderData!.invoices.isEmpty)
               _buildNoOrdersWidget(),
 
             if (provider.selectedOrder != null) ...[
@@ -391,8 +391,8 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
 
             if (provider.selectedOrder == null &&
                 !provider.isLoading &&
-                provider.orderData?.data != null &&
-                provider.orderData!.data.isNotEmpty)
+                provider.orderData?.invoices != null &&
+                provider.orderData!.invoices.isNotEmpty)
               _buildEmptyState(),
           ],
         ),
@@ -404,7 +404,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   // UI WIDGETS
   // ─────────────────────────────────────────────
 
-  Widget _buildSalesOrderDropdown(OrderTakingProvider provider) {
+  Widget _buildSalesOrderDropdown(SaleInvoicesProvider provider) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -440,14 +440,15 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
               color: Color(0xFF2563EB), size: 28),
         ),
         isExpanded: true,
-        items: _dropdownItems.isEmpty && provider.orderData?.data != null
-            ? provider.orderData!.data
-            .map((order) => DropdownMenuItem<int>(
-          value: int.parse(order.id),
-          child: Text(order.soNo),
-        ))
-            .toList()
-            : _dropdownItems,
+        // items: _dropdownItems.isEmpty && provider.orderData?.data != null
+        //     ? provider.orderData!.data
+        //     .map((order) => DropdownMenuItem<int>(
+        //   value: int.parse(order.id),
+        //   child: Text(order.soNo),
+        // ))
+        //     .toList()
+        //     : _dropdownItems,
+        items: _dropdownItems,
         onChanged: (id) {
           if (id != null) onOrderSelected(id);
         },

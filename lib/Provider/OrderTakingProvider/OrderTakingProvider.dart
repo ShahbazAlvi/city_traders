@@ -5,10 +5,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../ApiLink/ApiEndpoint.dart';
+import '../../model/OrderTakingModel/DetailsOrderModel.dart';
 import '../../model/OrderTakingModel/OrderTakingModel.dart';
 import 'package:http/http.dart'as http;
 
-import '../../model/SaleInvoiceModel/InvoiceOrderUpdate.dart';
+
 
 class OrderTakingProvider with ChangeNotifier{
   bool _isFetched = false;
@@ -208,9 +209,9 @@ class OrderTakingProvider with ChangeNotifier{
     }
   }
 
-
-  SingleOrderData? _selectedOrder;
-  SingleOrderData? get selectedOrder => _selectedOrder;
+  // ── Single order detail ──────────────────────
+  DetailsOrderData? _selectedOrder;
+  DetailsOrderData? get selectedOrder => _selectedOrder;
 
   Future<void> fetchSingleOrder(int orderId) async {
     _isLoading = true;
@@ -227,16 +228,18 @@ class OrderTakingProvider with ChangeNotifier{
         return;
       }
 
-      final url = Uri.parse('${ApiEndpoints.baseUrl}/sales-orders/$orderId');
-      final response = await http.get(url, headers: {
-        "Accept": "application/json",
-        "Authorization": "Bearer $token",
-        "x-company-id": "2",
-      });
+      final response = await http.get(
+        Uri.parse('${ApiEndpoints.baseUrl}/sales-orders/$orderId'),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+          "x-company-id": "2",
+        },
+      );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        _selectedOrder = SingleOrderModel.fromJson(data).data;
+        _selectedOrder = DetailsOrderModel.fromJson(data).data;
         _error = null;
       } else {
         _error = "Failed to fetch order (${response.statusCode})";
@@ -249,49 +252,18 @@ class OrderTakingProvider with ChangeNotifier{
     }
   }
 
-// Function to update order (send edited details)
-  Future<void> updateSelectedOrder() async {
-    if (_selectedOrder == null) return;
-
-    _isLoading = true;
+  void clearSelectedOrder() {
+    _selectedOrder = null;
     notifyListeners();
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString("token");
-
-      final url = Uri.parse("${ApiEndpoints.baseUrl}/sales-orders/${_selectedOrder!.id}");
-
-      // Map details
-      final details = _selectedOrder!.details.map((e) => {
-        "id": e.id,
-        "qty": e.qty,
-        "rate": e.rate,
-      }).toList();
-
-      final response = await http.put(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({"details": details}),
-      );
-
-      if (response.statusCode == 200) {
-        debugPrint("✅ Order updated successfully");
-        _error = null;
-        await fetchSingleOrder(_selectedOrder!.id); // refresh
-      } else {
-        _error = "Failed to update: ${response.statusCode}";
-      }
-    } catch (e) {
-      _error = "Error updating: $e";
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
   }
+
+
+  // Add this to OrderTakingProvider
+  void resetFetch() {
+    _isFetched = false;
+  }
+
+
 
 
 
