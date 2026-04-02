@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Provider/OrderTakingProvider/OrderTakingProvider.dart';
 import '../../../Provider/SaleManProvider/SaleManProvider.dart';
@@ -37,6 +38,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
   late String currentDate;
   bool isLoading = false;
   String selectedStatus = "APPROVED";
+  bool _isLocked = false;
 
   // final List<String> orderStatusList = [
   //   "DRAFT",
@@ -45,7 +47,8 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
   //   "CANCELLED",
   // ];
 
-  String? selectedSalesmanId;
+ // String? selectedSalesmanId;
+  String? _salesmanId;
   CustomerData? selectedCustomer;
   ItemDetails? selectedProduct;
   final formatted=NumberFormat("#,##,###");
@@ -64,13 +67,15 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
   @override
   void initState() {
     super.initState();
+    _loadSalesmanFromPrefs();
     currentDate = DateFormat('dd-MMM-yyyy').format(DateTime.now());
 
     Future.microtask(() => context.read<SaleManProvider>().fetchEmployees());
 
     if (widget.isUpdate && widget.existingOrder != null) {
       final order = widget.existingOrder!;
-      selectedSalesmanId = order.salesmanId?.toString();
+     // selectedSalesmanId
+      _salesmanId= order.salesmanId?.toString();
     }
   }
 
@@ -81,6 +86,15 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
       return sum + total;
     });
   }
+  Future<void> _loadSalesmanFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final id = prefs.getInt('salesman_id');
+    setState(() {
+      _salesmanId = id?.toString();
+      _isLocked = id != null; // salesman hai to lock, admin hai to open
+    });
+  }
+
 
   void addProductToOrder() {
     if (selectedProduct != null && qtyController.text.isNotEmpty) {
@@ -353,11 +367,18 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
         ],
       ),
       child: SalesmanDropdown(
-        selectedId: selectedSalesmanId,
-        onChanged: (value) {
-          setState(() => selectedSalesmanId = value);
+        selectedId: _salesmanId,
+        isLocked: _isLocked,       // ⬅️ salesman=true, admin=false
+        onChanged: (id) {
+          setState(() => _salesmanId = id);
         },
       ),
+      // child: SalesmanDropdown(
+      //   selectedId: selectedSalesmanId,
+      //   onChanged: (value) {
+      //     setState(() => selectedSalesmanId = value);
+      //   },
+      // ),
     );
   }
 
@@ -763,7 +784,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
   }
 
   Widget _buildSubmitButton(OrderTakingProvider orderProvider) {
-    final isFormValid = selectedSalesmanId != null &&
+    final isFormValid = _salesmanId != null &&    //selectedSalesmanId
         selectedCustomer != null &&
         orderItems.isNotEmpty;
 
@@ -802,7 +823,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
           try {
             await orderProvider.createOrder(
               orderId: widget.nextOrderId,
-              salesmanId: selectedSalesmanId!,
+              salesmanId: _salesmanId!,//selectedSalesmanId!,
               customerId: selectedCustomer!.id.toString(),
               status: selectedStatus,
               products: orderItems,

@@ -52,6 +52,8 @@ class LoginProvider with ChangeNotifier{
       if (response.statusCode == 200 && data["success"] == true) {
         message = "Login successful!";
 
+
+
         final prefs = await SharedPreferences.getInstance();
 
         final access = data["data"]["access"];
@@ -70,6 +72,20 @@ class LoginProvider with ChangeNotifier{
             'permission_codes',
             List<String>.from(access["permission_codes"] ?? [])
         );
+
+        // salesman id save
+        await prefs.setString('token', data["data"]["accessToken"]);
+        await prefs.setString('user', jsonEncode(data["data"]["user"]));
+
+// ⬅️ YEH LINE ADD KARO
+        final salesmanId = data["data"]["user"]["salesman_id"];
+        if (salesmanId != null) {
+          await prefs.setInt('salesman_id', salesmanId);
+        } else {
+          await prefs.remove('salesman_id'); // admin ke liye clear karo
+        }
+
+        // end
 
         // ⭐ OWNER CHECK (ADMIN)
         // Replace your is_owner block with this:
