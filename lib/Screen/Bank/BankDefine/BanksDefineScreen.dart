@@ -6,6 +6,8 @@ import '../../../compoents/AppColors.dart';
 import 'BankList/BankListScreen.dart';
 import 'BankList/PaymentVocherScreen/PaymentVoucherListScreen.dart';
 import 'BankList/ReceiptVoucherScreen/ReceiptVocherListScreen.dart';
+import 'DayBook.dart';
+import 'ExpenseScreen.dart';
 
 class BanksDefineScreen extends StatelessWidget {
   const BanksDefineScreen({super.key});
@@ -155,6 +157,24 @@ class BanksDefineScreen extends StatelessWidget {
                   color: Colors.black,
                   onTap: () {
                     Navigator.push(context,MaterialPageRoute(builder: (context)=>BankListScreen()));
+                  },
+                ),
+                DashboardCard(
+                      icon: Icons.equalizer_rounded,
+                      title: "Day Book",
+                      color: Colors.purpleAccent,
+                      onTap: () {
+                        Navigator.push(context,MaterialPageRoute(builder: (context)=>DaybookLedgerScreen()));
+
+                      },
+                    ),
+                DashboardCard(
+                  icon: Icons.equalizer_rounded,
+                  title: "Expense Voucher",
+                  color: Colors.purpleAccent,
+                  onTap: () {
+                    Navigator.push(context,MaterialPageRoute(builder: (context)=>ExpenseVoucherScreen()));
+
                   },
                 ),
               ]),
