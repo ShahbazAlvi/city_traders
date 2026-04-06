@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Provider/OrderTakingProvider/OrderTakingProvider.dart';
 import '../../../Provider/SaleInvoiceProvider/SaleInvoicesProvider.dart';
@@ -34,10 +35,22 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
   String searchQuery = '';
 
   bool canAddOrder = false;
+  String? _loggedInSalesmanId;
+  bool _isSalesmanLocked = false;
+
+  Future<void> _loadSalesmanId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final id = prefs.getInt('salesman_id');
+    setState(() {
+      _loggedInSalesmanId = id?.toString();
+      _isSalesmanLocked = id != null;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
+    _loadSalesmanId();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<SaleInvoicesProvider>(context, listen: false).fetchOrders();
     });
@@ -56,7 +69,10 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
   }
 
   List getPaginatedData(List data) {
-    final filteredData = data.where((invoice) {
+    final provider = Provider.of<SaleInvoicesProvider>(context, listen: false);
+    final sourceData = provider.getFilteredInvoices(_loggedInSalesmanId);
+
+    final filteredData = sourceData.where((invoice) {
       final query = searchQuery.toLowerCase();
       return invoice.invNo?.toLowerCase().contains(query) == true ||
           invoice.customerName?.toLowerCase().contains(query) == true ||
@@ -71,8 +87,8 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
 
   int get filteredItemCount {
     final provider = Provider.of<SaleInvoicesProvider>(context, listen: false);
-    final orders = provider.orderData?.invoices ?? [];
-    return orders.where((invoice) {
+    final sourceData = provider.getFilteredInvoices(_loggedInSalesmanId);
+    return sourceData.where((invoice) {
       final query = searchQuery.toLowerCase();
       return invoice.invNo?.toLowerCase().contains(query) == true ||
           invoice.customerName?.toLowerCase().contains(query) == true ||
@@ -300,8 +316,12 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: SalesmanDropdown(
-                  selectedId: selectedSalesmanId,
+                  selectedId: _isSalesmanLocked
+                      ? _loggedInSalesmanId
+                      : selectedSalesmanId,
+                  isLocked: _isSalesmanLocked,
                   onChanged: (value) {
+                    if (_isSalesmanLocked) return; // ← lock ho to kuch mat karo
                     setState(() {
                       selectedSalesmanId = value;
                       currentPage = 1;

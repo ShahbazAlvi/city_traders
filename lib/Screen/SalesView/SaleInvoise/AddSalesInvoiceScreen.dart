@@ -38,6 +38,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   TaxModel? selectedTax;
   late AnimationController _shimmerController;
   List<DropdownMenuItem<int>> _dropdownItems = [];
+  String? _loggedInSalesmanId;
 
   // Customer & Salesman override
   int? selectedCustomerId;
@@ -55,6 +56,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   @override
   void initState() {
     super.initState();
+    _loadSalesmanAndOrders();
     Future.microtask(() {
       Provider.of<LocationProvider>(context, listen: false).getLocations();
       Provider.of<CustomerProvider>(context, listen: false).fetchCustomers();
@@ -67,6 +69,16 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadOrders();
     });
+  }
+  Future<void> _loadSalesmanAndOrders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final id = prefs.getInt('salesman_id');
+    setState(() => _loggedInSalesmanId = id?.toString());
+
+    if (!mounted) return;
+    Provider.of<LocationProvider>(context, listen: false).getLocations();
+    Provider.of<CustomerProvider>(context, listen: false).fetchCustomers();
+    Provider.of<SaleManProvider>(context, listen: false).fetchEmployees();
   }
 
   @override
@@ -83,8 +95,16 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
 
     if (provider.orderData?.data != null &&
         provider.orderData!.data.isNotEmpty) {
+
+      // ← Salesman filter: admin = sab, salesman = sirf apne
+      final filteredOrders = _loggedInSalesmanId == null
+          ? provider.orderData!.data
+          : provider.orderData!.data.where((order) =>
+      order.salesmanId?.toString() == _loggedInSalesmanId
+      ).toList();
+
       setState(() {
-        _dropdownItems = provider.orderData!.data.map((order) {
+        _dropdownItems = filteredOrders.map((order) {
           return DropdownMenuItem<int>(
             value: int.parse(order.id),
             child: Container(

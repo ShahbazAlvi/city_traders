@@ -206,7 +206,8 @@ class _SalesDashboardState extends State<SalesDashboard> {
                 //     Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerLedgerScreen()));
                 //   },
                 // ),
-               // if (canViewAging)
+                if (canViewAging)
+               // if (canViewSalesInvoice)
                 DashboardCard(
                   icon: Icons.add_chart_rounded,
                   title: "Credit Aging",

@@ -23,7 +23,15 @@ class SaleInvoicesProvider with ChangeNotifier {
     token = prefs.getString("token");
   }
 
+// SaleInvoicesProvider.dart mein yeh getter add karo
+  List<dynamic> getFilteredInvoices(String? salesmanId) {
+    if (orderData == null) return [];
+    if (salesmanId == null) return orderData!.invoices; // Admin: sab
 
+    return orderData!.invoices.where((invoice) {
+      return invoice.salesmanId?.toString() == salesmanId;
+    }).toList();
+  }
 
 
 

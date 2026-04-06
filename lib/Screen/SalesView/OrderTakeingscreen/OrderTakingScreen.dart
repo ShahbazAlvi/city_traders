@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../Provider/OrderTakingProvider/OrderTakingProvider.dart';
 import '../../../compoents/AppColors.dart';
 import '../../../model/OrderTakingModel/DetailsOrderModel.dart';
@@ -31,6 +32,7 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
   bool canEditOrder   = false;
   bool canDeleteOrder = false;
   bool canViewOrder   = false;
+  String? _loggedInSalesmanId;
 
   @override
   void initState() {
@@ -40,6 +42,14 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
     });
     _scrollController.addListener(_onScroll);
     _loadPermissions();
+    _loadSalesmanId();
+  }
+  Future<void> _loadSalesmanId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final id = prefs.getInt('salesman_id');
+    setState(() {
+      _loggedInSalesmanId = id?.toString();
+    });
   }
 
   Future<void> _loadPermissions() async {
@@ -71,7 +81,10 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
   }
 
   List getPaginatedData(List data) {
-    final filteredData = data.where((order) {
+    // Salesman filter
+    final sourceData = provider.getFilteredOrders(_loggedInSalesmanId);
+
+    final filteredData = sourceData.where((order) {
       final query = searchQuery.toLowerCase();
       return order.soNo?.toLowerCase().contains(query) == true ||
           order.customerName?.toLowerCase().contains(query) == true ||
@@ -80,16 +93,14 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
 
     int start = (currentPage - 1) * itemsPerPage;
     int end = start + itemsPerPage;
-
     if (start >= filteredData.length) return [];
     if (end > filteredData.length) end = filteredData.length;
-
     return filteredData.sublist(start, end);
   }
 
   int get filteredItemCount {
-    if (provider.orderData == null) return 0;
-    return provider.orderData!.data.where((order) {
+    final sourceData = provider.getFilteredOrders(_loggedInSalesmanId);
+    return sourceData.where((order) {
       final query = searchQuery.toLowerCase();
       return order.soNo?.toLowerCase().contains(query) == true ||
           order.customerName?.toLowerCase().contains(query) == true ||

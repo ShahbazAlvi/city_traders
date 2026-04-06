@@ -27,6 +27,17 @@ class OrderTakingProvider with ChangeNotifier{
   String? get error => _error;
 
 
+  // Filtered orders for salesman
+  List<dynamic> getFilteredOrders(String? salesmanId) {
+    if (_orderData == null) return [];
+    if (salesmanId == null) return _orderData!.data; // Admin: sab dikho
+
+    return _orderData!.data.where((order) {
+      return order.salesmanId?.toString() == salesmanId;
+    }).toList();
+  }
+
+
   Future<void> FetchOrderTaking() async {
     if (_isFetched) return;
 
