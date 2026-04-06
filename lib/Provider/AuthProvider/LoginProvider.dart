@@ -84,6 +84,13 @@ class LoginProvider with ChangeNotifier{
         } else {
           await prefs.remove('salesman_id'); // admin ke liye clear karo
         }
+        
+        final userType = data["data"]["user"]["user_type"];
+        if (userType != null) {
+          await prefs.setString('user_type', userType);
+        } else {
+          await prefs.remove('user_type');
+        }
 
         // end
 

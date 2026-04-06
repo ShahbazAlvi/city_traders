@@ -90,7 +90,9 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
     final prefs = await SharedPreferences.getInstance();
     final id = prefs.getInt('salesman_id');
     setState(() {
-      _salesmanId = id?.toString();
+      if (!widget.isUpdate || _salesmanId == null) {
+        _salesmanId = id?.toString();
+      }
       _isLocked = id != null; // salesman hai to lock, admin hai to open
     });
   }

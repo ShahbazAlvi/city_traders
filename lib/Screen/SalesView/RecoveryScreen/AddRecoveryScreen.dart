@@ -5,6 +5,7 @@ import 'package:demo_distribution/compoents/AppTextfield.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../Provider/RecoveryProvider/RecoveryProvider.dart';
@@ -38,6 +39,7 @@ class _AddRecoveryScreenState extends State<AddRecoveryScreen> {
   final TextEditingController balanceController = TextEditingController();
 
   DateTime? selectedDate;
+  bool _isLocked = false;
 
   @override
   void initState() {
@@ -45,6 +47,18 @@ class _AddRecoveryScreenState extends State<AddRecoveryScreen> {
     selectedDate = DateTime.now();
     Provider.of<SaleManProvider>(context, listen: false).fetchEmployees();
     Provider.of<BankProvider>(context, listen: false).fetchBanks();
+    _loadSalesmanFromPrefs();
+  }
+
+  Future<void> _loadSalesmanFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final id = prefs.getInt('salesman_id');
+    setState(() {
+      if (selectedSalesmanId == null) {
+        selectedSalesmanId = id?.toString();
+      }
+      _isLocked = id != null; // Salesman is locked to self, Admin is open to choose
+    });
   }
 
   @override
@@ -144,6 +158,7 @@ class _AddRecoveryScreenState extends State<AddRecoveryScreen> {
                 title: "Salesman Information",
                 child: SalesmanDropdown(
                   selectedId: selectedSalesmanId,
+                  isLocked: _isLocked,
                   onChanged: (v) => setState(() => selectedSalesmanId = v),
                 ),
               ),
