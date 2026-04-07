@@ -16,6 +16,7 @@ import 'Provider/CustomerLedgerProvider/LedgerProvider.dart';
 import 'Provider/CustomerProvider/CustomerProvider.dart';
 import 'Provider/DailySaleReport/DailySaleReportProvider.dart';
 import 'Provider/DashBoardProvider.dart';
+import 'Provider/LoadingSheetProvider.dart';
 import 'Provider/OrderTakingProvider/OrderTakingProvider.dart';
 import 'Provider/ProductProvider/ItemCategoriesProvider.dart';
 import 'Provider/ProductProvider/ItemListsProvider.dart';
@@ -108,6 +109,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SaleManRecoveryProvider()),
         ChangeNotifierProvider(create: (_) => DaybookLedgerProvider()),
         ChangeNotifierProvider(create: (_) => ExpenseVoucherProvider()),
+        //LoadSheetProvider
+        ChangeNotifierProvider(create: (_) => LoadSheetProvider()),
 
 
 

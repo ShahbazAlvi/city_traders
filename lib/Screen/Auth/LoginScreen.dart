@@ -31,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
             height: screenHeight,
             width: screenWidth,
             child: Image.asset(
-              "assets/images/login-bg.png", // Add your image path
+              "assets/images/login-bg2.png", // Add your image path
               fit: BoxFit.cover,
             ),
           ),
@@ -88,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 8),
 
                       buildGlassTextField(
-                        hintText: "admin or admin@crm.com",
+                        hintText: "username or @gmail.com",
                         controller: loginProvider.emailController,
                         icon: Icons.email_outlined,
                       ),

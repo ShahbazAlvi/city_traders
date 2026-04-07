@@ -55,13 +55,20 @@ class OrderTakingProvider with ChangeNotifier{
         return;
       }
 
+      // Build URL with salesman_id filter if user is a salesman
+      final salesmanId = prefs.getInt('salesman_id');
+      String url = '${ApiEndpoints.baseUrl}/sales-orders';
+      if (salesmanId != null) {
+        url += '?salesman_id=$salesmanId';
+      }
+
       final response = await http.get(
-        Uri.parse('${ApiEndpoints.baseUrl}/sales-orders'),
+        Uri.parse(url),
         headers: {
           "Accept": "application/json",
           "Authorization": "Bearer $token",
           "x-company-id": "2",
-          "Cache-Control": "no-cache", // prevents 304 cache response
+          "Cache-Control": "no-cache",
         },
       );
 

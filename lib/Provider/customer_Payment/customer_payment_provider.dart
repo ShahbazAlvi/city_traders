@@ -27,8 +27,15 @@ class CustomerPaymentProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString("token");
 
+    // Build URL with salesman_id filter if user is a salesman
+    final salesmanId = prefs.getInt('salesman_id');
+    String url = '${ApiEndpoints.baseUrl}/customer-payments';
+    if (salesmanId != null) {
+      url += '?salesman_id=$salesmanId';
+    }
+
     final response = await http.get(
-      Uri.parse('${ApiEndpoints.baseUrl}/customer-payments'),
+      Uri.parse(url),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -103,6 +110,9 @@ class CustomerPaymentProvider with ChangeNotifier {
       // payment_balance = netTotal - paymentAmount
       final double balance = invoice.netTotal - paymentAmount;
 
+      // Include salesman_id if user is a salesman
+      final salesmanId = prefs.getInt('salesman_id');
+
       final Map<String, dynamic> body = {
         "payment_no": paymentNo,
         "payment_date": paymentDate,
@@ -116,6 +126,7 @@ class CustomerPaymentProvider with ChangeNotifier {
         "payment_mode": paymentMode,
         "bank_id": bankId,
         "status": status,
+        if (salesmanId != null) "salesman_id": salesmanId,
       };
 
       print("Submit Payment Body: ${jsonEncode(body)}");

@@ -1,5 +1,6 @@
 
 import 'dart:ui';
+import 'package:demo_distribution/Screen/SalesView/Load_Sheet_Screen/Load_Sheet.dart';
 import 'package:demo_distribution/Screen/SalesView/stock/stock_positions.dart';
 import 'package:flutter/material.dart';
 import '../../../compoents/AppColors.dart';
@@ -41,6 +42,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
   bool canViewLedger          = false;
   bool canViewAging           = false;
   bool canViewDailySales      = false;
+  bool canViewLoadSheet = false;
 
   @override
   void initState() {
@@ -57,6 +59,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
     final ledger           = await AccessControl.canDo("can_view_customer_ledger_report");
     final aging            = await AccessControl.canDo("can_view_credit_aging");
     final dailySales       = await AccessControl.canDo("can_view_daily_sales_report");
+    final loadSheet =await AccessControl.canDo("can_view_load_sheet");
 
     setState(() {
       canViewOrderBooking    = orderBooking;
@@ -68,6 +71,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
       canViewLedger          = ledger;
       canViewAging           = aging;
       canViewDailySales      = dailySales;
+      canViewLoadSheet = loadSheet;
     });
   }
   @override
@@ -134,6 +138,15 @@ class _SalesDashboardState extends State<SalesDashboard> {
                   color: Colors.tealAccent,
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const OrderTakingScreen()));
+                  },
+                ),
+                if (canViewLoadSheet)  //can_view_load_sheet
+                DashboardCard(
+                  icon: Icons.add_card,
+                  title: "Load Sheet",
+                  color: Colors.tealAccent,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LoadSheetScreen()));
                   },
                 ),
                 if (canViewSalesInvoice)

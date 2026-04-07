@@ -36,4 +36,11 @@ class AccessControl {
     if (await isAdmin()) return true;
     return hasPermission(permissionCode);
   }
+
+  /// Returns the salesman_id if logged-in user is a salesman, null if admin
+  static Future<int?> getSalesmanId() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!prefs.containsKey('salesman_id')) return null;
+    return prefs.getInt('salesman_id');
+  }
 }

@@ -887,7 +887,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ShaderMask(
                       shaderCallback: (b) =>
                           AppTheme.brandGradient.createShader(b),
-                      child: const Text('City Traders',
+                      child: const Text('Siddiqui Traders',
                           style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w800,

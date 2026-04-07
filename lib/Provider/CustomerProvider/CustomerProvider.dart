@@ -47,6 +47,35 @@ bool get isLoading=>_isLoading;
 
 
 
+// Add this getter inside CustomerProvider class:
+
+   List<CustomerData> _salesmanFilteredCustomers = [];
+
+   /// Call this once after fetchCustomers() to apply salesman filter.
+   Future<void> applyAccessFilter() async {
+     final prefs = await SharedPreferences.getInstance();
+     final salesmanId = prefs.containsKey('salesman_id')
+         ? prefs.getInt('salesman_id')
+         : null;
+
+     if (salesmanId == null) {
+       // Admin: show all customers
+       _salesmanFilteredCustomers = List.from(_customers);
+     } else {
+       // Salesman: show only their assigned customers
+       _salesmanFilteredCustomers = _customers
+           .where((c) => c.salesmanId == salesmanId)
+           .toList();
+     }
+     notifyListeners();
+   }
+
+   List<CustomerData> get accessFilteredCustomers => _salesmanFilteredCustomers;
+
+
+
+
+
 
 
   Future<void> fetchCustomers() async {
@@ -83,6 +112,7 @@ bool get isLoading=>_isLoading;
     }
 
     _isLoading = false;
+    await applyAccessFilter();
     notifyListeners();
   }
 

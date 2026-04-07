@@ -13,6 +13,7 @@ class CustomerData {
   final String address;
   final int? salesAreaId;
   final int? salesSubAreaId;
+  final int? salesmanId;
   final String openingBalance;
   final String? openingDate;
   final String creditLimit;
@@ -20,6 +21,7 @@ class CustomerData {
   final int isActive;
   final String createdAt;
   final String updatedAt;
+  final String? salesmanName;
 
   CustomerData({
     required this.id,
@@ -34,6 +36,7 @@ class CustomerData {
     required this.address,
     this.salesAreaId,
     this.salesSubAreaId,
+    this.salesmanId,
     required this.openingBalance,
     this.openingDate,
     required this.creditLimit,
@@ -41,6 +44,7 @@ class CustomerData {
     required this.isActive,
     required this.createdAt,
     required this.updatedAt,
+    this.salesmanName,
   });
 
   factory CustomerData.fromJson(Map<String, dynamic> json) {
@@ -57,6 +61,7 @@ class CustomerData {
       address: json['address'] ?? "",
       salesAreaId: json['sales_area_id'],
       salesSubAreaId: json['sales_sub_area_id'],
+      salesmanId: json['salesman_id'],
       openingBalance: json['opening_balance'] ?? "0",
       openingDate: json['opening_date'],
       creditLimit: json['credit_limit'] ?? "0",
@@ -64,6 +69,8 @@ class CustomerData {
       isActive: json['is_active'] ?? 0,
       createdAt: json['created_at'] ?? "",
       updatedAt: json['updated_at'] ?? "",
+      salesmanName: json['salesman_name'],
     );
   }
 }
+
