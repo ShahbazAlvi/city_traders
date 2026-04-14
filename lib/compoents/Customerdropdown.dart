@@ -10,12 +10,14 @@ class CustomerDropdown extends StatefulWidget {
   final int? selectedCustomerId;
   final ValueChanged<CustomerData?> onChanged;
   final bool showDetails;
+  final int? salesmanId;
 
   const CustomerDropdown({
     super.key,
     required this.onChanged,
     this.selectedCustomerId,
     this.showDetails = true,
+    this.salesmanId,
   });
 
   @override
@@ -66,6 +68,12 @@ class _CustomerDropdownState extends State<CustomerDropdown>
     }
   }
 
+  /// Returns the customer list filtered by salesmanId (if provided).
+  List<CustomerData> _applyFilter(List<CustomerData> all) {
+    if (widget.salesmanId == null) return all;
+    return all.where((c) => c.salesmanId == widget.salesmanId).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<CustomerProvider>(context);
@@ -74,18 +82,23 @@ class _CustomerDropdownState extends State<CustomerDropdown>
     if (provider.error!.isNotEmpty) return _buildErrorWidget(provider.error!);
     if (provider.accessFilteredCustomers.isEmpty) return _buildEmptyState();
 
+    // Apply salesman filter
+    final customers = _applyFilter(provider.accessFilteredCustomers);
+
+    if (customers.isEmpty) return _buildEmptyState();
+
     // Set initial selection if provided
     if (widget.selectedCustomerId != null && selectedCustomer == null) {
       try {
-        selectedCustomer = provider.accessFilteredCustomers
+        selectedCustomer = customers
             .firstWhere((c) => c.id == widget.selectedCustomerId);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _animationController.forward();
         });
       } catch (_) {
         selectedCustomer =
-        provider.accessFilteredCustomers.isNotEmpty
-            ? provider.accessFilteredCustomers.first
+        customers.isNotEmpty
+            ? customers.first
             : null;
       }
     }
@@ -95,7 +108,7 @@ class _CustomerDropdownState extends State<CustomerDropdown>
       children: [
         // ── Tappable field that triggers the search sheet ──────────────────
         GestureDetector(
-          onTap: () => _openSearchSheet(provider.accessFilteredCustomers),
+          onTap: () => _openSearchSheet(customers),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),

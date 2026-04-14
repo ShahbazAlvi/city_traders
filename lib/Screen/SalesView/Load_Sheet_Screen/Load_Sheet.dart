@@ -26,7 +26,6 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
   bool canEditsheet   = false;
   bool canDeletesheet = false;
   bool canViewsheet   = false;
- // String? _loggedInSalesmanId;
 
   @override
   void initState() {
@@ -177,7 +176,6 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
               children: [
                 Row(
                   children: [
-                    // Load No badge
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
@@ -197,7 +195,6 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
                       ),
                     ),
                     const Spacer(),
-                    // Status badge
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
@@ -338,7 +335,7 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  CREATE LOAD SHEET SCREEN
+//  CREATE LOAD SHEET SCREEN  (Multi‐step wizard)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class CreateLoadSheetScreen extends StatefulWidget {
@@ -350,9 +347,11 @@ class CreateLoadSheetScreen extends StatefulWidget {
 }
 
 class _CreateLoadSheetScreenState extends State<CreateLoadSheetScreen> {
-  final _formKey = GlobalKey<FormState>();
+  // ── Step tracking (0 = Info, 1 = Select Orders, 2 = Items/Submit) ──
+  int _currentStep = 0;
 
   // Controllers
+  final _formKey = GlobalKey<FormState>();
   final _loadNoController = TextEditingController();
   final _dateController = TextEditingController();
 
@@ -360,14 +359,13 @@ class _CreateLoadSheetScreenState extends State<CreateLoadSheetScreen> {
   String? _selectedSalesmanId;
   String? _selectedSalesmanName;
   DateTime _selectedDate = DateTime.now();
-  final List<LoadSheetDetail> _details = [];
-
-  // For "add item" row (temporary)
-  int? _pendingItemId;
-  String? _pendingItemName;
-  final _qtyController = TextEditingController();
-
   bool _isSalesmanLocked = false;
+
+  // Step 1: selected sales order IDs
+  final Set<int> _selectedSOIds = {};
+
+  // Step 2: editable qty map (item_id → qty)
+  final Map<int, double> _editableQty = {};
 
   @override
   void initState() {
@@ -375,9 +373,7 @@ class _CreateLoadSheetScreenState extends State<CreateLoadSheetScreen> {
     _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
     _checkSalesmanLock();
 
-    // Fetch items, employees, and load sheets (for auto load_no)
     Future.microtask(() async {
-      Provider.of<ItemDetailsProvider>(context, listen: false).fetchItems();
       Provider.of<SaleManProvider>(context, listen: false).fetchEmployees();
       final lsProvider = Provider.of<LoadSheetProvider>(context, listen: false);
       await lsProvider.fetchLoadSheets();
@@ -396,15 +392,15 @@ class _CreateLoadSheetScreenState extends State<CreateLoadSheetScreen> {
         : null;
 
     if (salesmanId != null && mounted) {
-      // Get salesman name from provider after it loads
       final provider =
       Provider.of<SaleManProvider>(context, listen: false);
       setState(() {
         _selectedSalesmanId = salesmanId.toString();
         _isSalesmanLocked = true;
       });
-      // Try to resolve name immediately if employees already loaded
       _resolveSalesmanName(provider, salesmanId.toString());
+      // Auto-fetch sales orders for locked salesman
+      _fetchOrdersForSalesman(salesmanId);
     }
   }
 
@@ -418,11 +414,15 @@ class _CreateLoadSheetScreenState extends State<CreateLoadSheetScreen> {
     }
   }
 
+  void _fetchOrdersForSalesman(int salesmanId) {
+    Provider.of<LoadSheetProvider>(context, listen: false)
+        .fetchSalesOrdersBySalesman(salesmanId);
+  }
+
   @override
   void dispose() {
     _loadNoController.dispose();
     _dateController.dispose();
-    _qtyController.dispose();
     super.dispose();
   }
 
@@ -448,64 +448,72 @@ class _CreateLoadSheetScreenState extends State<CreateLoadSheetScreen> {
     }
   }
 
-  void _addItem() {
-    final qty = double.tryParse(_qtyController.text.trim());
-    if (_pendingItemId == null || qty == null || qty <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a product and enter valid qty'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+  void _goToStep1() {
+    if (_selectedSalesmanId == null) {
+      _showSnack('Please select a salesman first');
       return;
     }
-
-    setState(() {
-      _details.add(LoadSheetDetail(
-        itemId: _pendingItemId!,
-        itemName: _pendingItemName ?? '',
-        qtyLoaded: qty,
-      ));
-      _pendingItemId = null;
-      _pendingItemName = null;
-      _qtyController.clear();
-    });
+    setState(() => _currentStep = 1);
   }
 
-  void _removeItem(int index) {
-    setState(() => _details.removeAt(index));
+  void _goToStep2() async {
+    if (_selectedSOIds.isEmpty) {
+      _showSnack('Please select at least one sales order');
+      return;
+    }
+    // Fetch items for selected orders
+    final provider = Provider.of<LoadSheetProvider>(context, listen: false);
+    await provider.fetchSOItems(_selectedSOIds.toList());
+
+    // Populate editable qty from fetched items
+    _editableQty.clear();
+    for (final item in provider.soItems) {
+      final itemId = item['item_id'] as int;
+      final qty = item['so_qty'] is double
+          ? item['so_qty'] as double
+          : double.tryParse(item['so_qty']?.toString() ?? '0') ?? 0;
+      _editableQty[itemId] = qty;
+    }
+
+    setState(() => _currentStep = 2);
+  }
+
+  void _goBack() {
+    if (_currentStep > 0) {
+      setState(() => _currentStep--);
+    } else {
+      Navigator.pop(context);
+    }
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    final provider = Provider.of<LoadSheetProvider>(context, listen: false);
 
-    if (_selectedSalesmanId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a salesman'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+    // Build details from items
+    final details = <LoadSheetDetail>[];
+    for (final item in provider.soItems) {
+      final itemId = item['item_id'] as int;
+      final qty = _editableQty[itemId] ?? 0;
+      if (qty > 0) {
+        details.add(LoadSheetDetail(
+          itemId: itemId,
+          itemName: item['item_name'] ?? '',
+          qtyLoaded: qty,
+        ));
+      }
+    }
+
+    if (details.isEmpty) {
+      _showSnack('No items with valid quantity');
       return;
     }
 
-    if (_details.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please add at least one product'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    final provider =
-    Provider.of<LoadSheetProvider>(context, listen: false);
     final success = await provider.createLoadSheet(
       loadNo: _loadNoController.text.trim(),
       loadDate: _dateController.text.trim(),
       salesmanId: int.parse(_selectedSalesmanId!),
-      details: _details,
+      details: details,
+      selectedSoIds: _selectedSOIds.toList(),
     );
 
     if (!mounted) return;
@@ -519,14 +527,17 @@ class _CreateLoadSheetScreenState extends State<CreateLoadSheetScreen> {
       );
       Navigator.pop(context);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.error ?? 'Failed to create'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      _showSnack(provider.error ?? 'Failed to create');
     }
+  }
+
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -541,315 +552,764 @@ class _CreateLoadSheetScreenState extends State<CreateLoadSheetScreen> {
       _resolveSalesmanName(salesmanProvider, _selectedSalesmanId!);
     }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        iconTheme: const IconThemeData(color: AppColors.text),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.secondary, AppColors.primary],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(30),
-              bottomRight: Radius.circular(30),
-            ),
-          ),
-        ),
-        title: const Text(
-          'New Load Sheet',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-            letterSpacing: 1.0,
-          ),
-        ),
-        centerTitle: true,
+    return WillPopScope(
+      onWillPop: () async {
+        if (_currentStep > 0) {
+          _goBack();
+          return false;
+        }
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F7FA),
+        appBar: _buildAppBar(),
+        body: _buildBody(provider),
+        bottomNavigationBar: _buildBottomBar(provider),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 120),
-          children: [
-            // ── Section: Load Info ─────────────────────────────────────────
-            _SectionCard(
-              title: 'Load Information',
-              icon: Icons.assignment_outlined,
-              children: [
-                // Load No
-                _FieldLabel(label: 'Load Number'),
-                TextFormField(
-                  controller: _loadNoController,
-                  readOnly: true,
-                  decoration: _inputDecoration(
-                    hint: 'Auto-generated',
-                    prefixIcon: Icons.tag_rounded,
-                  ),
-                ),
-                const SizedBox(height: 14),
+    );
+  }
 
-                // Load Date
-                _FieldLabel(label: 'Load Date'),
-                TextFormField(
-                  controller: _dateController,
-                  readOnly: true,
-                  onTap: _pickDate,
-                  decoration: _inputDecoration(
-                    hint: 'Select date',
-                    prefixIcon: Icons.calendar_today_rounded,
-                    suffixIcon: Icons.edit_calendar_rounded,
-                  ),
-                  validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Required' : null,
-                ),
-                const SizedBox(height: 14),
+  PreferredSizeWidget _buildAppBar() {
+    final titles = ['New Load Sheet', 'Select Orders', 'Confirm Items'];
+    return AppBar(
+      iconTheme: const IconThemeData(color: Colors.white),
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppColors.secondary, AppColors.primary],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(30),
+            bottomRight: Radius.circular(30),
+          ),
+        ),
+      ),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+        onPressed: _goBack,
+      ),
+      title: Text(
+        titles[_currentStep],
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 20,
+          letterSpacing: 1.0,
+        ),
+      ),
+      centerTitle: true,
+    );
+  }
 
-                // Salesman
-                _FieldLabel(label: 'Salesman'),
-                SalesmanDropdown(
-                  selectedId: _selectedSalesmanId,
-                  isLocked: _isSalesmanLocked,
-                  onChanged: (id) {
-                    if (!_isSalesmanLocked) {
-                      setState(() => _selectedSalesmanId = id);
+  Widget _buildBody(LoadSheetProvider provider) {
+    switch (_currentStep) {
+      case 0:
+        return _buildStep0(provider);
+      case 1:
+        return _buildStep1(provider);
+      case 2:
+        return _buildStep2(provider);
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  STEP 0: Load Info (Load No, Date, Salesman)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Widget _buildStep0(LoadSheetProvider provider) {
+    return Form(
+      key: _formKey,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 120),
+        children: [
+          // Step indicator
+          _buildStepIndicator(),
+          const SizedBox(height: 20),
+
+          _SectionCard(
+            title: 'Load Information',
+            icon: Icons.assignment_outlined,
+            children: [
+              _FieldLabel(label: 'Load Number'),
+              TextFormField(
+                controller: _loadNoController,
+                readOnly: true,
+                decoration: _inputDecoration(
+                  hint: 'Auto-generated',
+                  prefixIcon: Icons.tag_rounded,
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              _FieldLabel(label: 'Load Date'),
+              TextFormField(
+                controller: _dateController,
+                readOnly: true,
+                onTap: _pickDate,
+                decoration: _inputDecoration(
+                  hint: 'Select date',
+                  prefixIcon: Icons.calendar_today_rounded,
+                  suffixIcon: Icons.edit_calendar_rounded,
+                ),
+                validator: (v) =>
+                v == null || v.trim().isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 14),
+
+              _FieldLabel(label: 'Salesman'),
+              SalesmanDropdown(
+                selectedId: _selectedSalesmanId,
+                isLocked: _isSalesmanLocked,
+                onChanged: (id) {
+                  if (!_isSalesmanLocked) {
+                    setState(() {
+                      _selectedSalesmanId = id;
+                      _selectedSOIds.clear();
+                      _editableQty.clear();
+                    });
+                    if (id != null) {
+                      _fetchOrdersForSalesman(int.parse(id));
                     }
-                  },
+                  }
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  STEP 1: Select Sales Orders (checkboxes)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Widget _buildStep1(LoadSheetProvider provider) {
+    return Column(
+      children: [
+        // Step indicator
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: _buildStepIndicator(),
+        ),
+
+        // Select All bar
+        if (!provider.isLoadingSO && provider.salesOrders.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    '${_selectedSOIds.length} of ${provider.salesOrders.length} selected',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        if (_selectedSOIds.length == provider.salesOrders.length) {
+                          _selectedSOIds.clear();
+                        } else {
+                          _selectedSOIds.clear();
+                          for (final so in provider.salesOrders) {
+                            _selectedSOIds.add(so['id'] as int);
+                          }
+                        }
+                      });
+                    },
+                    child: Text(
+                      _selectedSOIds.length == provider.salesOrders.length
+                          ? 'Deselect All'
+                          : 'Select All',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+        const SizedBox(height: 8),
+
+        // Orders list
+        Expanded(
+          child: provider.isLoadingSO
+              ? const Center(
+            child: CircularProgressIndicator(),
+          )
+              : provider.soError != null
+              ? Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
+                const SizedBox(height: 12),
+                Text(provider.soError!, style: const TextStyle(color: Color(0xFF6B7280))),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () => _fetchOrdersForSalesman(int.parse(_selectedSalesmanId!)),
+                  child: const Text('Retry'),
                 ),
               ],
             ),
-
-            const SizedBox(height: 16),
-
-            // ── Section: Products ──────────────────────────────────────────
-            _SectionCard(
-              title: 'Products',
-              icon: Icons.inventory_2_outlined,
-              trailing: Text(
-                '${_details.length} item${_details.length == 1 ? '' : 's'}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).primaryColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+          )
+              : provider.salesOrders.isEmpty
+              ? Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Add item row
-                _FieldLabel(label: 'Select Product'),
-                ItemDetailsDropdown(
-                  onItemSelected: (item) {
-                    if (item != null) {
-                      setState(() {
-                        _pendingItemId = int.tryParse(item.id);
-                        _pendingItemName = item.name;
-                      });
-                    }
-                  },
-                ),
+                Icon(Icons.inbox_rounded, size: 56, color: Colors.grey.shade300),
                 const SizedBox(height: 12),
+                const Text(
+                  'No approved orders found',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'This salesman has no pending orders',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+                ),
+              ],
+            ),
+          )
+              : ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+            itemCount: provider.salesOrders.length,
+            itemBuilder: (context, index) {
+              final so = provider.salesOrders[index];
+              final soId = so['id'] as int;
+              final isSelected = _selectedSOIds.contains(soId);
+              final orderDate = so['order_date'] != null
+                  ? DateFormat('dd MMM yyyy').format(DateTime.parse(so['order_date']))
+                  : '—';
 
-                // Qty + Add button
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _FieldLabel(label: 'Qty to Load'),
-                          TextFormField(
-                            controller: _qtyController,
-                            keyboardType:
-                            const TextInputType.numberWithOptions(
-                                decimal: true),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                  RegExp(r'^\d+\.?\d{0,3}'))
-                            ],
-                            decoration: _inputDecoration(
-                              hint: '0',
-                              prefixIcon: Icons.numbers_rounded,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 22),
-                      child: SizedBox(
-                        height: 52,
-                        child: ElevatedButton.icon(
-                          onPressed: _addItem,
-                          icon: const Icon(Icons.add_rounded, size: 18),
-                          label: const Text('Add'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                            Theme.of(context).primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 18),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                        ),
-                      ),
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primary.withOpacity(0.04) : Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isSelected ? AppColors.primary.withOpacity(0.4) : const Color(0xFFE5E7EB),
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-
-                // Items list
-                if (_details.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF9FAFB),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: const Color(0xFFE5E7EB), width: 1),
-                    ),
-                    child: Column(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () {
+                    setState(() {
+                      if (isSelected) {
+                        _selectedSOIds.remove(soId);
+                      } else {
+                        _selectedSOIds.add(soId);
+                      }
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(
                       children: [
-                        // Header row
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 10),
-                          child: Row(
-                            children: const [
-                              Expanded(
-                                flex: 4,
-                                child: Text('Product',
-                                    style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF9CA3AF))),
-                              ),
-                              SizedBox(
-                                width: 70,
-                                child: Text('Qty',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF9CA3AF))),
-                              ),
-                              SizedBox(width: 32),
-                            ],
+                        // Checkbox
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.primary : Colors.transparent,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: isSelected ? AppColors.primary : Colors.grey.shade400,
+                              width: 2,
+                            ),
                           ),
+                          child: isSelected
+                              ? const Icon(Icons.check, size: 16, color: Colors.white)
+                              : null,
                         ),
-                        const Divider(height: 1, color: Color(0xFFE5E7EB)),
-                        ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _details.length,
-                          separatorBuilder: (_, __) => const Divider(
-                              height: 1, color: Color(0xFFE5E7EB)),
-                          itemBuilder: (context, index) {
-                            final detail = _details[index];
-                            return _DetailRow(
-                              detail: detail,
-                              index: index,
-                              onRemove: () => _removeItem(index),
-                              onQtyChanged: (newQty) {
-                                setState(() =>
-                                _details[index].qtyLoaded = newQty);
-                              },
-                            );
-                          },
-                        ),
-                        // Total row
-                        const Divider(height: 1, color: Color(0xFFE5E7EB)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 10),
-                          child: Row(
+                        const SizedBox(width: 14),
+
+                        // Order info
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Expanded(
-                                flex: 4,
-                                child: Text('Total',
-                                    style: TextStyle(
-                                        fontSize: 13,
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      so['so_no'] ?? '—',
+                                      style: TextStyle(
+                                        fontSize: 12,
                                         fontWeight: FontWeight.w700,
-                                        color: Color(0xFF111827))),
-                              ),
-                              SizedBox(
-                                width: 70,
-                                child: Text(
-                                  _details
-                                      .fold<double>(
-                                      0,
-                                          (sum, d) => sum + d.qtyLoaded)
-                                      .toStringAsFixed(1),
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: Theme.of(context).primaryColor,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFDCFCE7),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      so['status'] ?? '',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF16A34A),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 32),
+                              const SizedBox(height: 6),
+                              Text(
+                                so['customer_name'] ?? '—',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF374151),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(Icons.calendar_today_rounded, size: 12, color: Colors.grey.shade500),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    orderDate,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ],
-            ),
-          ],
+                ),
+              );
+            },
+          ),
         ),
-      ),
+      ],
+    );
+  }
 
-      // ── Bottom Submit Button ───────────────────────────────────────────────
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          12,
-          16,
-          12 + MediaQuery.of(context).padding.bottom,
+  // ─────────────────────────────────────────────────────────────────────────
+  //  STEP 2: Review & Edit Items
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Widget _buildStep2(LoadSheetProvider provider) {
+    return Column(
+      children: [
+        // Step indicator
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: _buildStepIndicator(),
         ),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border:
-          Border(top: BorderSide(color: Color(0xFFE5E7EB), width: 1)),
-        ),
-        child: SizedBox(
-          height: 52,
-          child: ElevatedButton(
-            onPressed: provider.isSubmitting ? null : _submit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor:
-              AppColors.primary.withOpacity(0.5),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+
+        // Summary bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary.withOpacity(0.08),
+                  AppColors.secondary.withOpacity(0.08),
+                ],
               ),
-              elevation: 0,
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: provider.isSubmitting
-                ? const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2, color: Colors.white),
-            )
-                : const Text(
-              'Create Load Sheet',
-              style: TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w700),
+            child: Row(
+              children: [
+                Icon(Icons.inventory_2_outlined, size: 20, color: AppColors.primary),
+                const SizedBox(width: 10),
+                Text(
+                  '${provider.soItems.length} Items from ${_selectedSOIds.length} Orders',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF374151),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
+
+        const SizedBox(height: 8),
+
+        // Items list
+        Expanded(
+          child: provider.isLoadingItems
+              ? const Center(child: CircularProgressIndicator())
+              : provider.itemsError != null
+              ? Center(
+            child: Text(provider.itemsError!,
+                style: const TextStyle(color: Colors.red)),
+          )
+              : provider.soItems.isEmpty
+              ? const Center(
+            child: Text('No items found',
+                style: TextStyle(
+                    fontSize: 16, color: Color(0xFF6B7280))),
+          )
+              : ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+            itemCount: provider.soItems.length,
+            itemBuilder: (context, index) {
+              final item = provider.soItems[index];
+              final itemId = item['item_id'] as int;
+              final itemName = item['item_name'] ?? '—';
+              final sku = item['item_sku'] ?? '';
+              final unitName = item['unit_name'] ?? '';
+              final categoryName = item['category_name'] ?? '';
+              final qty = _editableQty[itemId] ?? 0;
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // Index
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${index + 1}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Item info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            itemName,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF374151),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              if (sku.isNotEmpty) ...[
+                                Text(
+                                  sku,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                              if (unitName.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade50,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    unitName,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.blue.shade700,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Qty field
+                    SizedBox(
+                      width: 75,
+                      child: TextFormField(
+                        initialValue: qty % 1 == 0
+                            ? qty.toInt().toString()
+                            : qty.toStringAsFixed(2),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,3}')),
+                        ],
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                        ),
+                        onChanged: (v) {
+                          final parsed = double.tryParse(v);
+                          if (parsed != null && parsed >= 0) {
+                            _editableQty[itemId] = parsed;
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  BOTTOM BAR
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Widget _buildBottomBar(LoadSheetProvider provider) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        16, 12, 16, 12 + MediaQuery.of(context).padding.bottom,
       ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFE5E7EB), width: 1)),
+      ),
+      child: Row(
+        children: [
+          // Back button (except step 0)
+          if (_currentStep > 0)
+            Expanded(
+              flex: 1,
+              child: SizedBox(
+                height: 52,
+                child: OutlinedButton(
+                  onPressed: _goBack,
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.grey.shade300),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    'Back',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF374151),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (_currentStep > 0) const SizedBox(width: 12),
+
+          // Next / Submit button
+          Expanded(
+            flex: 2,
+            child: SizedBox(
+              height: 52,
+              child: ElevatedButton(
+                onPressed: provider.isSubmitting
+                    ? null
+                    : _currentStep == 0
+                    ? _goToStep1
+                    : _currentStep == 1
+                    ? _goToStep2
+                    : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: AppColors.primary.withOpacity(0.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                ),
+                child: provider.isSubmitting
+                    ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white),
+                )
+                    : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _currentStep == 2 ? 'Create Load Sheet' : 'Next',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (_currentStep < 2) ...[
+                      const SizedBox(width: 6),
+                      const Icon(Icons.arrow_forward_rounded, size: 18),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  STEP INDICATOR
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Widget _buildStepIndicator() {
+    final labels = ['Info', 'Orders', 'Items'];
+    return Row(
+      children: List.generate(3, (i) {
+        final isActive = i == _currentStep;
+        final isCompleted = i < _currentStep;
+        return Expanded(
+          child: Row(
+            children: [
+              if (i > 0)
+                Expanded(
+                  child: Container(
+                    height: 2,
+                    color: isCompleted ? AppColors.primary : Colors.grey.shade300,
+                  ),
+                ),
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: isCompleted
+                      ? AppColors.primary
+                      : isActive
+                      ? AppColors.primary.withOpacity(0.15)
+                      : Colors.grey.shade200,
+                  shape: BoxShape.circle,
+                  border: isActive
+                      ? Border.all(color: AppColors.primary, width: 2)
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: isCompleted
+                    ? const Icon(Icons.check, size: 14, color: Colors.white)
+                    : Text(
+                  '${i + 1}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: isActive ? AppColors.primary : Colors.grey.shade500,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                labels[i],
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                  color: isActive
+                      ? AppColors.primary
+                      : isCompleted
+                      ? AppColors.primary
+                      : Colors.grey.shade500,
+                ),
+              ),
+              if (i < 2)
+                Expanded(
+                  child: Container(
+                    height: 2,
+                    color: isCompleted ? AppColors.primary : Colors.grey.shade300,
+                  ),
+                ),
+            ],
+          ),
+        );
+      }),
     );
   }
 
@@ -890,142 +1350,6 @@ class _CreateLoadSheetScreenState extends State<CreateLoadSheetScreen> {
         borderRadius: BorderRadius.circular(12),
         borderSide:
         const BorderSide(color: Color(0xFFDC2626), width: 1),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  DETAIL ROW  (editable qty inline)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _DetailRow extends StatefulWidget {
-  final LoadSheetDetail detail;
-  final int index;
-  final VoidCallback onRemove;
-  final ValueChanged<double> onQtyChanged;
-
-  const _DetailRow({
-    required this.detail,
-    required this.index,
-    required this.onRemove,
-    required this.onQtyChanged,
-  });
-
-  @override
-  State<_DetailRow> createState() => _DetailRowState();
-}
-
-class _DetailRowState extends State<_DetailRow> {
-  late TextEditingController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = TextEditingController(
-        text: widget.detail.qtyLoaded.toStringAsFixed(
-            widget.detail.qtyLoaded % 1 == 0 ? 0 : 2));
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding:
-      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      child: Row(
-        children: [
-          // Index badge
-          Container(
-            width: 22,
-            height: 22,
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '${widget.index + 1}',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: Theme.of(context).primaryColor,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          // Name
-          Expanded(
-            flex: 4,
-            child: Text(
-              widget.detail.itemName,
-              style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF374151)),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          // Qty field
-          SizedBox(
-            width: 70,
-            child: TextFormField(
-              controller: _ctrl,
-              keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(
-                    RegExp(r'^\d+\.?\d{0,3}'))
-              ],
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w600),
-              decoration: InputDecoration(
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 8),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                      color: Colors.grey.shade300, width: 1),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                      color: Colors.grey.shade300, width: 1),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                      color: Theme.of(context).primaryColor,
-                      width: 1.5),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-              onChanged: (v) {
-                final parsed = double.tryParse(v);
-                if (parsed != null && parsed > 0) {
-                  widget.onQtyChanged(parsed);
-                }
-              },
-            ),
-          ),
-          // Remove
-          IconButton(
-            icon: const Icon(Icons.delete_outline_rounded,
-                color: Color(0xFFEF4444), size: 18),
-            onPressed: widget.onRemove,
-            padding: const EdgeInsets.all(6),
-            constraints: const BoxConstraints(),
-          ),
-        ],
       ),
     );
   }

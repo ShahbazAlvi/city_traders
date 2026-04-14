@@ -31,16 +31,7 @@ class _RecoveryListScreenState extends State<RecoveryListScreen>
   // Animation controller for shimmer effect
   late AnimationController _shimmerController;
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _shimmerController = AnimationController.unbounded(vsync: this)
-  //     ..repeat(min: 0, max: 1, period: const Duration(milliseconds: 1500));
-  //
-  //   final provider = Provider.of<RecoveryProvider>(context, listen: false);
-  //   provider.fetchRecoveryReport();
-  // }
-  // ✅ Permission Variables
+
   bool canAddOrder    = false;
   bool canEditOrder   = false;
   bool canDeleteOrder = false;

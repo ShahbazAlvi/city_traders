@@ -12,8 +12,19 @@ class DashboardProvider extends ChangeNotifier {
   DashboardData? data;
   String errorMsg = '';
 
-  String fromDate = '2026-01-01';
-  String toDate = '2026-12-31';
+  // Default to "This Month"
+  late String fromDate = _firstOfMonth();
+  late String toDate = _lastOfMonth();
+
+  static String _firstOfMonth() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, 1).toIso8601String().split('T')[0];
+  }
+
+  static String _lastOfMonth() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month + 1, 0).toIso8601String().split('T')[0];
+  }
 
   static const _mockJson = {
     // ... (keep this as fallback if needed for dev, but we are fixing API)

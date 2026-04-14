@@ -372,7 +372,11 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
         selectedId: _salesmanId,
         isLocked: _isLocked,       // ⬅️ salesman=true, admin=false
         onChanged: (id) {
-          setState(() => _salesmanId = id);
+          setState(() {
+            _salesmanId = id;
+            // Reset customer when salesman changes
+            selectedCustomer = null;
+          });
         },
       ),
       // child: SalesmanDropdown(
@@ -400,6 +404,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
       ),
       child: CustomerDropdown(
         selectedCustomerId: selectedCustomer?.id,
+        salesmanId: _salesmanId != null ? int.tryParse(_salesmanId!) : null,
         onChanged: (customer) {
           setState(() => selectedCustomer = customer);
         },
