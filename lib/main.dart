@@ -1,5 +1,9 @@
 
+import 'package:demo_distribution/Provider/setup/Department_provider/DepartmentProvider.dart';
+import 'package:demo_distribution/Provider/setup/Designation_provider/Designation_provider.dart';
+import 'package:demo_distribution/Provider/setup/SalesAreasProvider.dart';
 import 'package:demo_distribution/Provider/setup/tax_types_provider.dart';
+import 'package:demo_distribution/Screen/setup/Payroll/Designation/Designation_Screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -111,6 +115,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ExpenseVoucherProvider()),
         //LoadSheetProvider
         ChangeNotifierProvider(create: (_) => LoadSheetProvider()),
+        ChangeNotifierProvider(create: (_) => SalesAreasProvider()),
+        ChangeNotifierProvider(create: (_) => DepartmentProvider()),
+        ChangeNotifierProvider(create: (_) => DesignationProvider()),
 
 
 

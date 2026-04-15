@@ -1,6 +1,9 @@
 
 import 'dart:ui';
 import 'package:demo_distribution/Screen/SalesView/stock/stock_positions.dart';
+import 'package:demo_distribution/Screen/setup/Payroll/Department/Department_screen.dart';
+import 'package:demo_distribution/Screen/setup/Payroll/Designation/Designation_Screen.dart';
+import 'package:demo_distribution/Screen/setup/Sales_Areas/Sales_Areas_Screen.dart';
 import 'package:demo_distribution/Screen/setup/tax_tapes/tax_types_screen.dart';
 import 'package:flutter/material.dart';
 import '../../../compoents/AppColors.dart';
@@ -175,7 +178,7 @@ class _SalesDashboardState extends State<SetUpDashboard> {
                 ),
                 DashboardCard(
                   icon: Icons.person,
-                  title: "Employee Information",
+                  title: "Employee_provider Information",
                   color: Colors.orangeAccent,
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const EmployeesScreen()));
@@ -201,6 +204,30 @@ class _SalesDashboardState extends State<SetUpDashboard> {
                   color: Colors.tealAccent,
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const TaxTypesScreen() ));
+                  },
+                ),
+                DashboardCard(
+                  icon: Icons.area_chart,
+                  title: "Sales Areas ",
+                  color: Colors.blueAccent,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) =>SalesAreasScreen()));
+                  },
+                ),
+                DashboardCard(
+                  icon: Icons.local_fire_department,
+                  title: "Department",
+                  color: Colors.blueAccent,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) =>DepartmentScreen()));
+                  },
+                ),
+                DashboardCard(
+                  icon: Icons.settings_system_daydream,
+                  title: "Designation",
+                  color: Colors.blueAccent,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) =>DesignationScreen()));
                   },
                 ),
               ]),

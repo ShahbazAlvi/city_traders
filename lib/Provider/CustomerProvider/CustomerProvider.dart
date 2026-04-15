@@ -128,6 +128,22 @@ bool get isLoading=>_isLoading;
 
 
 
+  /// Compute the next auto-incremented customer code from the existing list.
+  String _getNextCustomerCode() {
+    int maxCode = 0;
+    for (final c in _customers) {
+      final parsed = int.tryParse(c.code ?? '0') ?? 0;
+      // Only consider valid 4-digit codes (0001 - 9999)
+      if (parsed > maxCode && parsed <= 9999) {
+        maxCode = parsed;
+      }
+    }
+    final nextCode = maxCode + 1;
+    final result = nextCode.toString().padLeft(4, '0');
+    print("AUTO CODE => maxCode: $maxCode, nextCode: $result");
+    return result;
+  }
+
   // Customers add
   Future<bool> addCustomer({
     required BuildContext context,
@@ -147,9 +163,19 @@ bool get isLoading=>_isLoading;
       return false;
     }
 
+    // Ensure customers are loaded so we can compute the next code
+    if (_customers.isEmpty) {
+      await fetchCustomers();
+    }
+
+    final nextCode = _getNextCustomerCode();
+    final nextCoaCode = "01-01-01-$nextCode";
+
     final url = Uri.parse("${ApiEndpoints.baseUrl}/customers");
 
     final body = {
+      "code": nextCode,
+      "coa_code": nextCoaCode,
       "name": CustomerNameController.text.trim(),
       "phone": ContactNumberController.text.trim(),
       "email": EmailController.text.trim(), // add EmailController to form
@@ -158,6 +184,7 @@ bool get isLoading=>_isLoading;
       "aging_days": int.tryParse(CreditDaysLimitController.text) ?? 0,
       "credit_limit": int.tryParse(CreditCashLimitController.text) ?? 0,
       "opening_balance": int.tryParse(OpeningBalanceController.text) ?? 0,
+      "opening_date": DateTime.now().toIso8601String().split('T').first,
       "is_active": 1,
       "sales_area_id": int.tryParse(AreaNameController.text) ?? 0,
       "sales_sub_area_id": int.tryParse(SubAreaController.text) ?? 0, // add SubAreaController to form
@@ -211,6 +238,7 @@ bool get isLoading=>_isLoading;
     CreditDaysLimitController.clear();
     CreditCashLimitController.clear();
     dateController.clear();
+    EmailController.clear();
 
     notifyListeners();
   }

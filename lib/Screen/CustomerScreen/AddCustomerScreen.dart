@@ -74,11 +74,13 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
               AppTextField(controller: provider.AddressController, label: "Address", validator: validator),
               SizedBox(height: 10,),
               AppTextField(controller: provider.OpeningBalanceController, label: "Opening Balance", validator: validator),
+              SizedBox(height: 10,),
               AppTextField(
                 controller: provider.EmailController,
                 label: "Email",
                 validator: validator,
               ),
+              SizedBox(height: 10,),
               AppTextField(
                 controller: provider.SubAreaController,
                 label: "Sub Area ID",

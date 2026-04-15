@@ -224,7 +224,7 @@ class SaleManProvider with ChangeNotifier {
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("✅ Employee added successfully!")),
+          const SnackBar(content: Text("✅ Employee_provider added successfully!")),
         );
 
         // Clear fields
@@ -295,7 +295,7 @@ class SaleManProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Employee updated successfully!")),
+          const SnackBar(content: Text("Employee_provider updated successfully!")),
         );
 
         fetchEmployees();
