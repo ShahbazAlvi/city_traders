@@ -1,70 +1,9 @@
-// import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
-//
-// import '../Provider/ProductProvider/manufactures_provider.dart';
-// import '../model/ProductModel/manufactures_Model.dart';
-//
-// class ManufacturesDropdown extends StatelessWidget {
-//   final int? selectedManufactureId;
-//   final Function(int?) onChanged;
-//   final bool isRequired;
-//   final String? hintText;
-//
-//   const ManufacturesDropdown({
-//     super.key,
-//     required this.selectedManufactureId,
-//     required this.onChanged,
-//     this.isRequired = false,
-//     this.hintText,
-//   });
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Consumer<ManufacturesProvider>(
-//       builder: (context, provider, child) {
-//         if (provider.isLoading) {
-//           return const Center(child: CircularProgressIndicator());
-//         }
-//
-//         if (provider.manufactures.isEmpty) {
-//           return const Text("No manufacturers available");
-//         }
-//
-//         return DropdownButtonFormField<int>(
-//           value: selectedManufactureId,
-//           decoration: InputDecoration(
-//             labelText: hintText ?? "Select Manufacturer",
-//             border: const OutlineInputBorder(),
-//           ),
-//           items: provider.manufactures.map((ManufacturesModel m) {
-//             return DropdownMenuItem<int>(
-//               value: m.id,
-//               child: Text(m.name),
-//             );
-//           }).toList(),
-//           onChanged: onChanged,
-//           validator: isRequired
-//               ? (value) {
-//             if (value == null) {
-//               return "Please select manufacturer";
-//             }
-//             return null;
-//           }
-//               : null,
-//         );
-//       },
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shimmer/shimmer.dart';
-
 import '../Provider/ProductProvider/manufactures_provider.dart';
 import '../model/ProductModel/manufactures_Model.dart';
 
-class ManufacturesDropdown extends StatelessWidget {
+class ManufacturesDropdown extends StatefulWidget {
   final int? selectedManufactureId;
   final Function(int?) onChanged;
   final bool isRequired;
@@ -85,267 +24,528 @@ class ManufacturesDropdown extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+  State<ManufacturesDropdown> createState() => _ManufacturesDropdownState();
+}
 
+class _ManufacturesDropdownState extends State<ManufacturesDropdown>
+    with SingleTickerProviderStateMixin {
+  ManufacturesModel? selectedManufacturer;
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    Future.microtask(() {
+      final provider = Provider.of<ManufacturesProvider>(context, listen: false);
+      if (provider.manufactures.isEmpty) {
+        provider.fetchManufactures();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openSearchSheet(List<ManufacturesModel> manufacturers) async {
+    final result = await showModalBottomSheet<ManufacturesModel>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ManufacturesSearchSheet(
+        manufacturers: manufacturers,
+        label: widget.labelText ?? widget.hintText ?? "Select Manufacturer",
+      ),
+    );
+
+    if (result != null) {
+      setState(() => selectedManufacturer = result);
+      widget.onChanged(result.id);
+      _animationController.forward(from: 0.0);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Consumer<ManufacturesProvider>(
       builder: (context, provider, child) {
-        if (provider.isLoading) {
-          return _buildShimmerLoader(isDark);
+        if (provider.isLoading) return _buildShimmerLoading();
+        if (provider.manufactures.isEmpty) return _buildEmptyState();
+
+        // Apply alphabetical sorting
+        final manufacturers = List<ManufacturesModel>.from(provider.manufactures);
+        manufacturers.sort((a, b) =>
+            a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+        // Set initial selection if provided
+        if (widget.selectedManufactureId != null && selectedManufacturer == null) {
+          try {
+            selectedManufacturer = manufacturers.firstWhere(
+              (m) => m.id == widget.selectedManufactureId,
+            );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _animationController.forward();
+            });
+          } catch (_) {}
         }
 
-        if (provider.manufactures.isEmpty) {
-          return _buildEmptyState(isDark);
-        }
-
-        return _buildDropdown(provider.manufactures, isDark, primaryColor);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            GestureDetector(
+              onTap: () => _openSearchSheet(manufacturers),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: AbsorbPointer(
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide:
+                            BorderSide(color: Colors.grey.shade200, width: 1),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide:
+                            BorderSide(color: Colors.grey.shade200, width: 1),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                            color: Theme.of(context).primaryColor, width: 1.5),
+                      ),
+                      prefixIcon: Icon(Icons.business_outlined,
+                          color: Colors.grey.shade600, size: 20),
+                      suffixIcon: Icon(Icons.arrow_drop_down,
+                          color: Colors.grey.shade600),
+                      errorText: widget.errorText,
+                    ),
+                    child: selectedManufacturer == null
+                        ? Text(
+                            widget.labelText ?? widget.hintText ?? "Select Manufacturer",
+                            style: TextStyle(
+                                color: Colors.grey.shade500, fontSize: 15),
+                          )
+                        : Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: Colors.orange,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  selectedManufacturer!.name,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black87,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
       },
     );
   }
 
-  Widget _buildShimmerLoader(bool isDark) {
-    return Shimmer.fromColors(
-      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
-      child: Container(
-        height: 56,
-        decoration: BoxDecoration(
-          color: isDark ? Colors.grey[900] : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-            width: 1,
-          ),
-        ),
+  Widget _buildShimmerLoading() {
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Colors.grey.shade300,
       ),
+      child: const ShimmerEffect(),
     );
   }
 
-  Widget _buildEmptyState(bool isDark) {
+  Widget _buildEmptyState() {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[900] : Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-          width: 1,
-        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade300, width: 1),
+        color: Colors.grey.shade50,
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[800] : Colors.grey[200],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.business_outlined,
-              size: 18,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
-            ),
-          ),
+          Icon(Icons.business_outlined, size: 24, color: Colors.grey.shade400),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              "No manufacturers available",
-              style: TextStyle(
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+          Text(
+            "No manufacturers found",
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildDropdown(
-      List<ManufacturesModel> manufacturers,
-      bool isDark,
-      Color primaryColor
-      ) {
-    // Find selected manufacturer for better display
-    final selectedManufacturer = manufacturers.firstWhere(
-          (m) => m.id == selectedManufactureId,
-      orElse: () => ManufacturesModel(id: 0, name: '', phone: '', address: '', isActive: 1, createdAt: '', updatedAt: ''),
-    );
+class _ManufacturesSearchSheet extends StatefulWidget {
+  final List<ManufacturesModel> manufacturers;
+  final String label;
+  const _ManufacturesSearchSheet({required this.manufacturers, required this.label});
+
+  @override
+  State<_ManufacturesSearchSheet> createState() => _ManufacturesSearchSheetState();
+}
+
+class _ManufacturesSearchSheetState extends State<_ManufacturesSearchSheet> {
+  final TextEditingController _searchController = TextEditingController();
+  List<ManufacturesModel> _filtered = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = widget.manufacturers;
+    _searchController.addListener(_onSearch);
+  }
+
+  void _onSearch() {
+    final query = _searchController.text.trim().toLowerCase();
+    setState(() {
+      _filtered = query.isEmpty
+          ? widget.manufacturers
+          : widget.manufacturers
+              .where((m) => m.name.toLowerCase().contains(query))
+              .toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black12 : Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+      height: MediaQuery.of(context).size.height * 0.75 + bottomInset,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Icon(Icons.business_outlined,
+                    color: Colors.grey.shade700, size: 22),
+                const SizedBox(width: 10),
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child:
+                      Icon(Icons.close, color: Colors.grey.shade500, size: 22),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              controller: _searchController,
+              autofocus: true,
+              style: const TextStyle(fontSize: 15, color: Colors.black87),
+              decoration: InputDecoration(
+                hintText: "Search manufacturer…",
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
+                prefixIcon:
+                    Icon(Icons.search, color: Colors.grey.shade500, size: 20),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? GestureDetector(
+                        onTap: () => _searchController.clear(),
+                        child: Icon(Icons.clear,
+                            color: Colors.grey.shade400, size: 18),
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "${_filtered.length} manufacturer${_filtered.length == 1 ? '' : 's'}",
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+              ),
+            ),
+          ),
+          Expanded(
+            child: _filtered.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.search_off,
+                            size: 48, color: Colors.grey.shade300),
+                        const SizedBox(height: 12),
+                        Text(
+                          "No manufacturers match\n'${_searchController.text}'",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: Colors.grey.shade500, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                    itemCount: _filtered.length,
+                    separatorBuilder: (_, __) => Divider(
+                      height: 1,
+                      color: Colors.grey.shade100,
+                    ),
+                    itemBuilder: (context, index) {
+                      final manufacturer = _filtered[index];
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => Navigator.of(context).pop(manufacturer),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 12),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.primaries[(manufacturer.id ?? 0) %
+                                          Colors.primaries.length]
+                                      .withOpacity(0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  (manufacturer.name).isNotEmpty
+                                      ? manufacturer.name[0].toUpperCase()
+                                      : "?",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.primaries[(manufacturer.id ?? 0) %
+                                        Colors.primaries.length],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _HighlightText(
+                                      text: manufacturer.name,
+                                      query: _searchController.text,
+                                    ),
+                                    if (manufacturer.phone.isNotEmpty)
+                                      Text(
+                                        manufacturer.phone,
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade500),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: manufacturer.isActive == 1
+                                      ? Colors.green
+                                      : Colors.grey,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
-      child: DropdownButtonFormField<int>(
-        value: selectedManufactureId,
-        decoration: InputDecoration(
-          labelText: labelText ?? hintText ?? "Select Manufacturer",
-          labelStyle: TextStyle(
-            color: isDark ? Colors.grey[400] : Colors.grey[600],
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-          hintText: hintText ?? "Choose a manufacturer",
-          hintStyle: TextStyle(
-            color: isDark ? Colors.grey[600] : Colors.grey[400],
-            fontSize: 14,
-          ),
-          errorText: errorText,
-          errorStyle: const TextStyle(
-            color: Color(0xFFE53935),
-            fontSize: 12,
-            fontWeight: FontWeight.w400,
-          ),
-          filled: true,
-          fillColor: isDark ? Colors.grey[900] : Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-              width: 1,
-            ),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-              width: 1,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: primaryColor,
-              width: 2,
-            ),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(
-              color: Color(0xFFE53935),
-              width: 1,
-            ),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(
-              color: Color(0xFFE53935),
-              width: 2,
-            ),
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-         // prefixIcon: showSearchIcon
+    );
+  }
+}
 
-          suffixIcon: const Icon(Icons.arrow_drop_down, size: 24),
-          suffixIconColor: isDark ? Colors.grey[400] : Colors.grey[600],
-        ),
-        items: manufacturers.map((ManufacturesModel m) {
-          final isSelected = m.id == selectedManufactureId;
-          return DropdownMenuItem<int>(
-            value: m.id,
-            child: Row(
-              children: [
-                Container(
-                  width: 4,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: isSelected ? primaryColor : Colors.transparent,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        m.name,
-                        style: TextStyle(
-                          color: isDark ? Colors.white : Colors.grey[900],
-                          fontSize: 14,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (m.id != null && m.id! > 0)
-                        const SizedBox(height: 2),
-                      // if (m.id != null && m.id! > 0)
-                      //   Text(
-                      //     'ID: ${m.id}',
-                      //     style: TextStyle(
-                      //       color: isDark ? Colors.grey[500] : Colors.grey[500],
-                      //       fontSize: 11,
-                      //       fontWeight: FontWeight.w400,
-                      //     ),
-                      //   ),
-                    ],
-                  ),
-                ),
-                if (isSelected)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Icon(
-                      Icons.check_circle,
-                      size: 18,
-                      color: primaryColor,
-                    ),
-                  ),
-              ],
-            ),
-          );
-        }).toList(),
-        onChanged: onChanged,
-        validator: isRequired
-            ? (value) {
-          if (value == null) {
-            return "Please select manufacturer";
-          }
-          return null;
-        }
-            : null,
-        icon: const SizedBox.shrink(),
-        isExpanded: true,
-        dropdownColor: isDark ? Colors.grey[900] : Colors.white,
-        menuMaxHeight: 400,
-        borderRadius: BorderRadius.circular(12),
-        // Show selected item with better visual feedback
-        selectedItemBuilder: (context) {
-          return manufacturers.map((m) {
-            return Row(
-              children: [
-                Icon(
-                  Icons.business_outlined,
-                  size: 18,
-                  color: primaryColor,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    m.name,
-                    style: TextStyle(
-                      color: isDark ? Colors.white : Colors.grey[900],
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            );
-          }).toList();
-        },
+class _HighlightText extends StatelessWidget {
+  final String text;
+  final String query;
+  const _HighlightText({required this.text, required this.query});
+
+  @override
+  Widget build(BuildContext context) {
+    if (query.isEmpty) {
+      return Text(text,
+          style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87));
+    }
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+    final matchIndex = lowerText.indexOf(lowerQuery);
+    if (matchIndex == -1) {
+      return Text(text,
+          style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87));
+    }
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(
+            fontSize: 15, fontWeight: FontWeight.w500, color: Colors.black87),
+        children: [
+          TextSpan(text: text.substring(0, matchIndex)),
+          TextSpan(
+            text: text.substring(matchIndex, matchIndex + query.length),
+            style: TextStyle(
+                backgroundColor:
+                    Theme.of(context).primaryColor.withOpacity(0.18),
+                color: Theme.of(context).primaryColor,
+                fontWeight: FontWeight.w700),
+          ),
+          TextSpan(text: text.substring(matchIndex + query.length)),
+        ],
       ),
     );
+  }
+}
+
+class ShimmerEffect extends StatefulWidget {
+  const ShimmerEffect({super.key});
+  @override
+  State<ShimmerEffect> createState() => _ShimmerEffectState();
+}
+
+class _ShimmerEffectState extends State<ShimmerEffect>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1500))
+      ..repeat(reverse: true);
+    _animation = Tween<double>(begin: -1.0, end: 1.0).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: ShaderMask(
+            shaderCallback: (bounds) {
+              return LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.grey.shade300,
+                  Colors.grey.shade100,
+                  Colors.grey.shade300,
+                ],
+                stops: const [0.3, 0.5, 0.7],
+                transform:
+                    SlidingGradientTransform(slidePercent: _animation.value),
+              ).createShader(bounds);
+            },
+            blendMode: BlendMode.srcOver,
+            child: Container(color: Colors.grey.shade200),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class SlidingGradientTransform extends GradientTransform {
+  final double slidePercent;
+  SlidingGradientTransform({required this.slidePercent});
+  @override
+  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
+    return Matrix4.translationValues(bounds.width * slidePercent, 0, 0);
   }
 }

@@ -241,24 +241,6 @@ class _ItemListScreenState extends State<ItemListScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: item.minLevelQty < 10
-                        ? Colors.red.withOpacity(0.1)
-                        : Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    "Stock: ${item.minLevelQty}",
-                    style: TextStyle(
-                      color: item.minLevelQty < 10 ? Colors.red : Colors.green,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
               ],
             ),
           ],

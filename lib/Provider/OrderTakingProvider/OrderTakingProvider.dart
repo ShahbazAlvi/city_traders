@@ -158,7 +158,8 @@ class OrderTakingProvider with ChangeNotifier{
   }
 
 
-  Future<void> deleteOrder(String orderId) async {
+  /// Returns null on success, or an error message string on failure.
+  Future<String?> deleteOrder(String orderId) async {
     try {
       _isLoading = true;
       notifyListeners();
@@ -179,16 +180,25 @@ class OrderTakingProvider with ChangeNotifier{
       if (response.statusCode == 200) {
         debugPrint("✅ Order deleted successfully");
 
-        _isFetched = false; // re-fetch
-        await FetchOrderTaking();
+        // Remove from local list immediately for instant UI refresh
+        _orderData?.data.removeWhere((o) => o.id.toString() == orderId);
+
+        _isLoading = false;
+        notifyListeners();
+        return null; // success
       } else {
-        _error = "Failed to delete: ${response.statusCode} - ${response.body}";
+        final errMsg = "Failed to delete: ${response.statusCode} - ${response.body}";
+        debugPrint(errMsg);
+        _isLoading = false;
+        notifyListeners();
+        return errMsg;
       }
     } catch (e) {
-      _error = "Error deleting: $e";
-    } finally {
+      final errMsg = "Error deleting: $e";
+      debugPrint(errMsg);
       _isLoading = false;
       notifyListeners();
+      return errMsg;
     }
   }
 

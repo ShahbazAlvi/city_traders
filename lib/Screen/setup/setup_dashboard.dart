@@ -30,43 +30,52 @@ class SetUpDashboard extends StatefulWidget {
 
 class _SalesDashboardState extends State<SetUpDashboard> {
   // Permissions
-  bool canViewOrderBooking = false;
-  bool canViewSalesInvoice = false;
-  bool canViewRecovery     = false;
-  bool canViewCustomerPayment = false;
-  bool canViewStockPosition   = false;
-  bool canViewReceivable      = false;
-  bool canViewLedger          = false;
-  bool canViewAging           = false;
-  bool canViewDailySales      = false;
+  bool canViewCategories   = false;
+  bool canViewItemTypes     = false;
+  bool canViewUnits         = false;
+  bool canViewItems         = false;
+  bool canViewLocations     = false;
+  bool canViewCustomers     = false;
+  bool canViewEmployees     = false;
+  bool canViewVehicles      = false;
+  bool canViewSuppliers     = false;
+  bool canViewTaxTypes      = false;
+  bool canViewSalesAreas    = false;
 
   @override
   void initState() {
     super.initState();
     _loadPermissions();
   }
-  Future<void> _loadPermissions() async {
-    final locations     = await AccessControl.canDo("can_view_location");
-    final salesInvoice     = await AccessControl.canDo("can_view_sales_invoice_cash");
-    final recovery         = await AccessControl.canDo("can_view_recovery_voucher");
-    final customerPayment  = await AccessControl.canDo("can_view_customer_payments");
-    final stockPosition    = await AccessControl.canDo("can_view_stock_position");
-    final receivable       = await AccessControl.canDo("can_view_amount_receivables");
-    final ledger           = await AccessControl.canDo("can_view_customer_ledger_report");
-    final aging            = await AccessControl.canDo("can_view_credit_aging");
-    final dailySales       = await AccessControl.canDo("can_view_daily_sales_report");
 
-    setState(() {
-      canViewOrderBooking    =  locations;
-      canViewSalesInvoice    = salesInvoice;
-      canViewRecovery        = recovery;
-      canViewCustomerPayment = customerPayment;
-      canViewStockPosition   = stockPosition;
-      canViewReceivable      = receivable;
-      canViewLedger          = ledger;
-      canViewAging           = aging;
-      canViewDailySales      = dailySales;
-    });
+  Future<void> _loadPermissions() async {
+    final categories   = await AccessControl.canDo("can_view_categories");
+    final itemTypes    = await AccessControl.canDo("can_view_item_types");
+    final units        = await AccessControl.canDo("can_view_units");
+    final items        = await AccessControl.canDo("can_view_item_definition");
+    final locations    = await AccessControl.canDo("can_view_locations");
+    final customers    = await AccessControl.canDo("can_view_customers");
+    final employees    = await AccessControl.canDo("can_view_employees");
+    final vehicles     = await AccessControl.canDo("can_view_vehicles");
+    final suppliers    = await AccessControl.canDo("can_view_suppliers");
+    final taxTypes     = await AccessControl.canDo("can_view_tax_types");
+    final salesAreas   = await AccessControl.canDo("can_view_sales_areas");
+
+    if (mounted) {
+      setState(() {
+        canViewCategories   = categories;
+        canViewItemTypes     = itemTypes;
+        canViewUnits         = units;
+        canViewItems         = items;
+        canViewLocations     = locations;
+        canViewCustomers     = customers;
+        canViewEmployees     = employees;
+        canViewVehicles      = vehicles;
+        canViewSuppliers     = suppliers;
+        canViewTaxTypes      = taxTypes;
+        canViewSalesAreas    = salesAreas;
+      });
+    }
   }
   @override
   Widget build(BuildContext context) {
@@ -127,109 +136,121 @@ class _SalesDashboardState extends State<SetUpDashboard> {
               _buildSectionTitle("🧩 Setup"),
               const SizedBox(height: 14),
               _buildCardGrid([
-                DashboardCard(
-                  icon: Icons.location_on_rounded,
-                  title: "location",
-                  color: Colors.limeAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LocationScreen()));
-                  },
-                ),
-                DashboardCard(
-                  icon: Icons.category,
-                  title: "Category Item",
-                  color: Colors.orangeAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoriesScreen()));
-                  },
-                ),
-
-                DashboardCard(
-                  icon: Icons.layers,
-                  title: "Items Type ",
-                  color: Colors.blueAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemTypeScreen()));
-                  },
-                ),
-                DashboardCard(
-                  icon: Icons.straighten,
-                  title: "Item Unit ",
-                  color: Colors.tealAccent  ,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemUnitScreen()));
-                  },
-                ),
-                DashboardCard(
-                  icon: Icons.inventory_2,
-                  title: "List of Items",
-                  color: Colors.lightBlueAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemListScreen()));
-                  },
-                ),
-                DashboardCard(
-                  icon: Icons.people,
-                  title: "Define Customers",
-                  color: Colors.pinkAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomersDefineScreen()));
-                  },
-                ),
-                DashboardCard(
-                  icon: Icons.person,
-                  title: "Employee_provider Information",
-                  color: Colors.orangeAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const EmployeesScreen()));
-                  },
-                ),
-                DashboardCard(
-                  icon: Icons.local_shipping,
-                  title: "Vehicle Information",
-                  color: Colors.blueAccent,
-                  onTap: () {},
-                ),
-                DashboardCard(
-                  icon: Icons.store_rounded,
-                  title: "Supplier",
-                  color: Colors.tealAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SupplierListScreen()));
-                  },
-                ),
-                DashboardCard(
-                  icon: Icons.store_rounded,
-                  title: "Tax Types",
-                  color: Colors.tealAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const TaxTypesScreen() ));
-                  },
-                ),
-                DashboardCard(
-                  icon: Icons.area_chart,
-                  title: "Sales Areas ",
-                  color: Colors.blueAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) =>SalesAreasScreen()));
-                  },
-                ),
-                DashboardCard(
-                  icon: Icons.local_fire_department,
-                  title: "Department",
-                  color: Colors.blueAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) =>DepartmentScreen()));
-                  },
-                ),
-                DashboardCard(
-                  icon: Icons.settings_system_daydream,
-                  title: "Designation",
-                  color: Colors.blueAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) =>DesignationScreen()));
-                  },
-                ),
+                if (canViewLocations)
+                  DashboardCard(
+                    icon: Icons.location_on_rounded,
+                    title: "location",
+                    color: Colors.limeAccent,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const LocationScreen()));
+                    },
+                  ),
+                if (canViewCategories)
+                  DashboardCard(
+                    icon: Icons.category,
+                    title: "Category Item",
+                    color: Colors.orangeAccent,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoriesScreen()));
+                    },
+                  ),
+                if (canViewItemTypes)
+                  DashboardCard(
+                    icon: Icons.layers,
+                    title: "Items Type ",
+                    color: Colors.blueAccent,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemTypeScreen()));
+                    },
+                  ),
+                if (canViewUnits)
+                  DashboardCard(
+                    icon: Icons.straighten,
+                    title: "Item Unit ",
+                    color: Colors.tealAccent,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemUnitScreen()));
+                    },
+                  ),
+                if (canViewItems)
+                  DashboardCard(
+                    icon: Icons.inventory_2,
+                    title: "List of Items",
+                    color: Colors.lightBlueAccent,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemListScreen()));
+                    },
+                  ),
+                if (canViewCustomers)
+                  DashboardCard(
+                    icon: Icons.people,
+                    title: "Define Customers",
+                    color: Colors.pinkAccent,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomersDefineScreen()));
+                    },
+                  ),
+                if (canViewEmployees)
+                  DashboardCard(
+                    icon: Icons.person,
+                    title: "Employee Information",
+                    color: Colors.orangeAccent,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const EmployeesScreen()));
+                    },
+                  ),
+                if (canViewVehicles)
+                  DashboardCard(
+                    icon: Icons.local_shipping,
+                    title: "Vehicle Information",
+                    color: Colors.blueAccent,
+                    onTap: () {},
+                  ),
+                if (canViewSuppliers)
+                  DashboardCard(
+                    icon: Icons.store_rounded,
+                    title: "Supplier",
+                    color: Colors.tealAccent,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const SupplierListScreen()));
+                    },
+                  ),
+                if (canViewTaxTypes)
+                  DashboardCard(
+                    icon: Icons.store_rounded,
+                    title: "Tax Types",
+                    color: Colors.tealAccent,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const TaxTypesScreen()));
+                    },
+                  ),
+                if (canViewSalesAreas)
+                  DashboardCard(
+                    icon: Icons.area_chart,
+                    title: "Sales Areas ",
+                    color: Colors.blueAccent,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => SalesAreasScreen()));
+                    },
+                  ),
+                if (canViewEmployees) ...[
+                  DashboardCard(
+                    icon: Icons.local_fire_department,
+                    title: "Department",
+                    color: Colors.blueAccent,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => DepartmentScreen()));
+                    },
+                  ),
+                  DashboardCard(
+                    icon: Icons.settings_system_daydream,
+                    title: "Designation",
+                    color: Colors.blueAccent,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => DesignationScreen()));
+                    },
+                  ),
+                ],
               ]),
 
               const SizedBox(height: 40),

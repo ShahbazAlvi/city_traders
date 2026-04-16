@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../Provider/ProductProvider/ItemUnitProvider.dart';
+import '../model/ProductModel/ItemUnitModel.dart';
 
-
-class ItemUnitDropdown extends StatelessWidget {
-  final String? selectedId;             // Selected ID
-  final Function(String) onSelected;    // Return ID to screen
+class ItemUnitDropdown extends StatefulWidget {
+  final String? selectedId;
+  final Function(String) onSelected;
   final String label;
 
   const ItemUnitDropdown({
@@ -17,28 +16,525 @@ class ItemUnitDropdown extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final provider = Provider.of<ItemUnitProvider>(context);
+  State<ItemUnitDropdown> createState() => _ItemUnitDropdownState();
+}
 
-    return provider.loading
-        ? const Center(child: CircularProgressIndicator())
-        : DropdownButtonFormField<String>(
-      value: selectedId,
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      items: provider.units.map((unit) {
-        return DropdownMenuItem<String>(
-          value: unit.id.toString(),
-          child: Text(unit.name ?? "Unnamed Unit"),
-        );
-      }).toList(),
-      onChanged: (value) {
-        if (value != null) {
-          onSelected(value); // Return selected ID
+class _ItemUnitDropdownState extends State<ItemUnitDropdown>
+    with SingleTickerProviderStateMixin {
+  ItemUnitModel? selectedUnit;
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    Future.microtask(() {
+      final provider = Provider.of<ItemUnitProvider>(context, listen: false);
+      if (provider.units.isEmpty) {
+        provider.fetchItemUnits();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openSearchSheet(List<ItemUnitModel> units) async {
+    final result = await showModalBottomSheet<ItemUnitModel>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ItemUnitSearchSheet(units: units, label: widget.label),
+    );
+
+    if (result != null) {
+      setState(() => selectedUnit = result);
+      widget.onSelected(result.id.toString());
+      _animationController.forward(from: 0.0);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ItemUnitProvider>(
+      builder: (context, provider, child) {
+        if (provider.loading) return _buildShimmerLoading();
+        if (provider.units.isEmpty) return _buildEmptyState();
+
+        // Apply alphabetical sorting
+        final units = List<ItemUnitModel>.from(provider.units);
+        units.sort((a, b) =>
+            (a.name ?? "").toLowerCase().compareTo((b.name ?? "").toLowerCase()));
+
+        // Set initial selection if provided
+        if (widget.selectedId != null && selectedUnit == null) {
+          try {
+            selectedUnit = units.firstWhere(
+              (u) => u.id.toString() == widget.selectedId,
+            );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _animationController.forward();
+            });
+          } catch (_) {}
         }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            GestureDetector(
+              onTap: () => _openSearchSheet(units),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: AbsorbPointer(
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide:
+                            BorderSide(color: Colors.grey.shade200, width: 1),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide:
+                            BorderSide(color: Colors.grey.shade200, width: 1),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                            color: Theme.of(context).primaryColor, width: 1.5),
+                      ),
+                      prefixIcon: Icon(Icons.straighten_outlined,
+                          color: Colors.grey.shade600, size: 20),
+                      suffixIcon: Icon(Icons.arrow_drop_down,
+                          color: Colors.grey.shade600),
+                    ),
+                    child: selectedUnit == null
+                        ? Text(
+                            widget.label,
+                            style: TextStyle(
+                                color: Colors.grey.shade500, fontSize: 15),
+                          )
+                        : Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: Colors.blue,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  selectedUnit!.name ?? "Unnamed Unit",
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black87,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
       },
     );
+  }
+
+  Widget _buildShimmerLoading() {
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Colors.grey.shade300,
+      ),
+      child: const ShimmerEffect(),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade300, width: 1),
+        color: Colors.grey.shade50,
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.straighten_outlined, size: 24, color: Colors.grey.shade400),
+          const SizedBox(width: 12),
+          Text(
+            "No units found",
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ItemUnitSearchSheet extends StatefulWidget {
+  final List<ItemUnitModel> units;
+  final String label;
+  const _ItemUnitSearchSheet({required this.units, required this.label});
+
+  @override
+  State<_ItemUnitSearchSheet> createState() => _ItemUnitSearchSheetState();
+}
+
+class _ItemUnitSearchSheetState extends State<_ItemUnitSearchSheet> {
+  final TextEditingController _searchController = TextEditingController();
+  List<ItemUnitModel> _filtered = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = widget.units;
+    _searchController.addListener(_onSearch);
+  }
+
+  void _onSearch() {
+    final query = _searchController.text.trim().toLowerCase();
+    setState(() {
+      _filtered = query.isEmpty
+          ? widget.units
+          : widget.units
+              .where((u) => (u.name ?? "").toLowerCase().contains(query))
+              .toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75 + bottomInset,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Icon(Icons.straighten_outlined,
+                    color: Colors.grey.shade700, size: 22),
+                const SizedBox(width: 10),
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child:
+                      Icon(Icons.close, color: Colors.grey.shade500, size: 22),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              controller: _searchController,
+              autofocus: true,
+              style: const TextStyle(fontSize: 15, color: Colors.black87),
+              decoration: InputDecoration(
+                hintText: "Search unit…",
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
+                prefixIcon:
+                    Icon(Icons.search, color: Colors.grey.shade500, size: 20),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? GestureDetector(
+                        onTap: () => _searchController.clear(),
+                        child: Icon(Icons.clear,
+                            color: Colors.grey.shade400, size: 18),
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "${_filtered.length} unit${_filtered.length == 1 ? '' : 's'}",
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+              ),
+            ),
+          ),
+          Expanded(
+            child: _filtered.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.search_off,
+                            size: 48, color: Colors.grey.shade300),
+                        const SizedBox(height: 12),
+                        Text(
+                          "No units match\n'${_searchController.text}'",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: Colors.grey.shade500, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                    itemCount: _filtered.length,
+                    separatorBuilder: (_, __) => Divider(
+                      height: 1,
+                      color: Colors.grey.shade100,
+                    ),
+                    itemBuilder: (context, index) {
+                      final unit = _filtered[index];
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => Navigator.of(context).pop(unit),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 12),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.primaries[(unit.id ?? 0) %
+                                          Colors.primaries.length]
+                                      .withOpacity(0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  (unit.name ?? "?").isNotEmpty
+                                      ? unit.name![0].toUpperCase()
+                                      : "?",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.primaries[(unit.id ?? 0) %
+                                        Colors.primaries.length],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _HighlightText(
+                                      text: unit.name ?? "Unnamed Unit",
+                                      query: _searchController.text,
+                                    ),
+                                    if (unit.shortName != null &&
+                                        unit.shortName!.isNotEmpty)
+                                      Text(
+                                        unit.shortName!,
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade500),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: unit.isActive == true
+                                      ? Colors.green
+                                      : Colors.grey,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HighlightText extends StatelessWidget {
+  final String text;
+  final String query;
+  const _HighlightText({required this.text, required this.query});
+
+  @override
+  Widget build(BuildContext context) {
+    if (query.isEmpty) {
+      return Text(text,
+          style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87));
+    }
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+    final matchIndex = lowerText.indexOf(lowerQuery);
+    if (matchIndex == -1) {
+      return Text(text,
+          style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87));
+    }
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(
+            fontSize: 15, fontWeight: FontWeight.w500, color: Colors.black87),
+        children: [
+          TextSpan(text: text.substring(0, matchIndex)),
+          TextSpan(
+            text: text.substring(matchIndex, matchIndex + query.length),
+            style: TextStyle(
+                backgroundColor:
+                    Theme.of(context).primaryColor.withOpacity(0.18),
+                color: Theme.of(context).primaryColor,
+                fontWeight: FontWeight.w700),
+          ),
+          TextSpan(text: text.substring(matchIndex + query.length)),
+        ],
+      ),
+    );
+  }
+}
+
+class ShimmerEffect extends StatefulWidget {
+  const ShimmerEffect({super.key});
+  @override
+  State<ShimmerEffect> createState() => _ShimmerEffectState();
+}
+
+class _ShimmerEffectState extends State<ShimmerEffect>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1500))
+      ..repeat(reverse: true);
+    _animation = Tween<double>(begin: -1.0, end: 1.0).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: ShaderMask(
+            shaderCallback: (bounds) {
+              return LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.grey.shade300,
+                  Colors.grey.shade100,
+                  Colors.grey.shade300,
+                ],
+                stops: const [0.3, 0.5, 0.7],
+                transform:
+                    SlidingGradientTransform(slidePercent: _animation.value),
+              ).createShader(bounds);
+            },
+            blendMode: BlendMode.srcOver,
+            child: Container(color: Colors.grey.shade200),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class SlidingGradientTransform extends GradientTransform {
+  final double slidePercent;
+  SlidingGradientTransform({required this.slidePercent});
+  @override
+  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
+    return Matrix4.translationValues(bounds.width * slidePercent, 0, 0);
   }
 }

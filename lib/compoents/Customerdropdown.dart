@@ -82,8 +82,9 @@ class _CustomerDropdownState extends State<CustomerDropdown>
     if (provider.error!.isNotEmpty) return _buildErrorWidget(provider.error!);
     if (provider.accessFilteredCustomers.isEmpty) return _buildEmptyState();
 
-    // Apply salesman filter
+    // Apply salesman filter and sort alphabetically
     final customers = _applyFilter(provider.accessFilteredCustomers);
+    customers.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
     if (customers.isEmpty) return _buildEmptyState();
 

@@ -517,6 +517,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool canViewBank = false;
   bool canViewSetUp = false;
 
+  // ── Dashboard content permission flags (matches React frontend) ──
+  bool canViewSalesTotal = false;
+  bool canViewPurchaseTotal = false;
+  bool canViewPaymentsInTotal = false;
+  bool canViewRecoveryKpi = false;
+  bool canViewSalesPurchaseGraph = false;
+  bool canViewInvoiceStatusChart = false;
+  bool canViewTopProductsChart = false;
+  bool canViewRecentActivity = false;
+  bool canViewRecoveryTotal = false;
+
   // ── Full nav definition (permission key = '' means always show) ──
   static final _allNavItems = <_NavItem>[
     _NavItem(
@@ -563,51 +574,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       screenBuilder: () => const ReportsDashboardScreen(),
     ),
     _NavItem(
-      icon: Icons.bar_chart,
+      icon: Icons.logout,
       label: 'Logout',
-      permissionKey: 'can_view_dashboard',
-      screenBuilder: () => const LoginScreen(),
+      isLogout: true,
+      alwaysVisible: true,
     ),
   ];
 
-  // const Divider(),
-  //           ListTile(
-  //             leading: const Icon(Icons.logout, color: Colors.red),
-  //             title: const Text('Logout'),
-  //             onTap: () async {
-  //               Navigator.pop(context); // close drawer first
-  //               final shouldLogout = await showDialog<bool>(
-  //                 context: context,
-  //                 builder: (context) => AlertDialog(
-  //                   title: const Text('Confirm Logout'),
-  //                   content: const Text('Are you sure you want to logout?'),
-  //                   actions: [
-  //                     TextButton(
-  //                       onPressed: () => Navigator.pop(context, false),
-  //                       child: const Text('Cancel'),
-  //                     ),
-  //                     ElevatedButton(
-  //                       style: ElevatedButton.styleFrom(
-  //                         backgroundColor: Colors.red,
-  //                       ),
-  //                       onPressed: () => Navigator.pop(context, true),
-  //                       child: const Text('Logout'),
-  //                     ),
-  //                   ],
-  //                 ),
-  //               );
-  //
-  //               if (shouldLogout ?? false) {
-  //                 // ✅ Navigate to LoginScreen after logout
-  //                 Navigator.pushReplacement(
-  //                   context,
-  //                   MaterialPageRoute(builder: (context) => LoginScreen()), // replace with your login screen
-  //                 );
-  //               }
 
-  // ── Derived: visible items based on permissions ──
   List<_NavItem> get _visibleItems => _allNavItems.where((item) {
     if (!_loaded) return false;
+    if (item.alwaysVisible) return true;
     if (isAdmin) return true; // admin sees everything
     return _hasPermission(item.permissionKey);
   }).toList();
@@ -646,6 +623,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final bank     = await AccessControl.canDo('can_view_accounts');
     final setup    = await AccessControl.canDo('can_view_setup');
 
+    // Dashboard content permissions (matching React frontend codes)
+    final salesTotal       = await AccessControl.canDo('view_sales_total');
+    final purchaseTotal    = await AccessControl.canDo('view_purchase_total');
+    final paymentsInTotal  = await AccessControl.canDo('view_payments_in_total');
+    final recoveryKpi      = await AccessControl.canDo('view_recovery_total');
+    final salesPurchGraph  = await AccessControl.canDo('view_sales_purchase_graph');
+    final invoiceChart     = await AccessControl.canDo('view_invoice_status_chart');
+    final topProducts      = await AccessControl.canDo('view_top_products_chart');
+    final recentAct        = await AccessControl.canDo('view_recent_sales_purchase_activity');
+    final recoveryTotal    = await AccessControl.canDo('view_recovery_total');
+
     setState(() {
       isAdmin          = admin;
       canViewStock     = stock;
@@ -655,6 +643,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       canViewDashboard = dashboard;
       canViewBank      = bank;
       canViewSetUp     = setup;
+
+      // Dashboard content
+      canViewSalesTotal         = salesTotal;
+      canViewPurchaseTotal      = purchaseTotal;
+      canViewPaymentsInTotal    = paymentsInTotal;
+      canViewRecoveryKpi        = recoveryKpi;
+      canViewSalesPurchaseGraph = salesPurchGraph;
+      canViewInvoiceStatusChart = invoiceChart;
+      canViewTopProductsChart   = topProducts;
+      canViewRecentActivity     = recentAct;
+      canViewRecoveryTotal      = recoveryTotal;
+
       _loaded          = true;
       _navIndex        = 0;
     });
@@ -688,7 +688,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => LoginScreen()),
-          (route) => false,
+              (route) => false,
         );
       }
     }
@@ -772,6 +772,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       Navigator.pop(context);
     }
 
+    if (item.isLogout) {
+      _handleLogout();
+      return;
+    }
+
     // If it's the first item (Dashboard), just update index — we're already here
     final idx = _visibleItems.indexOf(item);
     if (idx == 0) {
@@ -818,7 +823,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Expanded(
           child: Column(children: [
             SizedBox(height: 10,),
-           // _buildTopBar(isTablet),
+            // _buildTopBar(isTablet),
             Expanded(
               child: Consumer<DashboardProvider>(
                 builder: (_, prov, __) {
@@ -1070,118 +1075,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     child: _buildSidebar(true),
   );
 
-  // ─── Top Bar ──────────────────────────────────────────────────────────────
 
-  // Widget _buildTopBar(bool isTablet) => Container(
-  //   height: 62,
-  //   padding: const EdgeInsets.symmetric(horizontal: 16),
-  //   decoration: const BoxDecoration(
-  //     color: AppTheme.surface,
-  //     border:
-  //     Border(bottom: BorderSide(color: AppTheme.border)),
-  //     boxShadow: [
-  //       BoxShadow(
-  //           color: Color(0x08000000),
-  //           blurRadius: 8,
-  //           offset: Offset(0, 2))
-  //     ],
-  //   ),
-  //   child: Row(children: [
-  //     if (!isTablet)
-  //       IconButton(
-  //         onPressed: () =>
-  //             _scaffoldKey.currentState?.openDrawer(),
-  //         icon: ShaderMask(
-  //           shaderCallback: (b) =>
-  //               AppTheme.brandGradient.createShader(b),
-  //           child: const Icon(Icons.menu,
-  //               color: Colors.white, size: 22),
-  //         ),
-  //       ),
-  //     Expanded(
-  //       child: Column(
-  //         mainAxisAlignment: MainAxisAlignment.center,
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           ShaderMask(
-  //             shaderCallback: (b) =>
-  //                 AppTheme.brandGradient.createShader(b),
-  //             child: const Text('Dashboard Overview',
-  //                 style: TextStyle(
-  //                     color: Colors.white,
-  //                     fontWeight: FontWeight.w700,
-  //                     fontSize: 16)),
-  //           ),
-  //           const Text('Feb 28 – Mar 30, 2026',
-  //               style: TextStyle(
-  //                   color: AppTheme.textMuted, fontSize: 11)),
-  //         ],
-  //       ),
-  //     ),
-  //     // Admin badge
-  //     if (isAdmin)
-  //       Container(
-  //         margin: const EdgeInsets.only(right: 8),
-  //         padding: const EdgeInsets.symmetric(
-  //             horizontal: 10, vertical: 4),
-  //         decoration: BoxDecoration(
-  //           gradient: LinearGradient(colors: [
-  //             AppColors.secondary.withOpacity(0.15),
-  //             AppColors.primary.withOpacity(0.15),
-  //           ]),
-  //           borderRadius: BorderRadius.circular(20),
-  //           border: Border.all(
-  //               color: AppColors.primary.withOpacity(0.3)),
-  //         ),
-  //         child: ShaderMask(
-  //           shaderCallback: (b) =>
-  //               AppTheme.brandGradient.createShader(b),
-  //           child: const Text('Admin',
-  //               style: TextStyle(
-  //                   color: Colors.white,
-  //                   fontSize: 10,
-  //                   fontWeight: FontWeight.w700)),
-  //         ),
-  //       ),
-  //     // Live badge
-  //     Container(
-  //       padding: const EdgeInsets.symmetric(
-  //           horizontal: 12, vertical: 5),
-  //       decoration: BoxDecoration(
-  //         gradient: LinearGradient(colors: [
-  //           AppColors.secondary.withOpacity(0.12),
-  //           AppColors.primary.withOpacity(0.12)
-  //         ]),
-  //         borderRadius: BorderRadius.circular(8),
-  //         border: Border.all(
-  //             color: AppColors.primary.withOpacity(0.25)),
-  //       ),
-  //       child: ShaderMask(
-  //         shaderCallback: (b) =>
-  //             AppTheme.brandGradient.createShader(b),
-  //         child: const Text('● Live',
-  //             style: TextStyle(
-  //                 color: Colors.white,
-  //                 fontSize: 12,
-  //                 fontWeight: FontWeight.w700)),
-  //       ),
-  //     ),
-  //     const SizedBox(width: 4),
-  //     Consumer<DashboardProvider>(
-  //       builder: (_, prov, __) => IconButton(
-  //         onPressed: prov.state == LoadState.loading
-  //             ? null
-  //             : prov.refresh,
-  //         icon: ShaderMask(
-  //           shaderCallback: (b) =>
-  //               AppTheme.brandGradient.createShader(b),
-  //           child: const Icon(Icons.refresh,
-  //               color: Colors.white, size: 20),
-  //         ),
-  //       ),
-  //     ),
-  //   ]),
-  // );
 
   PreferredSizeWidget _buildAppBar(bool isTablet) {
     return AppBar(
@@ -1339,7 +1233,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const Icon(Icons.error_outline, size: 48, color: AppTheme.red),
           const SizedBox(height: 16),
           Text(
-            'API Error',
+            'API Error again Loading',
             style: const TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 18,
@@ -1373,51 +1267,92 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildBody(
       DashboardData d, bool isTablet, bool isDesktop) {
+
+    // Build the middle row: trend chart + invoice/recovery cards
+    final showTrend    = canViewSalesPurchaseGraph;
+    final showInvoice  = canViewInvoiceStatusChart;
+    final showRecovery = canViewRecoveryTotal;
+    final showProducts = canViewTopProductsChart;
+    final showActivity = canViewRecentActivity;
+
+    // Collect visible right-side cards for the tablet layout
+    final rightCards = <Widget>[
+      if (showInvoice)  _InvoiceCard(status: d.invoiceStatus),
+      if (showRecovery) _RecoveryCard(summary: d.recoverySummary),
+    ];
+
+    // Collect visible bottom-row cards
+    final bottomLeft  = showProducts  ? _ProductsCard(products: d.topProducts)    : null;
+    final bottomRight = showActivity  ? _ActivityCard(activity: d.recentActivity) : null;
+
     return SingleChildScrollView(
       padding: EdgeInsets.all(isDesktop ? 24 : 16),
       child:
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _KpiGrid(d: d, isTablet: isTablet, isDesktop: isDesktop),
+        // ── KPI Cards (permission-gated per card) ──
+        _KpiGrid(
+          d: d,
+          isTablet: isTablet,
+          isDesktop: isDesktop,
+          showSales: canViewSalesTotal,
+          showPurchases: canViewPurchaseTotal,
+          showPaymentsIn: canViewPaymentsInTotal,
+          showRecoveries: canViewRecoveryKpi,
+        ),
         const SizedBox(height: 20),
-        if (isTablet)
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Expanded(
-                flex: 3,
-                child: _TrendChart(trend: d.monthlyTrend)),
-            const SizedBox(width: 16),
-            Expanded(
-              flex: 2,
-              child: Column(children: [
-                _InvoiceCard(status: d.invoiceStatus),
+
+        // ── Trend Chart + Invoice/Recovery ──
+        if (showTrend || rightCards.isNotEmpty)
+          if (isTablet)
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (showTrend)
+                Expanded(
+                    flex: 3,
+                    child: _TrendChart(trend: d.monthlyTrend)),
+              if (showTrend && rightCards.isNotEmpty)
+                const SizedBox(width: 16),
+              if (rightCards.isNotEmpty)
+                Expanded(
+                  flex: 2,
+                  child: Column(children: [
+                    for (var i = 0; i < rightCards.length; i++) ...[
+                      if (i > 0) const SizedBox(height: 16),
+                      rightCards[i],
+                    ],
+                  ]),
+                ),
+            ])
+          else
+            Column(children: [
+              if (showTrend)  _TrendChart(trend: d.monthlyTrend),
+              if (showTrend && rightCards.isNotEmpty)
                 const SizedBox(height: 16),
-                _RecoveryCard(summary: d.recoverySummary),
-              ]),
-            ),
-          ])
-        else
-          Column(children: [
-            _TrendChart(trend: d.monthlyTrend),
-            const SizedBox(height: 16),
-            _InvoiceCard(status: d.invoiceStatus),
-            const SizedBox(height: 16),
-            _RecoveryCard(summary: d.recoverySummary),
-          ]),
-        const SizedBox(height: 20),
-        if (isDesktop)
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SizedBox(
-                width: 300,
-                child: _ProductsCard(products: d.topProducts)),
-            const SizedBox(width: 16),
-            Expanded(
-                child: _ActivityCard(activity: d.recentActivity)),
-          ])
-        else
-          Column(children: [
-            _ProductsCard(products: d.topProducts),
-            const SizedBox(height: 16),
-            _ActivityCard(activity: d.recentActivity),
-          ]),
+              for (var i = 0; i < rightCards.length; i++) ...[
+                if (i > 0) const SizedBox(height: 16),
+                rightCards[i],
+              ],
+            ]),
+
+        // ── Products + Activity ──
+        if (bottomLeft != null || bottomRight != null) ...[
+          const SizedBox(height: 20),
+          if (isDesktop)
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (bottomLeft != null)
+                SizedBox(width: 300, child: bottomLeft),
+              if (bottomLeft != null && bottomRight != null)
+                const SizedBox(width: 16),
+              if (bottomRight != null)
+                Expanded(child: bottomRight),
+            ])
+          else
+            Column(children: [
+              if (bottomLeft != null)  bottomLeft,
+              if (bottomLeft != null && bottomRight != null)
+                const SizedBox(height: 16),
+              if (bottomRight != null) bottomRight,
+            ]),
+        ],
         const SizedBox(height: 24),
       ]),
     );
@@ -1430,19 +1365,38 @@ class _KpiGrid extends StatelessWidget {
   final DashboardData d;
   final bool isTablet;
   final bool isDesktop;
-  const _KpiGrid(
-      {required this.d, required this.isTablet, required this.isDesktop});
+  final bool showSales;
+  final bool showPurchases;
+  final bool showPaymentsIn;
+  final bool showRecoveries;
+
+  const _KpiGrid({
+    required this.d,
+    required this.isTablet,
+    required this.isDesktop,
+    this.showSales = true,
+    this.showPurchases = true,
+    this.showPaymentsIn = true,
+    this.showRecoveries = true,
+  });
 
   @override
   Widget build(BuildContext context) {
     final kpi = d.kpiCards;
-    final cards = [
-      KpiCard(label: 'Total Sales', value: kpi.totalSales, color: AppColors.primary, icon: '📈', positive: true),
-      KpiCard(label: 'Purchases', value: kpi.totalPurchases, color: AppTheme.orange, icon: '🛒', positive: false),
-      KpiCard(label: 'Payments In', value: kpi.totalPaymentsIn, color: AppColors.secondary, icon: '💰', positive: true),
-      KpiCard(label: 'Recoveries', value: kpi.totalRecoveries, color: AppTheme.green, icon: '🔄', positive: true),
 
+    // Build only the cards the user has permission to see
+    final cards = <KpiCard>[
+      if (showSales)
+        KpiCard(label: 'Total Sales', value: kpi.totalSales, color: AppColors.primary, icon: '📈', positive: true),
+      if (showPurchases)
+        KpiCard(label: 'Purchases', value: kpi.totalPurchases, color: AppTheme.orange, icon: '🛒', positive: false),
+      if (showPaymentsIn)
+        KpiCard(label: 'Payments In', value: kpi.totalPaymentsIn, color: AppColors.secondary, icon: '💰', positive: true),
+      if (showRecoveries)
+        KpiCard(label: 'Recoveries', value: kpi.totalRecoveries, color: AppTheme.green, icon: '🔄', positive: true),
     ];
+
+    if (cards.isEmpty) return const SizedBox.shrink();
 
     final cols = isDesktop ? 4 : (isTablet ? 3 : 2);
     final rows = <Widget>[];

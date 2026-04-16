@@ -124,7 +124,7 @@ class _StockMainState extends State<StockMain> {
                 if(canViewItem)
                   DashboardCard(
                     icon: Icons.inventory_2,
-                    title: "List of Items",
+                    title: "Item Definition",
                     color: Colors.lightBlueAccent,
                     onTap: () {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemListScreen()));

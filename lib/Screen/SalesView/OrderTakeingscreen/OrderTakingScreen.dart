@@ -452,7 +452,7 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
                               Flexible(
                                 child: Text(
                                   formatedDate.format(order.orderDate),
-                                 // order.orderDate.toLocal().toString().split(' ')[0],
+                                  // order.orderDate.toLocal().toString().split(' ')[0],
                                   style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -577,7 +577,7 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
                     // Amount — takes remaining space
                     Expanded(
                       child: Text(
-                   'Rs: ${formatter.format(order.totalAmount)}',
+                        'Rs: ${formatter.format(order.totalAmount)}',
                         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -748,12 +748,14 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
             ElevatedButton(
               onPressed: () async {
                 Navigator.pop(ctx);
-                await provider.deleteOrder(orderId);
+                final error = await provider.deleteOrder(orderId);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: const Text("Order deleted successfully"),
-                      backgroundColor: Colors.green,
+                      content: Text(error == null
+                          ? "Order deleted successfully"
+                          : "Delete failed: $error"),
+                      backgroundColor: error == null ? Colors.green : Colors.red,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),

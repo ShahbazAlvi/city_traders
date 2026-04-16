@@ -52,54 +52,55 @@ class LoginProvider with ChangeNotifier{
       if (response.statusCode == 200 && data["success"] == true) {
         message = "Login successful!";
 
-
-
         final prefs = await SharedPreferences.getInstance();
 
+        // 🔹 Clear old session data to prevent leaking permissions
+        await prefs.remove('token');
+        await prefs.remove('user');
+        await prefs.remove('salesman_id');
+        await prefs.remove('is_owner');
+        await prefs.remove('roles');
+        await prefs.remove('permission_codes');
+        await prefs.remove('user_type');
+
         final access = data["data"]["access"];
-        //print(access.permissions_ids);
+        final user = data["data"]["user"];
+        final accessToken = data["data"]["accessToken"];
 
-        await prefs.setString('token', data["data"]["accessToken"]);
-        await prefs.setString('user', jsonEncode(data["data"]["user"]));
+        await prefs.setString('token', accessToken);
+        await prefs.setString('user', jsonEncode(user));
 
-        // ⭐ SAVE ROLE + PERMISSIONS
-        await prefs.setStringList(
-            'roles',
-            List<String>.from(access["roles"].map((e) => e["name"]))
-        );
+        // ⭐ SAVE ROLES
+        if (access["roles"] != null) {
+          await prefs.setStringList(
+              'roles',
+              List<String>.from(access["roles"].map((e) => e["name"]))
+          );
+        }
 
-        await prefs.setStringList(
-            'permission_codes',
-            List<String>.from(access["permission_codes"] ?? [])
-        );
+        // ⭐ SAVE PERMISSIONS
+        if (access["permission_codes"] != null) {
+          await prefs.setStringList(
+              'permission_codes',
+              List<String>.from(access["permission_codes"])
+          );
+        }
 
-        // salesman id save
-        await prefs.setString('token', data["data"]["accessToken"]);
-        await prefs.setString('user', jsonEncode(data["data"]["user"]));
-
-// ⬅️ YEH LINE ADD KARO
-        final salesmanId = data["data"]["user"]["salesman_id"];
+        // ⭐ SAVE SALESMAN ID
+        final salesmanId = user["salesman_id"];
         if (salesmanId != null) {
           await prefs.setInt('salesman_id', salesmanId);
-        } else {
-          await prefs.remove('salesman_id'); // admin ke liye clear karo
         }
-        
-        final userType = data["data"]["user"]["user_type"];
+
+        // ⭐ SAVE USER TYPE
+        final userType = user["user_type"];
         if (userType != null) {
           await prefs.setString('user_type', userType);
-        } else {
-          await prefs.remove('user_type');
         }
 
-        // end
-
         // ⭐ OWNER CHECK (ADMIN)
-        // Replace your is_owner block with this:
-        //final access = data["data"]["access"];
-
         bool isOwner = access["is_owner"] == true;
-// Fallback: also check companies list
+        // Fallback: also check companies list
         if (!isOwner &&
             data["data"]["companies"] != null &&
             data["data"]["companies"].isNotEmpty) {

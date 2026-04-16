@@ -1,11 +1,15 @@
 
 
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../ApiLink/ApiEndpoint.dart';
 import '../../../Provider/OrderTakingProvider/OrderTakingProvider.dart';
 import '../../../Provider/SaleManProvider/SaleManProvider.dart';
 import '../../../compoents/AppColors.dart';
@@ -39,13 +43,37 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
   bool isLoading = false;
   String selectedStatus = "APPROVED";
   bool _isLocked = false;
+// stock qunty
+  int? _stockQty;
+  bool _isFetchingStock = false;
 
-  // final List<String> orderStatusList = [
-  //   "DRAFT",
-  //   "APPROVED",
-  //   "CLOSED",
-  //   "CANCELLED",
-  // ];
+  Future<void> _fetchStockQty(int itemId) async {
+    debugPrint('📦 Fetching stock for item: $itemId');  // ← add this
+    setState(() { _isFetchingStock = true; _stockQty = null; });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final response = await http.get(
+        Uri.parse('${ApiEndpoints.baseUrl}/stock-position/item/$itemId'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      debugPrint('📦 Stock response: ${response.statusCode} - ${response.body}'); // ← add this
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final totalBalance = data['data']['total_balance'];
+        setState(() { _stockQty = (totalBalance as num).toInt(); });
+      }
+    } catch (e) {
+      debugPrint('Stock fetch error: $e');
+    } finally {
+      setState(() { _isFetchingStock = false; });
+    }
+  }
+
+
 
  // String? selectedSalesmanId;
   String? _salesmanId;
@@ -101,6 +129,30 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
   void addProductToOrder() {
     if (selectedProduct != null && qtyController.text.isNotEmpty) {
       final qty = double.tryParse(qtyController.text) ?? 0;
+
+      // Stock check
+      if (_stockQty != null && qty > _stockQty!) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Insufficient stock! Available: $_stockQty, Requested: ${qty.toInt()}',
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+        return; // ← block adding
+      }
+
       final price = double.tryParse(rateController.text) ??
           selectedProduct!.salePrice?.toDouble() ?? 0;
       final total = price * qty;
@@ -117,6 +169,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
       qtyController.clear();
       rateController.clear();
       selectedProduct = null;
+      _stockQty = null;
     }
   }
 
@@ -379,12 +432,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
           });
         },
       ),
-      // child: SalesmanDropdown(
-      //   selectedId: selectedSalesmanId,
-      //   onChanged: (value) {
-      //     setState(() => selectedSalesmanId = value);
-      //   },
-      // ),
+
     );
   }
 
@@ -431,10 +479,31 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
             ],
           ),
           child: ItemDetailsDropdown(
+            // onItemSelected: (item) {
+            //   setState(() => selectedProduct = item);
+            //   if (item != null) {
+            //     rateController.text = item.salePrice?.toString() ?? '';
+            //   }
+            // },
             onItemSelected: (item) {
-              setState(() => selectedProduct = item);
+              setState(() {
+                selectedProduct = item;
+                _stockQty = null;
+              });
               if (item != null) {
                 rateController.text = item.salePrice?.toString() ?? '';
+
+                // Handle both int and String id types safely
+                final rawId = item.id;
+                final int? id = rawId is int
+                    ? rawId as int          // ← add explicit cast
+                    : int.tryParse(rawId?.toString() ?? '');
+
+                if (id != null) {
+                  _fetchStockQty(id);
+                } else {
+                  debugPrint('❌ Could not parse item id: ${item.id}');
+                }
               }
             },
           ),
@@ -469,11 +538,25 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            'Stock: ${selectedProduct!.minLevelQty ?? 'N/A'}',
+                          _isFetchingStock
+                              ? Row(children: [
+                            SizedBox(width: 12, height: 12,
+                                child: CircularProgressIndicator(strokeWidth: 1.5,
+                                    color: AppColors.primary)),
+                            const SizedBox(width: 6),
+                            Text('Fetching stock...', style: TextStyle(fontSize: 12,
+                                color: Colors.grey.shade500)),
+                          ])
+                              : Text(
+                            'Stock: ${_stockQty ?? 'N/A'}',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey.shade600,
+                              color: (_stockQty != null && _stockQty! < 10)
+                                  ? Colors.red.shade600   // low stock = red
+                                  : Colors.grey.shade600,
+                              fontWeight: (_stockQty != null && _stockQty! < 10)
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
                             ),
                           ),
                         ],
@@ -791,7 +874,11 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
   }
 
   Widget _buildSubmitButton(OrderTakingProvider orderProvider) {
-    final isFormValid = _salesmanId != null &&    //selectedSalesmanId
+    debugPrint('🔍 isFormValid check: salesman=$_salesmanId, customer=$selectedCustomer, items=${orderItems.length}');
+    // final isFormValid = _salesmanId != null &&    //selectedSalesmanId
+    //     selectedCustomer != null &&
+    //     orderItems.isNotEmpty;
+    final isFormValid = _salesmanId != null &&
         selectedCustomer != null &&
         orderItems.isNotEmpty;
 

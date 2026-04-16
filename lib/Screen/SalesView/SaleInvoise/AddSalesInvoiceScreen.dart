@@ -346,11 +346,6 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
           children: [
             _buildSalesOrderDropdown(provider),
             const SizedBox(height: 12),
-            //
-            // TaxTypeDropdown(
-            //   onSelected: (tax) => setState(() => selectedTax = tax),
-            // ),
-            // const SizedBox(height: 12),
 
             Consumer<LocationProvider>(
               builder: (context, locProvider, _) {
@@ -460,14 +455,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
               color: Color(0xFF2563EB), size: 28),
         ),
         isExpanded: true,
-        // items: _dropdownItems.isEmpty && provider.orderData?.data != null
-        //     ? provider.orderData!.data
-        //     .map((order) => DropdownMenuItem<int>(
-        //   value: int.parse(order.id),
-        //   child: Text(order.soNo),
-        // ))
-        //     .toList()
-        //     : _dropdownItems,
+
         items: _dropdownItems,
         onChanged: (id) {
           if (id != null) onOrderSelected(id);
