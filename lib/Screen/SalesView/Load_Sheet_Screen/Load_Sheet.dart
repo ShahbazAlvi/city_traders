@@ -144,6 +144,57 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
           : _buildList(provider.loadSheets),
     );
   }
+  void _confirmDelete(BuildContext context, Map<String, dynamic> sheet) {
+    final provider = Provider.of<LoadSheetProvider>(context, listen: false);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 24),
+            SizedBox(width: 8),
+            Text('Delete Load Sheet'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to delete "${sheet['load_no']}"? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final success =
+              await provider.deleteLoadSheet(sheet['id'] as int);
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    success ? 'Load sheet deleted' : (provider.error ?? 'Failed'),
+                  ),
+                  backgroundColor: success ? const Color(0xFF16A34A) : Colors.red,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildList(List<Map<String, dynamic>> sheets) {
     return ListView.builder(
@@ -254,6 +305,24 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
                           '0',
                     ),
                     const Spacer(),
+                    // After the status chip Container in the Row:
+                    const SizedBox(width: 8),
+                    if (canDeletesheet)
+                      GestureDetector(
+                        onTap: () => _confirmDelete(context, sheet),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.delete_outline_rounded,
+                            size: 18,
+                            color: Colors.red.shade400,
+                          ),
+                        ),
+                      ),
                     if (sheet['vehicle_name'] != null)
                       _InfoChip(
                         icon: Icons.local_shipping_outlined,
@@ -1144,6 +1213,57 @@ class _CreateLoadSheetScreenState extends State<CreateLoadSheetScreen> {
           ),
         ),
       ],
+    );
+  }
+  void _confirmDelete(BuildContext context, Map<String, dynamic> sheet) {
+    final provider = Provider.of<LoadSheetProvider>(context, listen: false);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 24),
+            SizedBox(width: 8),
+            Text('Delete Load Sheet'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to delete "${sheet['load_no']}"? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final success =
+              await provider.deleteLoadSheet(sheet['id'] as int);
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    success ? 'Load sheet deleted' : (provider.error ?? 'Failed'),
+                  ),
+                  backgroundColor: success ? const Color(0xFF16A34A) : Colors.red,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
   }
 

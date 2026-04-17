@@ -102,5 +102,59 @@ class GRNApiService {
     return false;
   }
 
+  /// ✅ Fetch Single GRN Detail
+  static Future<GRNDetailModel?> fetchSingleGRN(int id) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      final response = await http.get(
+        Uri.parse("${ApiEndpoints.baseUrl}/grns/$id"),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Accept": "application/json",
+        },
+      );
+
+      print("GET SINGLE GRN URL = ${ApiEndpoints.baseUrl}/grns/$id");
+      print("RESPONSE STATUS = ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return GRNDetailModel.fromJson(body["data"]);
+      }
+    } catch (e) {
+      print("Error in fetchSingleGRN: $e");
+    }
+    return null;
+  }
+
+  /// ✅ Update GRN Record
+  static Future<bool> updateGRN(int id, Map<String, dynamic> body) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      print("UPDATE GRN BODY: ${jsonEncode(body)}");
+
+      final response = await http.put(
+        Uri.parse("${ApiEndpoints.baseUrl}/grns/$id"),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: jsonEncode(body),
+      );
+
+      print("UPDATE STATUS CODE: ${response.statusCode}");
+      print("UPDATE RESPONSE: ${response.body}");
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Error in updateGRN: $e");
+      return false;
+    }
+  }
 
 }

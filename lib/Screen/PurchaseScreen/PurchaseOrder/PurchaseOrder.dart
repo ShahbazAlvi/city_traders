@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../../../Provider/Purchase_Order_Provider/Purchase_order_provider.dart';
+import '../../../Provider/SupplierProvider/supplierProvider.dart';
 import '../../../compoents/AppColors.dart';
 import '../../../model/Purchase_Order_Model/purchaseOrderDetails.dart';
 import 'EditPurchaseOrder.dart';
@@ -334,20 +335,28 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen>
                       _actionButton(
                         icon: Icons.edit_outlined,
                         color: const Color(0xFF4A90D9),
+                        // In _buildOrderCard, replace the edit _actionButton onTap:
                         onTap: () {
-                          // In _buildOrderCard, replace the edit _actionButton onTap:
-
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => EditPurchaseOrder(orderId: order.id),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => MultiProvider(   // ← wrap with MultiProvider
+                                providers: [
+                                  ChangeNotifierProvider.value(
+                                    value: Provider.of<PurchaseOrderProvider>(context, listen: false),
+                                  ),
+                                  ChangeNotifierProvider.value(
+                                    value: Provider.of<SupplierProvider>(context, listen: false),
+                                  ),
+                                ],
+                                child: EditPurchaseOrder(orderId: order.id),
                               ),
-                            ).then((updated) {
-                              if (updated == true) {
-                                context.read<PurchaseOrderProvider>().fetchPurchaseOrder();
-                              }
-                            });
-
+                            ),
+                          ).then((updated) {
+                            if (updated == true) {
+                              context.read<PurchaseOrderProvider>().fetchPurchaseOrder();
+                            }
+                          });
                         },
                       ),
                       const SizedBox(width: 8),
@@ -482,121 +491,138 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen>
       BuildContext context, int orderId, String poNo) async {
     return showDialog(
       context: context,
+      barrierDismissible: false, // Prevent accidental close
       builder: (BuildContext dialogContext) {
-        return Dialog(
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF4D4F).withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.delete_outline_rounded,
-                    size: 30,
-                    color: Color(0xFFFF4D4F),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  "Delete Order",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A2E),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Are you sure you want to delete $poNo? This action cannot be undone.",
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 13.5,
-                    color: Color(0xFF888899),
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Row(
+        return Consumer<PurchaseOrderProvider>(
+          builder: (context, provider, _) {
+            final isDeleting = provider.isDeleting;
+
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24)),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(dialogContext),
-                        style: OutlinedButton.styleFrom(
-                          padding:
-                          const EdgeInsets.symmetric(vertical: 13),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                          side: const BorderSide(
-                              color: Color(0xFFE0E0E0), width: 1.5),
-                        ),
-                        child: const Text(
-                          "Cancel",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF555566),
-                          ),
-                        ),
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF4D4F).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: isDeleting
+                          ? const Padding(
+                              padding: EdgeInsets.all(16),
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 3, color: Color(0xFFFF4D4F)),
+                            )
+                          : const Icon(
+                              Icons.delete_outline_rounded,
+                              size: 30,
+                              color: Color(0xFFFF4D4F),
+                            ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      isDeleting ? "Deleting..." : "Delete Order",
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1A1A2E),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          Navigator.pop(dialogContext);
-                          final provider =
-                          Provider.of<PurchaseOrderProvider>(
-                              context,
-                              listen: false);
-                          bool success =
-                          await provider.deletePurchaseOrder(orderId);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  success
-                                      ? '$poNo deleted successfully'
-                                      : (provider.error ?? 'Delete failed'),
-                                ),
-                                backgroundColor:
-                                success ? const Color(0xFF00C896) : const Color(0xFFFF4D4F),
-                                behavior: SnackBarBehavior.floating,
+                    const SizedBox(height: 8),
+                    Text(
+                      isDeleting
+                          ? "Please wait while we delete $poNo."
+                          : "Are you sure you want to delete $poNo? This action cannot be undone.",
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        color: Color(0xFF888899),
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    if (!isDeleting)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(dialogContext),
+                              style: OutlinedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 13),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(14)),
+                                side: const BorderSide(
+                                    color: Color(0xFFE0E0E0), width: 1.5),
+                              ),
+                              child: const Text(
+                                "Cancel",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF555566),
                                 ),
                               ),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF4D4F),
-                          padding:
-                          const EdgeInsets.symmetric(vertical: 13),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                        ),
-                        child: const Text(
-                          "Delete",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                bool success =
+                                    await provider.deletePurchaseOrder(orderId);
+                                if (dialogContext.mounted) {
+                                  Navigator.pop(dialogContext);
+                                }
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        success
+                                            ? '$poNo deleted successfully'
+                                            : (provider.error ??
+                                                'Delete failed'),
+                                      ),
+                                      backgroundColor: success
+                                          ? const Color(0xFF00C896)
+                                          : const Color(0xFFFF4D4F),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFF4D4F),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 13),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14)),
+                              ),
+                              child: const Text(
+                                "Delete",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
                   ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );

@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../Provider/Purchase_Order_Provider/Purchase_order_provider.dart';
-import '../../../Provider/SupplierProvider/SupplierProvider.dart';
+import '../../../Provider/SupplierProvider/supplierProvider.dart';
 import '../../../Provider/SupplierProvider/Supplier_services.dart';
 import '../../../compoents/AppColors.dart';
 import '../../../compoents/ProductDropdown.dart';
@@ -30,6 +30,7 @@ class _EditPurchaseOrderState extends State<EditPurchaseOrder> {
   int? _supplierId;
   String _selectedStatus = 'APPROVED';
   DateTime _poDate = DateTime.now();
+  double _taxPercent = 0;
   List<_EditItem> _items = [];
 
   // ── Add product panel ──────────────────────
@@ -37,6 +38,9 @@ class _EditPurchaseOrderState extends State<EditPurchaseOrder> {
   ItemDetails? _newProduct;
   final TextEditingController _newQtyCtrl = TextEditingController();
   final TextEditingController _newRateCtrl = TextEditingController();
+
+  final TextEditingController _remarksCtrl = TextEditingController();
+  final TextEditingController _taxCtrl = TextEditingController();
 
   bool _isFetching = true;
   bool _isSubmitting = false;
@@ -53,20 +57,14 @@ class _EditPurchaseOrderState extends State<EditPurchaseOrder> {
   void initState() {
     super.initState();
     Future.microtask(() async {
-      // Clear stale data first
-      Provider.of<PurchaseOrderProvider>(context, listen: false)
-          .clearSelectedOrder();
-
-      // Load suppliers in parallel
+      // Use dedicated edit fetch — does NOT disturb detail sheet
       Provider.of<SupplierProvider>(context, listen: false).loadSuppliers();
 
-      // Fetch order — await until HTTP completes
       await Provider.of<PurchaseOrderProvider>(context, listen: false)
-          .fetchSinglePurchaseOrder(widget.orderId);
+          .fetchOrderForEdit(widget.orderId);  // ← new method
 
-      // Now read the result
       final order = Provider.of<PurchaseOrderProvider>(context, listen: false)
-          .selectedOrder;
+          .editOrder;  // ← read from editOrder, not selectedOrder
 
       if (order != null && mounted) {
         setState(() {
@@ -74,6 +72,9 @@ class _EditPurchaseOrderState extends State<EditPurchaseOrder> {
           _supplierId = order.supplierId;
           _selectedStatus = order.status;
           _poDate = order.poDate;
+          _taxPercent = order.taxPercent;
+          _taxCtrl.text = order.taxPercent.toStringAsFixed(0);
+          _remarksCtrl.text = order.remarks ?? '';
           _items = order.details
               .map((d) => _EditItem(
             itemId: d.itemId,
@@ -94,12 +95,15 @@ class _EditPurchaseOrderState extends State<EditPurchaseOrder> {
   void dispose() {
     _newQtyCtrl.dispose();
     _newRateCtrl.dispose();
+    _remarksCtrl.dispose();
+    _taxCtrl.dispose();
     super.dispose();
   }
 
   // ── Computed ─────────────────────────────────
-  double get _grandTotal =>
-      _items.fold(0.0, (s, i) => s + i.qty * i.rate);
+  double get _subTotal => _items.fold(0.0, (s, i) => s + i.qty * i.rate);
+  double get _taxAmount => _subTotal * (_taxPercent / 100);
+  double get _grandTotal => _subTotal + _taxAmount;
 
   // ── Snack ────────────────────────────────────
   void _snack(String msg, Color color) {
@@ -160,13 +164,24 @@ class _EditPurchaseOrderState extends State<EditPurchaseOrder> {
       _snack("Enter a valid rate", const Color(0xFFFFAB00));
       return;
     }
+    final itemId = int.tryParse(_newProduct!.id.toString()) ?? 0;
+    
+    // Check for duplicates
+    final existingIndex = _items.indexWhere((i) => i.itemId == itemId);
+    
     setState(() {
-      _items.add(_EditItem(
-        itemId: int.tryParse(_newProduct!.id.toString()) ?? 0,
-        itemName: _newProduct!.name ?? 'Product',
-        qty: qty,
-        rate: rate,
-      ));
+      if (existingIndex != -1) {
+        // Upgrade quantity if already exists
+        _items[existingIndex].qty += qty;
+        _snack("Quantity updated for existing product", AppColors.primary);
+      } else {
+        _items.add(_EditItem(
+          itemId: itemId,
+          itemName: _newProduct!.name ?? 'Product',
+          qty: qty,
+          rate: rate,
+        ));
+      }
       _newProduct = null;
       _newQtyCtrl.clear();
       _newRateCtrl.clear();
@@ -198,10 +213,12 @@ class _EditPurchaseOrderState extends State<EditPurchaseOrder> {
       supplierId: _supplierId!,
       status: _selectedStatus,
       poDate: _poDate,
+      taxPercent: _taxPercent,
+      remarks: _remarksCtrl.text.trim(),
       details: _items
           .map((i) => {
         "item_id": i.itemId,
-        "qty": i.qty,
+        "qty": i.qty % 1 == 0 ? i.qty.toInt() : i.qty,
         "rate": i.rate,
       })
           .toList(),
@@ -344,6 +361,31 @@ class _EditPurchaseOrderState extends State<EditPurchaseOrder> {
               Expanded(child: _buildDatePicker()),
               const SizedBox(width: 10),
               Expanded(child: _buildStatusDropdown()),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // ── Tax + Remarks row ──
+          Row(
+            children: [
+              Expanded(
+                flex: 1,
+                child: _inputField(
+                  controller: _taxCtrl,
+                  label: "Tax %",
+                  icon: Icons.percent_rounded,
+                  onChanged: (v) => setState(() => _taxPercent = double.tryParse(v) ?? 0),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: _inputField(
+                  controller: _remarksCtrl,
+                  label: "Remarks",
+                  icon: Icons.notes_rounded,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 18),
@@ -789,7 +831,7 @@ class _EditPurchaseOrderState extends State<EditPurchaseOrder> {
                 setState(() => _newProduct = item);
                 if (item != null) {
                   _newRateCtrl.text =
-                      item.salePrice?.toString() ?? '';
+                      item.purchasePrice?.toString() ?? '';
                 }
               },
             ),
@@ -1034,6 +1076,33 @@ class _EditPurchaseOrderState extends State<EditPurchaseOrder> {
                 color: Color(0xFF00875A)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _inputField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    Function(String)? onChanged,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE8E8F0)),
+      ),
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(fontSize: 12, color: Color(0xFF9E9EB0)),
+          prefixIcon: Icon(icon, size: 16, color: AppColors.primary),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        ),
       ),
     );
   }

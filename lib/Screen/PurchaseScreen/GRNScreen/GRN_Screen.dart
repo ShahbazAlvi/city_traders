@@ -540,9 +540,12 @@ class _GRNScreenState extends State<GRNScreen>
                         color: const Color(0xFF4A90D9),
                         onTap: () => Navigator.push(
                           context,
-                          MaterialPageRoute(
-                              builder: (_) => GrnUpdate(grn: grn)),
-                        ),
+                          MaterialPageRoute(builder: (_) => GrnUpdate(grn: grn)),
+                        ).then((value) {
+                          if (value == true) {
+                            provider.getGRNData();
+                          }
+                        }),
                       ),
                       const SizedBox(width: 8),
                       _actionButton(

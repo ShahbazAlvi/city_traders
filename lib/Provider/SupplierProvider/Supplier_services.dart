@@ -76,6 +76,26 @@ class SupplierApi {
 
 
 
+  static Future<int> fetchSupplierAging(int supplierId) async {
+    try {
+      String? token = await TokenStorage.getToken();
+      final response = await http.get(
+        Uri.parse("$baseUrl/suppliers/$supplierId/aging"),
+        headers: {
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return int.tryParse(body["data"]["aging_days"].toString()) ?? 0;
+      }
+    } catch (e) {
+      print("Error in fetchSupplierAging: $e");
+    }
+    return 0;
+  }
+
 }
 
 

@@ -341,10 +341,27 @@ class _RecoveryScreenState extends State<SaleManRecoveryScreen> {
       ],
     );
   }
+  // void _showDetailSheet(BuildContext context, int salesmanId, String salesmanName) {
+  //   final date = selectedDate.toIso8601String().split('T').first;
+  //
+  //   // Fetch detail
+  //   Provider.of<SaleManRecoveryProvider>(context, listen: false)
+  //       .fetchSalesmanDetail(salesmanId: salesmanId, date: date);
+  //
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     backgroundColor: Colors.transparent,
+  //     builder: (_) => _SalesmanDetailSheet(
+  //       salesmanName: salesmanName,
+  //       date: date,
+  //     ),
+  //   );
+  // }
   void _showDetailSheet(BuildContext context, int salesmanId, String salesmanName) {
     final date = selectedDate.toIso8601String().split('T').first;
 
-    // Fetch detail
+    // Fetch detail BEFORE opening sheet
     Provider.of<SaleManRecoveryProvider>(context, listen: false)
         .fetchSalesmanDetail(salesmanId: salesmanId, date: date);
 
@@ -352,9 +369,12 @@ class _RecoveryScreenState extends State<SaleManRecoveryScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _SalesmanDetailSheet(
-        salesmanName: salesmanName,
-        date: date,
+      builder: (ctx) => ChangeNotifierProvider.value(   // ← ADD THIS
+        value: Provider.of<SaleManRecoveryProvider>(context, listen: false),
+        child: _SalesmanDetailSheet(
+          salesmanName: salesmanName,
+          date: date,
+        ),
       ),
     );
   }
@@ -442,8 +462,9 @@ class _SalesmanDetailSheet extends StatelessWidget {
                   child: SingleChildScrollView(
                     child: DataTable(
                       columnSpacing: 20,
-                      headingRowColor:
-                      MaterialStateProperty.all(Colors.grey[200]),
+                      // headingRowColor:
+                      // MaterialStateProperty.all(Colors.grey[200]),
+                      headingRowColor: WidgetStateProperty.all(Colors.grey[200]),
                       columns: const [
 
                         DataColumn(label: Text("Date")),

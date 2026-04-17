@@ -232,6 +232,8 @@ class PurchaseOrderProvider with ChangeNotifier {
     required int supplierId,
     required String status,
     required DateTime poDate,
+    required double taxPercent,
+    String? remarks,
     required List<Map<String, dynamic>> details,
   }) async {
     _isDetailLoading = true;   // ✅ won't freeze list screen
@@ -254,6 +256,8 @@ class PurchaseOrderProvider with ChangeNotifier {
         "supplier_id": supplierId,
         "po_date": poDate.toIso8601String().substring(0, 10),
         "status": status,
+        "tax_percent": taxPercent,
+        "remarks": remarks,
         "details": details,
       };
 
@@ -289,7 +293,49 @@ class PurchaseOrderProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+// In PurchaseOrderProvider — add separate edit state
+  PurchaseOrderDetailData? _editOrder;
+  PurchaseOrderDetailData? get editOrder => _editOrder;
+  bool _isEditLoading = false;
+  bool get isEditLoading => _isEditLoading;
 
+  Future<void> fetchOrderForEdit(int orderId) async {
+    _isEditLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString("token");
+      if (token == null) { _isEditLoading = false; notifyListeners(); return; }
+
+      final response = await http.get(
+        Uri.parse('${ApiEndpoints.baseUrl}/purchase-orders/$orderId'),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+          "x-company-id": "2",
+          "Cache-Control": "no-cache",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _editOrder = PurchaseOrderDetailModel.fromJson(data).data;
+      } else {
+        _error = "Failed (${response.statusCode})";
+      }
+    } catch (e) {
+      _error = "Error: $e";
+    } finally {
+      _isEditLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void clearEditOrder() {
+    _editOrder = null;
+  }
 
 
 }

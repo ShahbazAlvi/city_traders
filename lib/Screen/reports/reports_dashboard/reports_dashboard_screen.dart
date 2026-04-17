@@ -104,23 +104,12 @@ class _SalesDashboardState extends State<ReportsDashboardScreen> {
 
               const SizedBox(height: 28),
 
-              _buildSectionTitle("📊 Reports"),
+              _buildSectionTitle("📊 Sales Reports"),
               const SizedBox(height: 14),
 
               _buildCardGrid([
 
-                // ── Customer Ledger ──
-                if (canViewLedger)
-                  DashboardCard(
-                    icon:  Icons.account_balance_wallet_sharp,
-                    title: "Customer Ledger",
-                    color: const Color(0xFF7C3AED), // deep purple
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const CustomerLedgerScreen()),
-                    ),
-                  ),
+
 
                 // ── SalesMan Recovery ──
                 if(canSalesRecovery)
@@ -135,18 +124,7 @@ class _SalesDashboardState extends State<ReportsDashboardScreen> {
                   ),
                 ),
 
-                // ── Credit Aging ──
-                if (canViewAging)
-                  DashboardCard(
-                    icon:  Icons.hourglass_bottom_sharp,
-                    title: "Credit Aging",
-                    color: const Color(0xFF0891B2), // cyan
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const CreditAgingScreen()),
-                    ),
-                  ),
+
 
                 // ── Daily Sales ──
                 if (canViewDailySales)
@@ -161,18 +139,7 @@ class _SalesDashboardState extends State<ReportsDashboardScreen> {
                     ),
                   ),
 
-                // ── Supplier Ledger ──
-                if (canViewLedgerSupplier)
-                  DashboardCard(
-                    icon:  Icons.local_shipping_sharp,
-                    title: "Supplier Ledger",
-                    color: const Color(0xFF059669), // emerald green
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => SupplierLedgerScreen()),
-                    ),
-                  ),
+
 
                 // ── Pending Recovery ──
 
@@ -188,6 +155,54 @@ class _SalesDashboardState extends State<ReportsDashboardScreen> {
                 ),
 
               ]),
+              const SizedBox(height: 10),
+              _buildSectionTitle("📊 Accounts Reports"),
+              const SizedBox(height: 14),
+              _buildCardGrid([
+
+                // customers ledger
+                if (canViewLedger)
+                  DashboardCard(
+                    icon:  Icons.account_balance_wallet_sharp,
+                    title: "Customer Ledger",
+                    color: const Color(0xFF7C3AED), // deep purple
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const CustomerLedgerScreen()),
+                    ),
+                  ),
+                // suppliers Ledger
+                // ── Supplier Ledger ──
+                if (canViewLedgerSupplier)
+                  DashboardCard(
+                    icon:  Icons.local_shipping_sharp,
+                    title: "Supplier Ledger",
+                    color: const Color(0xFF059669), // emerald green
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => SupplierLedgerScreen()),
+                    ),
+                  ),
+                // ── Credit Aging ──
+                if (canViewAging)
+                  DashboardCard(
+                    icon:  Icons.hourglass_bottom_sharp,
+                    title: "Credit Aging",
+                    color: const Color(0xFF0891B2), // cyan
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const CreditAgingScreen()),
+                    ),
+                  ),
+
+
+
+
+              ]),
+
             ],
           ),
         ),

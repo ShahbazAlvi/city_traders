@@ -10,6 +10,7 @@ class GRNProvider extends ChangeNotifier {
 
   List<GRNModel> grnList = [];
   bool isLoading = false;
+  GRNDetailModel? selectedGrnDetails;
 
   /// ✅ FETCH GRN DATA (This was missing)
   Future<void> getGRNData() async {
@@ -21,6 +22,17 @@ class GRNProvider extends ChangeNotifier {
     } catch (e) {
       print("Error fetching GRN: $e");
     }
+
+    isLoading = false;
+    notifyListeners();
+  }
+
+  /// ✅ FETCH SINGLE GRN DETAIL
+  Future<void> fetchGrnDetails(int id) async {
+    isLoading = true;
+    notifyListeners();
+
+    selectedGrnDetails = await GRNApiService.fetchSingleGRN(id);
 
     isLoading = false;
     notifyListeners();
@@ -60,9 +72,8 @@ class GRNProvider extends ChangeNotifier {
       rethrow;
     }
   }
-  Future<void>update()async{
 
-  }
+  Future<void> update() async {}
 
   /// ✅ DELETE RECORD (FIXED int TYPE)
   Future<void> deleteRecord(int id) async {
@@ -81,9 +92,9 @@ class GRNProvider extends ChangeNotifier {
     required String grnDate,
     required int locationId,
     required List<Map<String, dynamic>> details,
-    required double totalAmount, required List<Map<String, dynamic>> products,
+    required double totalAmount,
+    required List<Map<String, dynamic>> products,
   }) async {
-
     bool success = await GRNApiService.addGRN(
       grnNo: grnNo,
       supplierId: supplierId,
@@ -93,6 +104,40 @@ class GRNProvider extends ChangeNotifier {
       discount: 0,
       details: details,
     );
+
+    if (success) {
+      await getGRNData();
+    }
+
+    return success;
+  }
+
+  /// ✅ UPDATE GRN
+  Future<bool> updateGRN({
+    required int id,
+    required String grnNo,
+    required int supplierId,
+    required String grnDate,
+    required int locationId,
+    required String status,
+    required String agingDueDate,
+    required double discount,
+    required double taxPercent,
+    required List<Map<String, dynamic>> details,
+  }) async {
+    final body = {
+      "grn_no": grnNo,
+      "supplier_id": supplierId,
+      "grn_date": grnDate,
+      "location_id": locationId,
+      "status": status,
+      "aging_due_date": agingDueDate,
+      "details": details,
+      "discount": discount,
+      "tax_percent": taxPercent,
+    };
+
+    bool success = await GRNApiService.updateGRN(id, body);
 
     if (success) {
       await getGRNData();

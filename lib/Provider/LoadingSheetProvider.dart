@@ -268,6 +268,36 @@ class LoadSheetProvider with ChangeNotifier {
       return false;
     }
   }
+  // delete it
+  Future<bool> deleteLoadSheet(int id) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      final response = await http.delete(
+        Uri.parse('${ApiEndpoints.baseUrl}/load-sheets/$id'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        _loadSheets.removeWhere((s) => s['id'] == id);
+        notifyListeners();
+        return true;
+      } else {
+        final data = jsonDecode(response.body);
+        _error = data['message'] ?? 'Failed to delete';
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _error = 'Error: $e';
+      notifyListeners();
+      return false;
+    }
+  }
 
 
 }

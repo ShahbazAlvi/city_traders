@@ -36,6 +36,52 @@ class SalesmanRecoveryDetailData {
   }
 }
 
+// class SalesmanRecoveryDetailEntry {
+//   final int recoveryId;
+//   final String recoveryDate;
+//   final String voucherNo;
+//   final double amount;
+//   final String mode;
+//   final String? remarks;
+//   final int customerId;
+//   final String customerName;
+//   final String customerPhone;
+//   final int invoiceCount;
+//   final String invoiceNumbers;
+//   final double totalInvoiceAmt;
+//
+//   SalesmanRecoveryDetailEntry({
+//     required this.recoveryId,
+//     required this.recoveryDate,
+//     required this.voucherNo,
+//     required this.amount,
+//     required this.mode,
+//     this.remarks,
+//     required this.customerId,
+//     required this.customerName,
+//     required this.customerPhone,
+//     required this.invoiceCount,
+//     required this.invoiceNumbers,
+//     required this.totalInvoiceAmt,
+//   });
+//
+//   factory SalesmanRecoveryDetailEntry.fromJson(Map<String, dynamic> json) {
+//     return SalesmanRecoveryDetailEntry(
+//       recoveryId: json['recovery_id'],
+//       recoveryDate: json['recovery_date'],
+//       voucherNo: json['voucher_no'],
+//       amount: double.parse(json['amount'].toString()),
+//       mode: json['mode'],
+//       remarks: json['remarks'],
+//       customerId: json['customer_id'],
+//       customerName: json['customer_name'],
+//       customerPhone: json['customer_phone'],
+//       invoiceCount: json['invoice_count'],
+//       invoiceNumbers: json['invoice_numbers'],
+//       totalInvoiceAmt: double.parse(json['total_invoice_amt'].toString()),
+//     );
+//   }
+// }
 class SalesmanRecoveryDetailEntry {
   final int recoveryId;
   final String recoveryDate;
@@ -45,7 +91,7 @@ class SalesmanRecoveryDetailEntry {
   final String? remarks;
   final int customerId;
   final String customerName;
-  final String customerPhone;
+  final String? customerPhone;   // ← was String, make nullable
   final int invoiceCount;
   final String invoiceNumbers;
   final double totalInvoiceAmt;
@@ -59,7 +105,7 @@ class SalesmanRecoveryDetailEntry {
     this.remarks,
     required this.customerId,
     required this.customerName,
-    required this.customerPhone,
+    this.customerPhone,            // ← optional
     required this.invoiceCount,
     required this.invoiceNumbers,
     required this.totalInvoiceAmt,
@@ -75,7 +121,7 @@ class SalesmanRecoveryDetailEntry {
       remarks: json['remarks'],
       customerId: json['customer_id'],
       customerName: json['customer_name'],
-      customerPhone: json['customer_phone'],
+      customerPhone: json['customer_phone'],   // ← null is now fine
       invoiceCount: json['invoice_count'],
       invoiceNumbers: json['invoice_numbers'],
       totalInvoiceAmt: double.parse(json['total_invoice_amt'].toString()),

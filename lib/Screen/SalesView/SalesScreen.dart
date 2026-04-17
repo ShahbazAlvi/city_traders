@@ -134,7 +134,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
                 if (canViewOrderBooking)
                 DashboardCard(
                   icon: Icons.add_card,
-                  title: "Order Taking",
+                  title: "Order Booking",
                   color: Colors.tealAccent,
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const OrderTakingScreen()));
@@ -158,6 +158,16 @@ class _SalesDashboardState extends State<SalesDashboard> {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const SaleInvoiseScreen()));
                   },
                 ),
+                if (canViewCustomerPayment)
+                  DashboardCard(
+                    icon: Icons.wallet,
+                    title: "Customer Payment",
+                    color: Colors.greenAccent,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerPaymentScreen()));
+
+                    },
+                  ),
                 if (canViewRecovery)
                 DashboardCard(
                   icon: Icons.newspaper,
@@ -168,16 +178,16 @@ class _SalesDashboardState extends State<SalesDashboard> {
                   },
                 ),
 
-                if (canViewCustomerPayment)
-                DashboardCard(
-                  icon: Icons.wallet,
-                  title: "Customer Payment",
-                  color: Colors.greenAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerPaymentScreen()));
 
-                  },
-                ),
+                if (canViewReceivable)
+                  DashboardCard(
+                    icon: Icons.add_card,
+                    title: "Amount Receivable",
+                    color: Colors.redAccent,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceivableScreen()));
+                    },
+                  ),
                 // DashboardCard(
                 //   icon: Icons.cloud_upload_rounded,
                 //   title: "Load Return",
@@ -186,67 +196,67 @@ class _SalesDashboardState extends State<SalesDashboard> {
                 // ),
               ]),
 
-              const SizedBox(height: 30),
+            //  const SizedBox(height: 30),
 
               // 🔸 Reports Section
-              _buildSectionTitle("📊 Reports"),
-              const SizedBox(height: 14),
-              _buildCardGrid([
-                // if (canViewStockPosition)
-                // DashboardCard(
-                //   icon: Icons.cloud_upload_rounded,
-                //   title: "Stock Positions",
-                //   color: Colors.orangeAccent,
-                //   onTap: () {
-                //     Navigator.push(context, MaterialPageRoute(builder: (_) => const StockPositionScreen()));
-                //   },
-                // ),
-                if (canViewReceivable)
-                DashboardCard(
-                  icon: Icons.add_card,
-                  title: "Amount Receivable",
-                  color: Colors.redAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceivableScreen()));
-                  },
-                ),
-                // if (canViewLedger)
-                // DashboardCard(
-                //   icon: Icons.newspaper,
-                //   title: "Customer Ledger",
-                //   color: Colors.purpleAccent,
-                //   onTap: () {
-                //     Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerLedgerScreen()));
-                //   },
-                // ),
-                if (canViewAging)
-               // if (canViewSalesInvoice)
-                DashboardCard(
-                  icon: Icons.add_chart_rounded,
-                  title: "Credit Aging",
-                  color: Colors.cyanAccent,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CreditAgingScreen()));
-                  },
-                ),
-                // if (canViewDailySales)
-                // DashboardCard(
-                //   icon: Icons.sim_card_alert_rounded,
-                //   title: "Daily Sales",
-                //   color: Colors.lightBlueAccent,
-                //   onTap: () {
-                //     Navigator.push(context, MaterialPageRoute(builder: (_) => const DailySaleReportScreen()));
-                //   },
-                // ),
-                // DashboardCard(
-                //   icon: Icons.cloud_upload_rounded,
-                //   title: "Daily Sales Report",
-                //   color: Colors.indigoAccent,
-                //   onTap: () {},
-                // ),
-              ]),
-
-              const SizedBox(height: 30),
+              // _buildSectionTitle("📊 Reports"),
+              // const SizedBox(height: 14),
+              // _buildCardGrid([
+              //   // if (canViewStockPosition)
+              //   // DashboardCard(
+              //   //   icon: Icons.cloud_upload_rounded,
+              //   //   title: "Stock Positions",
+              //   //   color: Colors.orangeAccent,
+              //   //   onTap: () {
+              //   //     Navigator.push(context, MaterialPageRoute(builder: (_) => const StockPositionScreen()));
+              //   //   },
+              //   // ),
+              //   // if (canViewReceivable)
+              //   // DashboardCard(
+              //   //   icon: Icons.add_card,
+              //   //   title: "Amount Receivable",
+              //   //   color: Colors.redAccent,
+              //   //   onTap: () {
+              //   //     Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceivableScreen()));
+              //   //   },
+              //   // ),
+              //   // if (canViewLedger)
+              //   // DashboardCard(
+              //   //   icon: Icons.newspaper,
+              //   //   title: "Customer Ledger",
+              //   //   color: Colors.purpleAccent,
+              //   //   onTap: () {
+              //   //     Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerLedgerScreen()));
+              //   //   },
+              //   // ),
+              //   if (canViewAging)
+              //  // if (canViewSalesInvoice)
+              //   DashboardCard(
+              //     icon: Icons.add_chart_rounded,
+              //     title: "Credit Aging",
+              //     color: Colors.cyanAccent,
+              //     onTap: () {
+              //       Navigator.push(context, MaterialPageRoute(builder: (_) => const CreditAgingScreen()));
+              //     },
+              //   ),
+              //   // if (canViewDailySales)
+              //   // DashboardCard(
+              //   //   icon: Icons.sim_card_alert_rounded,
+              //   //   title: "Daily Sales",
+              //   //   color: Colors.lightBlueAccent,
+              //   //   onTap: () {
+              //   //     Navigator.push(context, MaterialPageRoute(builder: (_) => const DailySaleReportScreen()));
+              //   //   },
+              //   // ),
+              //   // DashboardCard(
+              //   //   icon: Icons.cloud_upload_rounded,
+              //   //   title: "Daily Sales Report",
+              //   //   color: Colors.indigoAccent,
+              //   //   onTap: () {},
+              //   // ),
+              // ]),
+              //
+              // const SizedBox(height: 30),
 
               // 🔸 Setup Section
               // _buildSectionTitle("🧩 Setup"),
