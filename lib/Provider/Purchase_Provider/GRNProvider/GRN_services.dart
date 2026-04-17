@@ -35,12 +35,13 @@ class GRNApiService {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
 
-      final url = Uri.parse("$baseUrl/grn/$id");
+      final url = Uri.parse("${ApiEndpoints.baseUrl}/grns/$id"); // ✅ FIXED
 
       final response = await http.delete(
         url,
         headers: {
           "Authorization": "Bearer $token",
+          "Accept": "application/json",
         },
       );
 
@@ -64,9 +65,10 @@ class GRNApiService {
     required int locationId,
     required String status,
     required double discount,
+    required double taxPercent,
+    required String agingDueDate,
     required List<Map<String, dynamic>> details,
   }) async {
-
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString("token");
 
@@ -77,10 +79,12 @@ class GRNApiService {
       "location_id": locationId,
       "status": status,
       "discount": discount,
+      "tax_percent": taxPercent,
+      "aging_due_date": agingDueDate,  // ✅ calculated from API
       "details": details
     };
 
-    print("REQUEST BODY: ${jsonEncode(body)}");
+    print("ADD GRN REQUEST BODY: ${jsonEncode(body)}");
 
     final response = await http.post(
       Uri.parse("${ApiEndpoints.baseUrl}/grns"),
@@ -92,14 +96,10 @@ class GRNApiService {
       body: jsonEncode(body),
     );
 
-    print("STATUS CODE: ${response.statusCode}");
-    print("RESPONSE: ${response.body}");
+    print("ADD GRN STATUS: ${response.statusCode}");
+    print("ADD GRN RESPONSE: ${response.body}");
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return true;
-    }
-
-    return false;
+    return response.statusCode == 200 || response.statusCode == 201;
   }
 
   /// ✅ Fetch Single GRN Detail
@@ -155,6 +155,32 @@ class GRNApiService {
       print("Error in updateGRN: $e");
       return false;
     }
+  }
+  /// ✅ Fetch Supplier Aging Days
+  static Future<int> fetchSupplierAgingDays(int supplierId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      final response = await http.get(
+        Uri.parse("${ApiEndpoints.baseUrl}/suppliers/$supplierId/aging"),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Accept": "application/json",
+        },
+      );
+
+      print("AGING STATUS: ${response.statusCode}");
+      print("AGING BODY: ${response.body}");
+
+      if (response.statusCode == 200 || response.statusCode == 304) {
+        final body = jsonDecode(response.body);
+        return body["data"]["aging_days"] ?? 20; // ✅ default 20 if null
+      }
+    } catch (e) {
+      print("Error fetching aging: $e");
+    }
+    return 20; // ✅ fallback default
   }
 
 }

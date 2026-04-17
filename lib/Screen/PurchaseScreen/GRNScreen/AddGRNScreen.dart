@@ -1,369 +1,3 @@
-//
-// import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
-// import 'package:intl/intl.dart';
-//
-// import '../../../Provider/Purchase_Provider/GRNProvider/GRN_Provider.dart';
-// import '../../../Provider/setup/location_provider.dart';
-// import '../../../compoents/AppColors.dart';
-// import '../../../compoents/ProductDropdown.dart';
-// import '../../../compoents/SupplierDropdown.dart';
-// import '../../../compoents/location_dropdown.dart';
-// import '../../../model/ProductModel/itemsdetailsModel.dart';
-//
-// class AddGRNScreen extends StatefulWidget {
-//   final String nextOrderId;
-//   const AddGRNScreen({super.key, required this.nextOrderId});
-//
-//   @override
-//   State<AddGRNScreen> createState() => _AddGRNScreenState();
-// }
-//
-// class _AddGRNScreenState extends State<AddGRNScreen> {
-//
-//   String? selectedSupplierId;
-//   ItemDetails? selectedProduct;
-//
-//   final qtyController = TextEditingController();
-//   final rateController = TextEditingController();
-//   int? selectedLocationId;
-//
-//   double productTotal = 0;
-//
-//   List<Map<String, dynamic>> selectedProducts = [];
-//   double grandTotal = 0;
-//
-//   /// CALCULATE TOTAL
-//   void calculateTotal() {
-//     int qty = int.tryParse(qtyController.text) ?? 0;
-//     double rate = double.tryParse(rateController.text) ?? 0;
-//
-//     setState(() {
-//       productTotal = qty * rate;
-//     });
-//   }
-//
-//   /// ADD PRODUCT
-//   void addProductToList() {
-//
-//     if (selectedProduct == null ||
-//         qtyController.text.isEmpty ||
-//         rateController.text.isEmpty) {
-//
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         const SnackBar(content: Text("Please fill all fields")),
-//       );
-//       return;
-//     }
-//
-//     selectedProducts.add({
-//       "item_id": selectedProduct!.id,
-//       "name": selectedProduct!.name,
-//       "qty_received": int.parse(qtyController.text),
-//       "unit_cost": double.parse(rateController.text),
-//       "total": productTotal
-//     });
-//
-//     grandTotal = selectedProducts.fold(
-//         0, (sum, item) => sum + (item["total"] as double));
-//
-//     qtyController.clear();
-//     rateController.clear();
-//
-//     productTotal = 0;
-//
-//     setState(() {});
-//   }
-//   @override
-//   void initState() {
-//     super.initState();
-//
-//     Future.microtask(() {
-//       Provider.of<LocationProvider>(context, listen: false).getLocations();
-//     });
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//
-//     final grnProvider = Provider.of<GRNProvider>(context);
-//
-//     return Scaffold(
-//
-//       appBar: AppBar(
-//         iconTheme: const IconThemeData(color: Colors.white),
-//         title: const Text("Add GRN",
-//             style: TextStyle(
-//               color: Colors.white,
-//               fontWeight: FontWeight.bold,
-//               fontSize: 22,
-//             )),
-//         centerTitle: true,
-//         flexibleSpace: Container(
-//           decoration: const BoxDecoration(
-//             gradient: LinearGradient(
-//               colors: [AppColors.secondary, AppColors.primary],
-//             ),
-//           ),
-//         ),
-//       ),
-//
-//       body: SingleChildScrollView(
-//         padding: const EdgeInsets.all(14),
-//
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             Text("GRN No: ${widget.nextOrderId}",
-//                 style: const TextStyle(fontWeight: FontWeight.bold)),
-//             const SizedBox(height: 15),
-//
-//             /// SUPPLIER
-//             SupplierDropdown(
-//               onSelected: (id) {
-//                 selectedSupplierId = id;
-//               },
-//             ),
-//
-//             const SizedBox(height: 15),
-//             Consumer<LocationProvider>(
-//               builder: (context, provider, child) {
-//
-//                 return LocationDropdown(
-//                   locations: provider.locationList,
-//                   selectedId: selectedLocationId,
-//                   onChanged: (value) {
-//
-//                     setState(() {
-//                       selectedLocationId = value;
-//                     });
-//
-//                   },
-//                 );
-//               },
-//             ),
-//             const SizedBox(height: 15),
-//
-//             /// PRODUCT
-//             ItemDetailsDropdown(
-//               onItemSelected: (item) {
-//                 selectedProduct = item;
-//                 setState(() {});
-//               },
-//             ),
-//
-//             const SizedBox(height: 20),
-//
-//             /// QTY RATE
-//             if (selectedProduct != null)
-//               Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//
-//                   const Text("Quantity"),
-//
-//                   TextField(
-//                     controller: qtyController,
-//                     keyboardType: TextInputType.number,
-//                     onChanged: (_) => calculateTotal(),
-//                     decoration: const InputDecoration(
-//                       border: OutlineInputBorder(),
-//                       hintText: "Enter Quantity",
-//                     ),
-//                   ),
-//
-//                   const SizedBox(height: 10),
-//
-//                   const Text("Rate"),
-//
-//                   TextField(
-//                     controller: rateController,
-//                     keyboardType: TextInputType.number,
-//                     onChanged: (_) => calculateTotal(),
-//                     decoration: const InputDecoration(
-//                       border: OutlineInputBorder(),
-//                       hintText: "Enter Rate",
-//                     ),
-//                   ),
-//
-//                   const SizedBox(height: 10),
-//
-//                   Text(
-//                     "Total: Rs $productTotal",
-//                     style: const TextStyle(
-//                         fontWeight: FontWeight.bold,
-//                         fontSize: 16),
-//                   ),
-//
-//                   const SizedBox(height: 10),
-//
-//                   ElevatedButton.icon(
-//                     onPressed: addProductToList,
-//                     icon: const Icon(Icons.add),
-//                     label: const Text("Add Product"),
-//                   ),
-//                 ],
-//               ),
-//
-//             const SizedBox(height: 20),
-//
-//             /// PRODUCT TABLE
-//             if (selectedProducts.isNotEmpty)
-//               Column(
-//                 children: [
-//
-//                   const Text(
-//                     "Products",
-//                     style: TextStyle(
-//                         fontWeight: FontWeight.bold,
-//                         fontSize: 18),
-//                   ),
-//
-//                   const SizedBox(height: 10),
-//
-//                   Table(
-//                     border: TableBorder.all(),
-//
-//                     columnWidths: const {
-//                       0: FlexColumnWidth(2),
-//                       1: FlexColumnWidth(1),
-//                       2: FlexColumnWidth(1),
-//                       3: FlexColumnWidth(1),
-//                     },
-//
-//                     children: [
-//
-//                       const TableRow(
-//                         decoration: BoxDecoration(color: Colors.black12),
-//                         children: [
-//                           Padding(
-//                             padding: EdgeInsets.all(6),
-//                             child: Text("Item",
-//                                 style: TextStyle(fontWeight: FontWeight.bold)),
-//                           ),
-//                           Padding(
-//                             padding: EdgeInsets.all(6),
-//                             child: Text("Qty",
-//                                 style: TextStyle(fontWeight: FontWeight.bold)),
-//                           ),
-//                           Padding(
-//                             padding: EdgeInsets.all(6),
-//                             child: Text("Rate",
-//                                 style: TextStyle(fontWeight: FontWeight.bold)),
-//                           ),
-//                           Padding(
-//                             padding: EdgeInsets.all(6),
-//                             child: Text("Total",
-//                                 style: TextStyle(fontWeight: FontWeight.bold)),
-//                           ),
-//                         ],
-//                       ),
-//
-//                       ...selectedProducts.map((p) {
-//
-//                         return TableRow(children: [
-//
-//                           Padding(
-//                             padding: const EdgeInsets.all(6),
-//                             child: Text(p["name"]),
-//                           ),
-//
-//                           Padding(
-//                             padding: const EdgeInsets.all(6),
-//                             child: Text(p["qty_received"].toString()),
-//                           ),
-//
-//                           Padding(
-//                             padding: const EdgeInsets.all(6),
-//                             child: Text(p["unit_cost"].toString()),
-//                           ),
-//
-//                           Padding(
-//                             padding: const EdgeInsets.all(6),
-//                             child: Text(p["total"].toString()),
-//                           ),
-//
-//                         ]);
-//
-//                       }).toList(),
-//                     ],
-//                   ),
-//
-//                   const SizedBox(height: 10),
-//
-//                   Text(
-//                     "Grand Total: Rs $grandTotal",
-//                     style: const TextStyle(
-//                         fontWeight: FontWeight.bold,
-//                         fontSize: 18),
-//                   )
-//                 ],
-//               ),
-//
-//             const SizedBox(height: 20),
-//
-//             /// SAVE BUTTON
-//             ElevatedButton(
-//
-//               onPressed: () async {
-//
-//                 if (selectedSupplierId == null ||
-//                     selectedLocationId == null ||
-//                     selectedProducts.isEmpty) {
-//
-//                   ScaffoldMessenger.of(context).showSnackBar(
-//                     const SnackBar(
-//                         content: Text("Select supplier, location & add product")),
-//                   );
-//                   return;
-//                 }
-//
-//                 final date = DateFormat("yyyy-MM-dd").format(DateTime.now());
-//
-//                 /// DETAILS FORMAT FOR API
-//                 List<Map<String, dynamic>> details =
-//                 selectedProducts.map((e) => {
-//                   "item_id": e["item_id"] is String ? int.parse(e["item_id"]) : e["item_id"],
-//                   "qty_received": e["qty_received"],
-//                   "unit_cost": e["unit_cost"],
-//                 }).toList();
-//
-//                 bool success = await grnProvider.addNewGRN(
-//                   supplierId: int.parse(selectedSupplierId!),
-//                   grnDate: date,
-//                   products: details,
-//                   totalAmount: grandTotal,
-//                   grnNo: widget.nextOrderId,      // ✅ dynamic from widget
-//                   locationId: selectedLocationId!, // ✅ dynamic from dropdown
-//                   details: details,
-//                 );
-//
-//                 if (success) {
-//
-//                   ScaffoldMessenger.of(context).showSnackBar(
-//                     const SnackBar(
-//                         content: Text("GRN Added Successfully")),
-//                   );
-//
-//                   Navigator.pop(context);
-//
-//                 } else {
-//
-//                   ScaffoldMessenger.of(context).showSnackBar(
-//                     const SnackBar(
-//                         content: Text("Failed to Add GRN")),
-//                   );
-//                 }
-//               },
-//
-//               child: const Text("Save GRN"),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -389,23 +23,38 @@ class _AddGRNScreenState extends State<AddGRNScreen>
   String? selectedSupplierId;
   ItemDetails? selectedProduct;
 
+  final taxController = TextEditingController();
+  final discountController = TextEditingController();
   final qtyController = TextEditingController();
   final rateController = TextEditingController();
+
   int? selectedLocationId;
 
   double productTotal = 0;
-  List<Map<String, dynamic>> selectedProducts = [];
+  double taxAmount = 0;
   double grandTotal = 0;
+  double grandTotalWithTax = 0;
+
+  List<Map<String, dynamic>> selectedProducts = [];
 
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
   // ── Calc / Add / Remove ───────────────────────────────────────────────────
 
-  void calculateTotal() {
-    final qty = int.tryParse(qtyController.text) ?? 0;
+  void calculateProductTotal() {
+    final qty = double.tryParse(qtyController.text) ?? 0;
     final rate = double.tryParse(rateController.text) ?? 0;
     setState(() => productTotal = qty * rate);
+  }
+
+  void calculateGrandTotal() {
+    grandTotal =
+        selectedProducts.fold(0, (sum, item) => sum + (item["total"] as double));
+    final tax = double.tryParse(taxController.text) ?? 0;
+    taxAmount = grandTotal * tax / 100;
+    grandTotalWithTax = grandTotal + taxAmount;
+    setState(() {});
   }
 
   void addProductToList() {
@@ -419,25 +68,20 @@ class _AddGRNScreenState extends State<AddGRNScreen>
     selectedProducts.add({
       "item_id": selectedProduct!.id,
       "name": selectedProduct!.name,
-      "qty_received": int.parse(qtyController.text),
+      "qty_received": double.parse(qtyController.text),
       "unit_cost": double.parse(rateController.text),
       "total": productTotal,
     });
 
-    grandTotal =
-        selectedProducts.fold(0, (sum, item) => sum + (item["total"] as double));
-
     qtyController.clear();
     rateController.clear();
     productTotal = 0;
-    setState(() {});
+    calculateGrandTotal(); // ✅ recalculates grandTotal + tax
   }
 
   void removeProduct(int index) {
     selectedProducts.removeAt(index);
-    grandTotal =
-        selectedProducts.fold(0, (sum, item) => sum + (item["total"] as double));
-    setState(() {});
+    calculateGrandTotal(); // ✅ recalculates grandTotal + tax
   }
 
   void _showSnack(String msg, {bool isError = false}) {
@@ -473,6 +117,8 @@ class _AddGRNScreenState extends State<AddGRNScreen>
     _fadeController.dispose();
     qtyController.dispose();
     rateController.dispose();
+    taxController.dispose();
+    discountController.dispose();
     super.dispose();
   }
 
@@ -535,33 +181,24 @@ class _AddGRNScreenState extends State<AddGRNScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── GRN ID header ──
               _buildGrnIdCard(),
               const SizedBox(height: 16),
-
-              // ── Supplier + Location ──
               _buildSectionCard(
                 title: "Order Details",
                 icon: Icons.assignment_outlined,
                 child: _buildOrderDetailsSection(),
               ),
               const SizedBox(height: 16),
-
-              // ── Product selection ──
               _buildSectionCard(
                 title: "Add Product",
                 icon: Icons.add_shopping_cart_rounded,
                 child: _buildProductSection(),
               ),
               const SizedBox(height: 16),
-
-              // ── Products table ──
               if (selectedProducts.isNotEmpty) ...[
                 _buildProductsTable(),
                 const SizedBox(height: 16),
               ],
-
-              // ── Save button ──
               _buildSaveButton(grnProvider),
             ],
           ),
@@ -597,8 +234,8 @@ class _AddGRNScreenState extends State<AddGRNScreen>
               color: AppColors.primary.withOpacity(0.12),
               borderRadius: BorderRadius.circular(12),
             ),
-            child:
-            Icon(Icons.receipt_rounded, color: AppColors.primary, size: 20),
+            child: Icon(Icons.receipt_rounded,
+                color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: 14),
           Column(
@@ -709,7 +346,7 @@ class _AddGRNScreenState extends State<AddGRNScreen>
     );
   }
 
-  // ── Order Details (Supplier + Location) ───────────────────────────────────
+  // ── Order Details (Supplier + Location + Tax) ─────────────────────────────
 
   Widget _buildOrderDetailsSection() {
     return Column(
@@ -718,7 +355,7 @@ class _AddGRNScreenState extends State<AddGRNScreen>
         _styledDropdownWrapper(
           icon: Icons.storefront_rounded,
           child: SupplierDropdown(
-            onSelected: (id) => selectedSupplierId = id,
+            onSelected: (id) => setState(() => selectedSupplierId = id),
           ),
         ),
         const SizedBox(height: 14),
@@ -729,10 +366,122 @@ class _AddGRNScreenState extends State<AddGRNScreen>
             builder: (context, provider, _) => LocationDropdown(
               locations: provider.locationList,
               selectedId: selectedLocationId,
-              onChanged: (value) => setState(() => selectedLocationId = value),
+              onChanged: (value) =>
+                  setState(() => selectedLocationId = value),
             ),
           ),
         ),
+        const SizedBox(height: 14),
+
+        // ✅ Tax % Field
+        _buildInputField(
+          controller: taxController,
+          label: "Tax %",
+          icon: Icons.percent_rounded,
+          onChanged: (_) => calculateGrandTotal(),
+        ),
+
+        // ✅ Live Tax Breakdown — only show when tax > 0 and products exist
+        if ((double.tryParse(taxController.text) ?? 0) > 0 &&
+            selectedProducts.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Container(
+            padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF8E1),
+              borderRadius: BorderRadius.circular(12),
+              border:
+              Border.all(color: const Color(0xFFFFD54F), width: 1),
+            ),
+            child: Column(
+              children: [
+                // Subtotal row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.receipt_long_outlined,
+                            size: 15, color: Color(0xFFFF8F00)),
+                        SizedBox(width: 6),
+                        Text(
+                          "Subtotal",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF888888),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      "Rs ${NumberFormat('#,##0.##').format(grandTotal)}",
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF555566),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                // Tax row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.percent_rounded,
+                            size: 15, color: Color(0xFFFF8F00)),
+                        const SizedBox(width: 6),
+                        Text(
+                          "Tax (${taxController.text}%)",
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF888888),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      "+ Rs ${NumberFormat('#,##0.##').format(taxAmount)}",
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFFF8F00),
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 14, color: Color(0xFFFFD54F)),
+                // Total with tax row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Total with Tax",
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1A1A2E),
+                      ),
+                    ),
+                    Text(
+                      "Rs ${NumberFormat('#,##0.##').format(grandTotalWithTax)}",
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFFFF8F00),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -749,7 +498,6 @@ class _AddGRNScreenState extends State<AddGRNScreen>
         padding: const EdgeInsets.all(8.0),
         child: Row(
           children: [
-
             Expanded(child: child),
           ],
         ),
@@ -763,7 +511,6 @@ class _AddGRNScreenState extends State<AddGRNScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Product dropdown
         ItemDetailsDropdown(
           onItemSelected: (item) {
             setState(() => selectedProduct = item);
@@ -830,7 +577,7 @@ class _AddGRNScreenState extends State<AddGRNScreen>
                   controller: qtyController,
                   label: "Quantity",
                   icon: Icons.format_list_numbered_rounded,
-                  onChanged: (_) => calculateTotal(),
+                  onChanged: (_) => calculateProductTotal(), // ✅ fixed name
                 ),
               ),
               const SizedBox(width: 12),
@@ -839,7 +586,7 @@ class _AddGRNScreenState extends State<AddGRNScreen>
                   controller: rateController,
                   label: "Rate",
                   icon: Icons.payments_outlined,
-                  onChanged: (_) => calculateTotal(),
+                  onChanged: (_) => calculateProductTotal(), // ✅ fixed name
                 ),
               ),
             ],
@@ -847,7 +594,7 @@ class _AddGRNScreenState extends State<AddGRNScreen>
 
           const SizedBox(height: 12),
 
-          // Live total
+          // Live product total
           if (productTotal > 0)
             Container(
               padding: const EdgeInsets.symmetric(
@@ -913,7 +660,8 @@ class _AddGRNScreenState extends State<AddGRNScreen>
               icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
               label: const Text(
                 "Add Product",
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                style:
+                TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
               ),
             ),
           ),
@@ -950,8 +698,7 @@ class _AddGRNScreenState extends State<AddGRNScreen>
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
-          prefixIcon:
-          Icon(icon, color: const Color(0xFF9E9EC0), size: 18),
+          prefixIcon: Icon(icon, color: const Color(0xFF9E9EC0), size: 18),
           border: InputBorder.none,
           contentPadding:
           const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -1030,8 +777,8 @@ class _AddGRNScreenState extends State<AddGRNScreen>
             color: const Color(0xFFF8F8FC),
             padding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              children: const [
+            child: const Row(
+              children: [
                 Expanded(
                     flex: 3,
                     child: Text("Item",
@@ -1081,7 +828,8 @@ class _AddGRNScreenState extends State<AddGRNScreen>
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             itemCount: selectedProducts.length,
             separatorBuilder: (_, __) =>
             const Divider(height: 1, color: Color(0xFFF5F5FA)),
@@ -1091,7 +839,6 @@ class _AddGRNScreenState extends State<AddGRNScreen>
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Row(
                   children: [
-                    // Name + avatar
                     Expanded(
                       flex: 3,
                       child: Row(
@@ -1130,7 +877,6 @@ class _AddGRNScreenState extends State<AddGRNScreen>
                         ],
                       ),
                     ),
-                    // Qty
                     Expanded(
                       flex: 1,
                       child: Text(
@@ -1143,12 +889,10 @@ class _AddGRNScreenState extends State<AddGRNScreen>
                         ),
                       ),
                     ),
-                    // Rate
                     Expanded(
                       flex: 2,
                       child: Text(
-                        NumberFormat('#,##0.##')
-                            .format(p["unit_cost"]),
+                        NumberFormat('#,##0.##').format(p["unit_cost"]),
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 13,
@@ -1157,7 +901,6 @@ class _AddGRNScreenState extends State<AddGRNScreen>
                         ),
                       ),
                     ),
-                    // Total
                     Expanded(
                       flex: 2,
                       child: Text(
@@ -1171,15 +914,13 @@ class _AddGRNScreenState extends State<AddGRNScreen>
                       ),
                     ),
                     const SizedBox(width: 6),
-                    // Delete
                     GestureDetector(
                       onTap: () => removeProduct(index),
                       child: Container(
                         width: 28,
                         height: 28,
                         decoration: BoxDecoration(
-                          color:
-                          const Color(0xFFFF4D4F).withOpacity(0.08),
+                          color: const Color(0xFFFF4D4F).withOpacity(0.08),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(Icons.delete_outline_rounded,
@@ -1230,8 +971,9 @@ class _AddGRNScreenState extends State<AddGRNScreen>
                     ),
                   ],
                 ),
+                // ✅ Shows tax-included total if tax > 0
                 Text(
-                  "Rs ${NumberFormat('#,##0.##').format(grandTotal)}",
+                  "Rs ${NumberFormat('#,##0.##').format(grandTotalWithTax > 0 ? grandTotalWithTax : grandTotal)}",
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
@@ -1285,7 +1027,7 @@ class _AddGRNScreenState extends State<AddGRNScreen>
             return;
           }
 
-          final date =
+          final grnDate =
           DateFormat("yyyy-MM-dd").format(DateTime.now());
 
           final List<Map<String, dynamic>> details =
@@ -1297,14 +1039,21 @@ class _AddGRNScreenState extends State<AddGRNScreen>
             "unit_cost": e["unit_cost"],
           }).toList();
 
+          final double finalTotal =
+          grandTotalWithTax > 0 ? grandTotalWithTax : grandTotal;
+          final double taxPercent =
+              double.tryParse(taxController.text) ?? 0;
+
           bool success = await grnProvider.addNewGRN(
             supplierId: int.parse(selectedSupplierId!),
-            grnDate: date,
+            grnDate: grnDate,
             products: details,
-            totalAmount: grandTotal,
+            totalAmount: finalTotal,
             grnNo: widget.nextOrderId,
             locationId: selectedLocationId!,
             details: details,
+            taxPercent: taxPercent,  // ✅ from tax field
+            discount: 0,
           );
 
           if (success) {

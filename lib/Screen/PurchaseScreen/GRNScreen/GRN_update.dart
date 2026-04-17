@@ -66,7 +66,7 @@ class _GrnUpdateState extends State<GrnUpdate> with SingleTickerProviderStateMix
         discountController.text = details.discount.toStringAsFixed(0);
         taxController.text = details.taxPercent.toStringAsFixed(0);
         
-        selectedProducts = details.details.map((item) => {
+        selectedProducts = details.details.map<Map<String, dynamic>>((item) => <String, dynamic>{
           "item_id": item.itemId,
           "name": item.itemName,
           "qty_received": item.qtyReceived,
@@ -117,19 +117,33 @@ class _GrnUpdateState extends State<GrnUpdate> with SingleTickerProviderStateMix
     final rate = double.parse(rateController.text);
 
     setState(() {
-      selectedProducts.add({
-        "item_id": selectedProduct!.id,
-        "name": selectedProduct!.name,
-        "qty_received": qty,
-        "unit_cost": rate,
-        "total": qty * rate,
-      });
+      final existingIndex = selectedProducts.indexWhere((p) => p["item_id"] == selectedProduct!.id);
 
-      qtyController.clear();
-      rateController.clear();
-      selectedProduct = null;
-      productTotal = 0;
+      if (existingIndex != -1) {
+        selectedProducts[existingIndex]["qty_received"] = qty;
+        selectedProducts[existingIndex]["unit_cost"] = rate;
+        selectedProducts[existingIndex]["total"] = qty * rate;
+        _showSnack("Product updated in list");
+      } else {
+        selectedProducts.add(<String, dynamic>{
+          "item_id": selectedProduct!.id,
+          "name": selectedProduct!.name,
+          "qty_received": qty,
+          "unit_cost": rate,
+          "total": qty * rate,
+        });
+        _showSnack("Product added to list");
+      }
+
+      _clearProductForm();
     });
+  }
+
+  void _clearProductForm() {
+    qtyController.clear();
+    rateController.clear();
+    selectedProduct = null;
+    productTotal = 0;
   }
 
   void removeProduct(int index) {
@@ -155,7 +169,7 @@ class _GrnUpdateState extends State<GrnUpdate> with SingleTickerProviderStateMix
     }
 
     final List<Map<String, dynamic>> details = selectedProducts.map((e) => {
-      "item_id": e["item_id"],
+      "item_id": e["item_id"] is String ? int.parse(e["item_id"]) : e["item_id"],
       "qty_received": e["qty_received"],
       "unit_cost": e["unit_cost"],
     }).toList();

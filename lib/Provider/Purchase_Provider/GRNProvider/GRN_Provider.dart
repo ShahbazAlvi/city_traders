@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:demo_distribution/ApiLink/ApiEndpoint.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../model/Purchase_Model/GNRModel/GNR_Model.dart';
 import 'GRN_services.dart';
@@ -77,15 +78,21 @@ class GRNProvider extends ChangeNotifier {
 
   /// ✅ DELETE RECORD (FIXED int TYPE)
   Future<void> deleteRecord(int id) async {
+    print("TRY DELETE ID: $id");
+
     bool success = await GRNApiService.deleteGRN(id.toString());
 
+    print("DELETE SUCCESS: $success");
+
     if (success) {
-      grnList.removeWhere((item) => item.id == id);
-      notifyListeners();
+      await getGRNData();
+    } else {
+      print("DELETE FAILED");
     }
   }
 
   /// ✅ ADD NEW GRN
+  /// ✅ ADD NEW GRN — fetches aging from API automatically
   Future<bool> addNewGRN({
     required String grnNo,
     required int supplierId,
@@ -94,21 +101,34 @@ class GRNProvider extends ChangeNotifier {
     required List<Map<String, dynamic>> details,
     required double totalAmount,
     required List<Map<String, dynamic>> products,
+    required double taxPercent,
+    required double discount,
   }) async {
+
+    // ✅ Fetch aging days from API
+    final int agingDays = await GRNApiService.fetchSupplierAgingDays(supplierId);
+
+    // ✅ Calculate aging_due_date using API value
+    final DateTime grnDateTime = DateTime.now();
+    final String agingDueDate = DateFormat("yyyy-MM-dd")
+        .format(grnDateTime.add(Duration(days: agingDays)));
+
+    print("AGING DAYS FROM API: $agingDays");
+    print("CALCULATED AGING DUE DATE: $agingDueDate");
+
     bool success = await GRNApiService.addGRN(
       grnNo: grnNo,
       supplierId: supplierId,
       grnDate: grnDate,
       locationId: locationId,
       status: "POSTED",
-      discount: 0,
+      discount: discount,
+      taxPercent: taxPercent,
+      agingDueDate: agingDueDate,   // ✅ from API
       details: details,
     );
 
-    if (success) {
-      await getGRNData();
-    }
-
+    if (success) await getGRNData();
     return success;
   }
 
