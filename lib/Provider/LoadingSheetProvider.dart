@@ -11,6 +11,7 @@ import '../model/load_sheet_model/Loading_sheet_model.dart';
 
 class LoadSheetProvider with ChangeNotifier {
   List<Map<String, dynamic>> _loadSheets = [];
+  List<Map<String, dynamic>> _unfilteredSheets = [];
   bool _isLoading = false;
   bool _isSubmitting = false;
   String? _error;
@@ -38,18 +39,19 @@ class LoadSheetProvider with ChangeNotifier {
   bool get isLoadingItems => _isLoadingItems;
   String? get itemsError => _itemsError;
 
-  /// Returns the next auto-incremented load number like LS-0003
+  /// Returns the next auto-incremented load number like LO-0003
   String get nextLoadNo {
     int maxNum = 0;
-    for (final sheet in _loadSheets) {
+    // Use unfiltered list for collective/global ID generation
+    for (final sheet in _unfilteredSheets) {
       final loadNo = sheet['load_no'] as String? ?? '';
-      final match = RegExp(r'LS-(\d+)').firstMatch(loadNo);
+      final match = RegExp(r'(?:LS|LO|Lo)-(\d+)$').firstMatch(loadNo);
       if (match != null) {
         final num = int.tryParse(match.group(1)!) ?? 0;
         if (num > maxNum) maxNum = num;
       }
     }
-    return 'LS-${(maxNum + 1).toString().padLeft(4, '0')}';
+    return 'LO-${(maxNum + 1).toString().padLeft(4, '0')}';
   }
 
   Future<String> _getToken() async {
@@ -86,6 +88,8 @@ class LoadSheetProvider with ChangeNotifier {
       if (response.statusCode == 200 && data['success'] == true) {
         final list = (data['data']['data'] as List? ?? [])
             .cast<Map<String, dynamic>>();
+
+        _unfilteredSheets = list; // Keep full list for ID generation
 
         if (salesmanId != null) {
           _loadSheets = list

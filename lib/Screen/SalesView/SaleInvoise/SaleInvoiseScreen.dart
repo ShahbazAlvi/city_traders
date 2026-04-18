@@ -909,6 +909,9 @@ class _InvoiceDetailsSheet extends StatefulWidget {
 class _InvoiceDetailsSheetState extends State<_InvoiceDetailsSheet> {
   final formatter = NumberFormat('#,##,###');
   final dateFormat = DateFormat('dd MMM yyyy');
+  bool canAddOrder = false;
+  bool canEditOrder = false;
+  bool canDeleteOrder = false;
 
   @override
   void initState() {
@@ -916,6 +919,16 @@ class _InvoiceDetailsSheetState extends State<_InvoiceDetailsSheet> {
     Future.microtask(() =>
         Provider.of<SaleInvoicesProvider>(context, listen: false)
             .fetchSingleInvoice(widget.invoiceId));
+    _loadPermissions();
+
+  }
+  Future<void> _loadPermissions() async {
+    final add = await AccessControl.canDo("can_add_sales_invoice_cash");
+    final edit = await AccessControl.canDo("can_edit_sales_invoice_cash");
+    final delete = await AccessControl.canDo("can_delete_sales_invoice_cash");
+    setState(() => canAddOrder = add);
+    setState(() => canEditOrder = edit);
+    setState(() => canDeleteOrder = delete);
   }
 
   @override
@@ -993,6 +1006,7 @@ class _InvoiceDetailsSheetState extends State<_InvoiceDetailsSheet> {
                       child: Row(
                         children: [
                           // ── Edit button ──
+                          if(canEditOrder)
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed: () {
@@ -1023,6 +1037,7 @@ class _InvoiceDetailsSheetState extends State<_InvoiceDetailsSheet> {
                           ),
                           const SizedBox(width: 10),
                           // ── Delete button ──
+                          if(canDeleteOrder)
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed: () => _confirmDelete(context, provider, invoice.id),

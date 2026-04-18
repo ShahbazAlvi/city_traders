@@ -35,6 +35,8 @@ class _PurchaseDashboardState extends State<PurchaseDashboard> {
   bool canViewLedger          = false;
   bool canViewAging           = false;
   bool canViewDailySales      = false;
+  bool canViewPayable= false;
+  bool canViewPaymentSupplier= false;
 
   @override
   void initState() {
@@ -50,7 +52,9 @@ class _PurchaseDashboardState extends State<PurchaseDashboard> {
     final receivable       = await AccessControl.canDo("can_view_amount_receivables");
     final ledger           = await AccessControl.canDo("can_view_supplier_ledger_report");
     final aging            = await AccessControl.canDo("can_view_credit_aging");
-    final dailySales       = await AccessControl.canDo("can_view_daily_sales_report");
+    final dailySales       = await AccessControl.canDo("can_view_daily_sales_report");  //can_view_amount_payables
+    final payables       = await AccessControl.canDo("can_view_amount_payables");
+    final supplierPayment       = await AccessControl.canDo("can_view_payment_to_supplier");
 
     setState(() {
       canViewgrn    = grn;
@@ -62,6 +66,8 @@ class _PurchaseDashboardState extends State<PurchaseDashboard> {
       canViewLedger          = ledger;
       canViewAging           = aging;
       canViewDailySales      = dailySales;
+      canViewPayable         = payables;
+      canViewPaymentSupplier         = supplierPayment;
     });
   }
   Future<void> _onRefresh() async {
@@ -164,6 +170,7 @@ class _PurchaseDashboardState extends State<PurchaseDashboard> {
                 _buildSectionTitle("📊 Reports"),
                 const SizedBox(height: 14),
                 _buildCardGrid([
+                  if(canViewPayable)
                   DashboardCard(
                     icon: Icons.account_balance_wallet_rounded,
                     title: "Amount Payable",
@@ -172,6 +179,7 @@ class _PurchaseDashboardState extends State<PurchaseDashboard> {
                       Navigator.push(context,MaterialPageRoute(builder: (context)=>PayableAmountScreen()));
                     },
                   ),
+                  if(canViewPaymentSupplier)
                   DashboardCard(
                     icon: Icons.date_range_rounded,
                     title: "Payment to Supplier ",

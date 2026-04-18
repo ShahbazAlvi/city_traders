@@ -705,19 +705,21 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
   }
 
   void _navigateToAddOrder() {
-    String nextOrderId = "SO-0001";
+    String prefix = "OS";
+    String nextOrderId = "$prefix-0001";
 
     if (provider.orderData != null && provider.orderData!.data.isNotEmpty) {
       final allNumbers = provider.orderData!.data.map((order) {
         final id = order.soNo?.toString() ?? "";
-        final regex = RegExp(r'SO-(\d+)$');
+        // Support both old SO- and new OS- formats
+        final regex = RegExp(r'(?:OS|os)-(\d+)$');
         final match = regex.firstMatch(id);
         return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
       }).toList();
 
       final maxNumber =
       allNumbers.isNotEmpty ? allNumbers.reduce((a, b) => a > b ? a : b) : 0;
-      nextOrderId = "SO-${(maxNumber + 1).toString().padLeft(4, '0')}";
+      nextOrderId = "$prefix-${(maxNumber + 1).toString().padLeft(4, '0')}";
     }
 
     Navigator.push(
