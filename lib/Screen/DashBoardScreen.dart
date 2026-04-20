@@ -505,6 +505,8 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
+  String _userName = '';
+  String _userInitial = 'U';
 
   // ── Permission flags ──
   bool _loaded = false;
@@ -578,6 +580,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       label: 'Logout',
       isLogout: true,
       alwaysVisible: true,
+
     ),
   ];
 
@@ -633,6 +636,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final topProducts      = await AccessControl.canDo('view_top_products_chart');
     final recentAct        = await AccessControl.canDo('view_recent_sales_purchase_activity');
     final recoveryTotal    = await AccessControl.canDo('view_recovery_total');
+    final prefs = await SharedPreferences.getInstance();
+
+    // Add these two lines at the top
+    final userName = prefs.getString('user_name') ?? prefs.getString('name') ?? 'User';
+   // final admin = await AccessControl.isAdmin();
+
 
     setState(() {
       isAdmin          = admin;
@@ -657,6 +666,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       _loaded          = true;
       _navIndex        = 0;
+      _userName = userName;
+      _userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : 'U';
+
+      isAdmin = admin;
     });
   }
 
@@ -847,6 +860,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ─── Sidebar ────────────────────────────────────────────────────────────
 
+
   Widget _buildSidebar(bool isDesktop) {
     final items = _visibleItems;
     return Container(
@@ -941,11 +955,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
 
         // ── User chip ──
+        // Container(
+        //   padding: const EdgeInsets.all(16),
+        //   decoration: const BoxDecoration(
+        //       border:
+        //       Border(top: BorderSide(color: AppTheme.border))),
+        //   child: Row(children: [
+        //     Container(
+        //       width: 36,
+        //       height: 36,
+        //       decoration: BoxDecoration(
+        //         gradient: AppTheme.brandGradient,
+        //         borderRadius: BorderRadius.circular(18),
+        //         boxShadow: [
+        //           BoxShadow(
+        //               color: AppColors.primary.withOpacity(0.3),
+        //               blurRadius: 8,
+        //               offset: const Offset(0, 3)),
+        //         ],
+        //       ),
+        //       child: const Center(
+        //           child: Text('A',
+        //               style: TextStyle(
+        //                   color: Colors.white,
+        //                   fontWeight: FontWeight.w800,
+        //                   fontSize: 15))),
+        //     ),
+        //     if (isDesktop) ...[
+        //       const SizedBox(width: 10),
+        //       Column(
+        //           crossAxisAlignment: CrossAxisAlignment.start,
+        //           children: [
+        //             const Text('Admin',
+        //                 style: TextStyle(
+        //                     color: AppTheme.textPrimary,
+        //                     fontSize: 13,
+        //                     fontWeight: FontWeight.w600)),
+        //             Text(
+        //               isAdmin ? 'Super Admin' : 'Staff',
+        //               style: TextStyle(
+        //                   color: isAdmin
+        //                       ? AppColors.primary
+        //                       : AppTheme.textMuted,
+        //                   fontSize: 10,
+        //                   fontWeight: isAdmin
+        //                       ? FontWeight.w600
+        //                       : FontWeight.w400),
+        //             ),
+        //           ]),
+        //     ],
+        //   ]),
+        // ),
+        // ── User chip ──
         Container(
           padding: const EdgeInsets.all(16),
           decoration: const BoxDecoration(
-              border:
-              Border(top: BorderSide(color: AppTheme.border))),
+              border: Border(top: BorderSide(color: AppTheme.border))),
           child: Row(children: [
             Container(
               width: 36,
@@ -960,9 +1025,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       offset: const Offset(0, 3)),
                 ],
               ),
-              child: const Center(
-                  child: Text('A',
-                      style: TextStyle(
+              child: Center(
+                  child: Text(
+                      _userInitial,   // ← real initial instead of 'A'
+                      style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
                           fontSize: 15))),
@@ -972,21 +1038,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Admin',
-                        style: TextStyle(
+                    Text(
+                        _userName,    // ← real name instead of 'Admin'
+                        style: const TextStyle(
                             color: AppTheme.textPrimary,
                             fontSize: 13,
                             fontWeight: FontWeight.w600)),
                     Text(
                       isAdmin ? 'Super Admin' : 'Staff',
                       style: TextStyle(
-                          color: isAdmin
-                              ? AppColors.primary
-                              : AppTheme.textMuted,
+                          color: isAdmin ? AppColors.primary : AppTheme.textMuted,
                           fontSize: 10,
-                          fontWeight: isAdmin
-                              ? FontWeight.w600
-                              : FontWeight.w400),
+                          fontWeight: isAdmin ? FontWeight.w600 : FontWeight.w400),
                     ),
                   ]),
             ],

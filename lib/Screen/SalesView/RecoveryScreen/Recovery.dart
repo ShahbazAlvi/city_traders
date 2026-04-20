@@ -234,7 +234,7 @@ class _RecoveryListScreenState extends State<RecoveryListScreen>
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         title: const Text(
-          "Recovery Report",
+          "Recovery Voucher",
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w600,
@@ -252,67 +252,106 @@ class _RecoveryListScreenState extends State<RecoveryListScreen>
             ),
           ),
         ),
-        actions: [
-          if(canAddOrder)
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              color: Colors.white.withOpacity(0.2),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  final provider = Provider.of<RecoveryProvider>(context, listen: false);
-                  String nextRvNo = "RV-0001";
-
-                  if (provider.recoveryReport != null &&
-                      provider.recoveryReport!.data.vouchers.isNotEmpty) {
-                    final allNumbers = provider.recoveryReport!.data.vouchers.map((voucher) {
-                      final regex = RegExp(r'RV-(\d+)$');
-                      final match = regex.firstMatch(voucher.rvNo);
-                      return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
-                    }).toList();
-
-                    final maxNumber = allNumbers.isNotEmpty ? allNumbers.reduce((a, b) => a > b ? a : b) : 0;
-                    nextRvNo = "RV-${(maxNumber + 1).toString().padLeft(4, '0')}";
-                  }
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AddRecoveryScreen(nextOrderId: nextRvNo),
-                    ),
-                  );
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: const [
-                      Icon(
-                        Icons.add_circle_outline,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        "Add Order",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+        // actions: [
+        //   if(canAddOrder)
+        //   Container(
+        //     margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        //     decoration: BoxDecoration(
+        //       borderRadius: BorderRadius.circular(16),
+        //       color: Colors.white.withOpacity(0.2),
+        //     ),
+        //     child: Material(
+        //       color: Colors.transparent,
+        //       child: InkWell(
+        //         onTap: () {
+        //           final provider = Provider.of<RecoveryProvider>(context, listen: false);
+        //           String nextRvNo = "RV-0001";
+        //
+        //           if (provider.recoveryReport != null &&
+        //               provider.recoveryReport!.data.vouchers.isNotEmpty) {
+        //             final allNumbers = provider.recoveryReport!.data.vouchers.map((voucher) {
+        //               final regex = RegExp(r'RV-(\d+)$');
+        //               final match = regex.firstMatch(voucher.rvNo);
+        //               return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
+        //             }).toList();
+        //
+        //             final maxNumber = allNumbers.isNotEmpty ? allNumbers.reduce((a, b) => a > b ? a : b) : 0;
+        //             nextRvNo = "RV-${(maxNumber + 1).toString().padLeft(4, '0')}";
+        //           }
+        //
+        //           Navigator.push(
+        //             context,
+        //             MaterialPageRoute(
+        //               builder: (context) => AddRecoveryScreen(nextOrderId: nextRvNo),
+        //             ),
+        //           );
+        //         },
+        //         borderRadius: BorderRadius.circular(16),
+        //         child: Padding(
+        //           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        //           child: Row(
+        //             children: const [
+        //               Icon(
+        //                 Icons.add_circle_outline,
+        //                 color: Colors.white,
+        //                 size: 20,
+        //               ),
+        //               SizedBox(width: 8),
+        //               Text(
+        //                 "Add Order",
+        //                 style: TextStyle(
+        //                   color: Colors.white,
+        //                   fontWeight: FontWeight.w600,
+        //                   fontSize: 14,
+        //                 ),
+        //               ),
+        //             ],
+        //           ),
+        //         ),
+        //       ),
+        //     ),
+        //   ),
+        // ],
       ),
+      floatingActionButton: canAddOrder
+          ? FloatingActionButton.extended(
+        elevation: 3,
+        backgroundColor: AppColors.primary,
+        onPressed: () {
+          final provider = Provider.of<RecoveryProvider>(context, listen: false);
+          String nextRvNo = "RV-0001";
+
+          if (provider.recoveryReport != null &&
+              provider.recoveryReport!.data.vouchers.isNotEmpty) {
+            final allNumbers = provider.recoveryReport!.data.vouchers.map((voucher) {
+              final regex = RegExp(r'RV-(\d+)$');
+              final match = regex.firstMatch(voucher.rvNo);
+              return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
+            }).toList();
+
+            final maxNumber = allNumbers.isNotEmpty
+                ? allNumbers.reduce((a, b) => a > b ? a : b)
+                : 0;
+            nextRvNo = "RV-${(maxNumber + 1).toString().padLeft(4, '0')}";
+          }
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddRecoveryScreen(nextOrderId: nextRvNo),
+            ),
+          );
+        },
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          "Add Recovery",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      )
+          : null,
       body: Column(
         children: [
           // Filter Section

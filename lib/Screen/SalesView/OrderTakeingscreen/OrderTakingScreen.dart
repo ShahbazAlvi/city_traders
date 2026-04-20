@@ -704,23 +704,36 @@ class _OrderTakingScreenState extends State<OrderTakingScreen> {
     );
   }
 
-  void _navigateToAddOrder() {
-    String prefix = "OS";
-    String nextOrderId = "$prefix-0001";
+  // void _navigateToAddOrder() {
+  //   String prefix = "SO";
+  //   String nextOrderId = "$prefix-0001";
+  //
+  //   if (provider.orderData != null && provider.orderData!.data.isNotEmpty) {
+  //     final allNumbers = provider.orderData!.data.map((order) {
+  //       final id = order.soNo?.toString() ?? "";
+  //       // Support both old SO- and new OS- formats
+  //       final regex = RegExp(r'(?:SO|so)-(\d+)$');
+  //       final match = regex.firstMatch(id);
+  //       return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
+  //     }).toList();
+  //
+  //     final maxNumber =
+  //     allNumbers.isNotEmpty ? allNumbers.reduce((a, b) => a > b ? a : b) : 0;
+  //     nextOrderId = "$prefix-${(maxNumber + 1).toString().padLeft(4, '0')}";
+  //   }
+  //
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (_) => AddOrderScreen(nextOrderId: nextOrderId),
+  //     ),
+  //   );
+  // }
+  void _navigateToAddOrder() async {
+    // Show loading briefly while fetching correct SO number
+    final nextOrderId = await provider.fetchNextSoNumber();
 
-    if (provider.orderData != null && provider.orderData!.data.isNotEmpty) {
-      final allNumbers = provider.orderData!.data.map((order) {
-        final id = order.soNo?.toString() ?? "";
-        // Support both old SO- and new OS- formats
-        final regex = RegExp(r'(?:OS|os)-(\d+)$');
-        final match = regex.firstMatch(id);
-        return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
-      }).toList();
-
-      final maxNumber =
-      allNumbers.isNotEmpty ? allNumbers.reduce((a, b) => a > b ? a : b) : 0;
-      nextOrderId = "$prefix-${(maxNumber + 1).toString().padLeft(4, '0')}";
-    }
+    if (!mounted) return;
 
     Navigator.push(
       context,

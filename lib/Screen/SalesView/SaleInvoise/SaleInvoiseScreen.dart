@@ -115,6 +115,21 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
         appBar: _buildAppBar(),
+        floatingActionButton: canAddOrder
+            ? FloatingActionButton.extended(
+          elevation: 3,
+          backgroundColor: AppColors.primary,
+          onPressed: _navigateToAddInvoice,
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: const Text(
+            "Add Invoice",
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        )
+            : null,
         body: Column(
           children: [
             _buildFilterSection(provider),
@@ -137,6 +152,65 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
   }
 
   // ── AppBar ──────────────────────────────────────────────────────────────────
+  // PreferredSizeWidget _buildAppBar() {
+  //   return AppBar(
+  //     elevation: 0,
+  //     backgroundColor: Colors.transparent,
+  //     flexibleSpace: Container(
+  //       decoration: const BoxDecoration(
+  //         gradient: LinearGradient(
+  //           colors: [AppColors.secondary, AppColors.primary],
+  //           begin: Alignment.topLeft,
+  //           end: Alignment.bottomRight,
+  //         ),
+  //         borderRadius: BorderRadius.only(
+  //           bottomLeft: Radius.circular(30),
+  //           bottomRight: Radius.circular(30),
+  //         ),
+  //       ),
+  //     ),
+  //     // ✅ title uses FittedBox so it never overflows on narrow screens
+  //     title: const FittedBox(
+  //       fit: BoxFit.scaleDown,
+  //       child: Text(
+  //         "Sales Invoice",
+  //         style: TextStyle(
+  //           color: Colors.white,
+  //           fontWeight: FontWeight.bold,
+  //           fontSize: 20,
+  //         ),
+  //       ),
+  //     ),
+  //     centerTitle: true,
+  //     // actions: [
+  //     //   if (canAddOrder)
+  //     //     Padding(
+  //     //       padding: const EdgeInsets.only(right: 10, top: 8, bottom: 8),
+  //     //       child: ElevatedButton.icon(
+  //     //         onPressed: _navigateToAddInvoice,
+  //     //         icon: const Icon(Icons.add, color: Colors.white, size: 18),
+  //     //         label: const Text(
+  //     //           "Add",
+  //     //           style: TextStyle(
+  //     //             color: Colors.white,
+  //     //             fontWeight: FontWeight.w600,
+  //     //             fontSize: 13,
+  //     //           ),
+  //     //         ),
+  //     //         style: ElevatedButton.styleFrom(
+  //     //           backgroundColor: Colors.white.withOpacity(0.2),
+  //     //           shadowColor: Colors.transparent,
+  //     //           shape: RoundedRectangleBorder(
+  //     //             borderRadius: BorderRadius.circular(12),
+  //     //           ),
+  //     //           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+  //     //           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+  //     //         ),
+  //     //       ),
+  //     //     ),
+  //     // ],
+  //   );
+  // }
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       elevation: 0,
@@ -154,7 +228,6 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
           ),
         ),
       ),
-      // ✅ title uses FittedBox so it never overflows on narrow screens
       title: const FittedBox(
         fit: BoxFit.scaleDown,
         child: Text(
@@ -167,33 +240,7 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
         ),
       ),
       centerTitle: true,
-      actions: [
-        if (canAddOrder)
-          Padding(
-            padding: const EdgeInsets.only(right: 10, top: 8, bottom: 8),
-            child: ElevatedButton.icon(
-              onPressed: _navigateToAddInvoice,
-              icon: const Icon(Icons.add, color: Colors.white, size: 18),
-              label: const Text(
-                "Add",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white.withOpacity(0.2),
-                shadowColor: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-            ),
-          ),
-      ],
+      // ✅ actions removed entirely
     );
   }
 

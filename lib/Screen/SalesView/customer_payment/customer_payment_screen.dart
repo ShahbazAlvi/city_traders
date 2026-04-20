@@ -22,12 +22,7 @@ class _CustomerPaymentScreenState extends State<CustomerPaymentScreen> {
   final TextEditingController _searchController = TextEditingController();
   String searchQuery = '';
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   Future.microtask(() =>
-  //       context.read<CustomerPaymentProvider>().fetchCustomerPayments());
-  // }
+
 
   bool canAddOrder    = false;
   bool canEditOrder   = false;
@@ -80,7 +75,12 @@ class _CustomerPaymentScreenState extends State<CustomerPaymentScreen> {
         //   );
         // },
         onPressed: () async {
-          final nextNo = provider.getNextPaymentNumber();
+          // Show loading while fetching correct CP number
+          final nextNo = await context
+              .read<CustomerPaymentProvider>()
+              .fetchNextPaymentNumber();  // ← API call, not local list
+
+          if (!context.mounted) return;
 
           final result = await Navigator.push(
             context,
@@ -93,8 +93,8 @@ class _CustomerPaymentScreenState extends State<CustomerPaymentScreen> {
             context.read<CustomerPaymentProvider>().fetchCustomerPayments();
           }
         },
-        icon: const Icon(Icons.add),
-        label: const Text("New Payment"),
+        icon: const Icon(Icons.add,color:AppColors.text ,),
+        label: const Text("New Payment",style: TextStyle(color: AppColors.text),),
       )
           : null,  // ← null means no FAB shown
       body: provider.isLoading

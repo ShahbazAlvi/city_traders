@@ -291,6 +291,45 @@ class OrderTakingProvider with ChangeNotifier{
     _isFetched = false;
   }
 
+ // so-number form api
+
+  Future<String> fetchNextSoNumber() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      // Always fetch ALL orders (no salesman filter) just for SO number
+      final response = await http.get(
+        Uri.parse('${ApiEndpoints.baseUrl}/sales-orders'),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+          "x-company-id": "2",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final allOrders = OrderTakingModel.fromJson(data).data;
+
+        if (allOrders.isEmpty) return 'SO-0001';
+
+        final allNumbers = allOrders.map((order) {
+          final id = order.soNo?.toString() ?? "";
+          final regex = RegExp(r'(?:SO|so)-(\d+)$');
+          final match = regex.firstMatch(id);
+          return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
+        }).toList();
+
+        final maxNumber = allNumbers.reduce((a, b) => a > b ? a : b);
+        return 'SO-${(maxNumber + 1).toString().padLeft(4, '0')}';
+      }
+    } catch (e) {
+      debugPrint('Error fetching SO number: $e');
+    }
+    return 'SO-0001'; // fallback
+  }
+
 
 
 

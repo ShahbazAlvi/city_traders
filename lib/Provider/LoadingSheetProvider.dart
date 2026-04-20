@@ -45,13 +45,13 @@ class LoadSheetProvider with ChangeNotifier {
     // Use unfiltered list for collective/global ID generation
     for (final sheet in _unfilteredSheets) {
       final loadNo = sheet['load_no'] as String? ?? '';
-      final match = RegExp(r'(?:LS|LO|Lo)-(\d+)$').firstMatch(loadNo);
+      final match = RegExp(r'(?:LS)-(\d+)$').firstMatch(loadNo);
       if (match != null) {
         final num = int.tryParse(match.group(1)!) ?? 0;
         if (num > maxNum) maxNum = num;
       }
     }
-    return 'LO-${(maxNum + 1).toString().padLeft(4, '0')}';
+    return 'LS-${(maxNum + 1).toString().padLeft(4, '0')}';
   }
 
   Future<String> _getToken() async {
