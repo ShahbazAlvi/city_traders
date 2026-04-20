@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../../compoents/AppColors.dart';
 import '../../../../utils/access_control.dart';
 import '../../SetUp/ItemsListScreen/ItemsListsScreen.dart';
+import '../low_level_stock_screen.dart';
 
 
 
@@ -130,9 +131,18 @@ class _StockMainState extends State<StockMain> {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemListScreen()));
                     },
                   ),
+                DashboardCard(
+                  icon: Icons.inventory_2,
+                  title: "Low stock",
+                  color: Colors.lightBlueAccent,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LowLevelStockScreen()));
+                  },
+                ),
               ]),
 
               const SizedBox(height: 30),
+
 
 
 

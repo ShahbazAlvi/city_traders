@@ -46,6 +46,7 @@ import 'Provider/SalessProvider/SalessProvider.dart';
 import 'Provider/SupplierProvider/supplierProvider.dart';
 import 'Provider/customer_Payment/customer_payment_provider.dart';
 import 'Provider/setup/location_provider.dart';
+import 'Provider/stock_provider/low_level_stock_provider.dart';
 import 'Provider/stock_provider/stock_position_provider.dart';
 import 'Screen/splashview/splashLogo.dart';
 
@@ -118,6 +119,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SalesAreasProvider()),
         ChangeNotifierProvider(create: (_) => DepartmentProvider()),
         ChangeNotifierProvider(create: (_) => DesignationProvider()),
+        ChangeNotifierProvider(create: (_) => LowLevelStockProvider()),
 
 
 

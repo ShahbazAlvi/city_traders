@@ -8,6 +8,7 @@ import '../../../Provider/Purchase_Order_Provider/Purchase_order_provider.dart';
 import '../../../Provider/SupplierProvider/supplierProvider.dart';
 import '../../../compoents/AppColors.dart';
 import '../../../model/Purchase_Order_Model/purchaseOrderDetails.dart';
+import '../../../utils/access_control.dart';
 import 'EditPurchaseOrder.dart';
 
 class PurchaseOrderScreen extends StatefulWidget {
@@ -26,10 +27,15 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen>
   final TextEditingController _searchController = TextEditingController();
   final NumberFormat _fmt = NumberFormat('#,##,###');
   String _searchQuery = '';
+  bool canViewAdd = false;
+  bool canViewDelete = false;
+  bool canViewEdit     = false;
+
 
   @override
   void initState() {
     super.initState();
+    _loadPermissions();
 
     _shimmerController = AnimationController.unbounded(vsync: this)
       ..repeat(min: 0, max: 1, period: const Duration(milliseconds: 1500));
@@ -51,6 +57,21 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen>
 
     _searchController.addListener(() {
       setState(() => _searchQuery = _searchController.text.toLowerCase());
+    });
+  }
+
+
+  Future<void> _loadPermissions() async {
+    final add     = await AccessControl.canDo("can_add_purchase_order");
+    final delete     = await AccessControl.canDo("can_delete_purchase_order");
+    final edit         = await AccessControl.canDo("can_edit_purchase_order");
+
+
+    setState(() {
+      canViewAdd    = add;
+      canViewDelete    = delete;
+      canViewEdit        = edit;
+
     });
   }
 
@@ -727,56 +748,85 @@ class _PurchaseOrderScreenState extends State<PurchaseOrderScreen>
                     ),
                   ),
                   // Add Order button
-                  GestureDetector(
-                    onTap: () {
-                      final p = Provider.of<PurchaseOrderProvider>(
-                          context,
-                          listen: false);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AddPurchaseOrder(
-                            nextOrderId: _getNextOrderId(p),
-                          ),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.18),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.35),
-                          width: 1,
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.add_rounded,
-                              color: Colors.white, size: 18),
-                          SizedBox(width: 5),
-                          Text(
-                            "Add",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  // GestureDetector(
+                  //   onTap: () {
+                  //     final p = Provider.of<PurchaseOrderProvider>(
+                  //         context,
+                  //         listen: false);
+                  //     Navigator.push(
+                  //       context,
+                  //       MaterialPageRoute(
+                  //         builder: (context) => AddPurchaseOrder(
+                  //           nextOrderId: _getNextOrderId(p),
+                  //         ),
+                  //       ),
+                  //     );
+                  //   },
+                  //   child: Container(
+                  //     margin: const EdgeInsets.only(right: 8),
+                  //     padding: const EdgeInsets.symmetric(
+                  //         horizontal: 14, vertical: 8),
+                  //     decoration: BoxDecoration(
+                  //       color: Colors.white.withOpacity(0.18),
+                  //       borderRadius: BorderRadius.circular(14),
+                  //       border: Border.all(
+                  //         color: Colors.white.withOpacity(0.35),
+                  //         width: 1,
+                  //       ),
+                  //     ),
+                  //     child: const Row(
+                  //       mainAxisSize: MainAxisSize.min,
+                  //       children: [
+                  //         Icon(Icons.add_rounded,
+                  //             color: Colors.white, size: 18),
+                  //         SizedBox(width: 5),
+                  //         Text(
+                  //           "Add",
+                  //           style: TextStyle(
+                  //             color: Colors.white,
+                  //             fontWeight: FontWeight.w600,
+                  //             fontSize: 13,
+                  //           ),
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),
           ),
         ),
       ),
+      floatingActionButton: canViewAdd
+          ? ScaleTransition(
+        scale: _fabScaleAnimation,
+        child: FloatingActionButton.extended(
+          elevation: 3,
+          backgroundColor: AppColors.primary,
+          onPressed: () {
+            final p = Provider.of<PurchaseOrderProvider>(
+                context, listen: false);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AddPurchaseOrder(
+                  nextOrderId: _getNextOrderId(p),
+                ),
+              ),
+            );
+          },
+          icon: const Icon(Icons.add_rounded, color: Colors.white),
+          label: const Text(
+            "Add Order",
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      )
+          : null,
       body: Builder(builder: (_) {
         if (provider.isLoading) {
           return Column(
