@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../Provider/Purchase_Provider/GRNProvider/GRN_Provider.dart';
 import '../../../compoents/AppColors.dart';
+import '../../../utils/access_control.dart';
 import 'AddGRNScreen.dart';
 
 class GRNScreen extends StatefulWidget {
@@ -21,10 +22,14 @@ class _GRNScreenState extends State<GRNScreen>
   late AnimationController _shimmerController;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  bool canViewAdd = false;
+  bool canViewDelete = false;
+  bool canViewEdit     = false;
 
   @override
   void initState() {
     super.initState();
+    _loadPermissions();
 
     _shimmerController = AnimationController.unbounded(vsync: this)
       ..repeat(min: 0, max: 1, period: const Duration(milliseconds: 1500));
@@ -43,6 +48,19 @@ class _GRNScreenState extends State<GRNScreen>
     _shimmerController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+  Future<void> _loadPermissions() async {
+    final add     = await AccessControl.canDo("can_add_goods_receipt_note");
+    final delete     = await AccessControl.canDo("can_delete_goods_receipt_note");
+    final edit         = await AccessControl.canDo("can_edit_goods_receipt_note");
+
+
+    setState(() {
+      canViewAdd    = add;
+      canViewDelete    = delete;
+      canViewEdit        = edit;
+
+    });
   }
 
   // ── Next GRN ID ───────────────────────────────────────────────────────────
@@ -517,52 +535,75 @@ class _GRNScreenState extends State<GRNScreen>
                       ),
                     ),
                   ),
-                  Consumer<GRNProvider>(
-                    builder: (context, provider, _) => GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AddGRNScreen(
-                              nextOrderId: _getNextGrnId(provider)),
-                        ),
-                      ),
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.18),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.35),
-                            width: 1,
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.add_rounded,
-                                color: Colors.white, size: 18),
-                            SizedBox(width: 5),
-                            Text(
-                              "Add GRN",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                  // Consumer<GRNProvider>(
+                  //   builder: (context, provider, _) => GestureDetector(
+                  //     onTap: () => Navigator.push(
+                  //       context,
+                  //       MaterialPageRoute(
+                  //         builder: (_) => AddGRNScreen(
+                  //             nextOrderId: _getNextGrnId(provider)),
+                  //       ),
+                  //     ),
+                  //     child: Container(
+                  //       margin: const EdgeInsets.only(right: 8),
+                  //       padding: const EdgeInsets.symmetric(
+                  //           horizontal: 14, vertical: 8),
+                  //       decoration: BoxDecoration(
+                  //         color: Colors.white.withOpacity(0.18),
+                  //         borderRadius: BorderRadius.circular(14),
+                  //         border: Border.all(
+                  //           color: Colors.white.withOpacity(0.35),
+                  //           width: 1,
+                  //         ),
+                  //       ),
+                  //       child: const Row(
+                  //         mainAxisSize: MainAxisSize.min,
+                  //         children: [
+                  //           Icon(Icons.add_rounded,
+                  //               color: Colors.white, size: 18),
+                  //           SizedBox(width: 5),
+                  //           Text(
+                  //             "Add GRN",
+                  //             style: TextStyle(
+                  //               color: Colors.white,
+                  //               fontWeight: FontWeight.w600,
+                  //               fontSize: 13,
+                  //             ),
+                  //           ),
+                  //         ],
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),
           ),
         ),
       ),
+      floatingActionButton: canViewAdd
+      ?Consumer<GRNProvider>(
+        builder: (context, provider, _) => FloatingActionButton.extended(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AddGRNScreen(
+                  nextOrderId: _getNextGrnId(provider)),
+            ),
+          ),
+          backgroundColor: AppColors.primary,
+          elevation: 4,
+          icon: const Icon(Icons.add_rounded, color: Colors.white),
+          label: const Text(
+            "Add GRN",
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ): null,
       body: Consumer<GRNProvider>(
         builder: (context, provider, _) {
           if (provider.isLoading) {
