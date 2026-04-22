@@ -2191,13 +2191,10 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
             const SizedBox(height: 12),
 
             // ── Customer & Salesman — ALWAYS VISIBLE ──
-            Row(
-              children: [
-                Expanded(child: _buildCustomerDropdown()),
-                const SizedBox(width: 10),
-                Expanded(child: _buildSalesmanDropdown()),
-              ],
-            ),
+            _buildCustomerDropdown(),
+            const SizedBox(height: 12), // const SizedBox(width: 10),
+                _buildSalesmanDropdown(),
+
             const SizedBox(height: 12),
 
             if (!isDirectSource &&
@@ -3081,7 +3078,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   // }
   Widget _buildCustomerDropdown() {
     return _buildDropdownCard(
-      icon: Icons.person_outline,
+    //  icon: Icons.person_outline,
       child: CustomerDropdown(
         selectedCustomerId: selectedCustomerId,
         salesmanId: selectedSalesmanId != null
@@ -3095,7 +3092,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
 
   Widget _buildSalesmanDropdown() {
     return _buildDropdownCard(
-      icon: Icons.badge_outlined,
+     // icon: Icons.badge_outlined,
       child: SalesmanDropdown(
         selectedId: selectedSalesmanId,
         isLocked: _isLocked,
@@ -3107,69 +3104,39 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
     );
   }
 
-  InputDecoration _dropdownDecoration() {
-    return InputDecoration(
-      filled: true,
-      fillColor: Colors.white,
-      isDense: true,
-      contentPadding:
-      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200)),
-      enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200)),
-      focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide:
-          const BorderSide(color: Color(0xFF2563EB), width: 1.5)),
-      suffixIcon:
-      Icon(Icons.arrow_drop_down, color: Colors.grey.shade500),
-    );
-  }
+  // InputDecoration _dropdownDecoration() {
+  //   return InputDecoration(
+  //     filled: true,
+  //     fillColor: Colors.white,
+  //     isDense: true,
+  //     contentPadding:
+  //     const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+  //     border: OutlineInputBorder(
+  //         borderRadius: BorderRadius.circular(12),
+  //         borderSide: BorderSide(color: Colors.grey.shade200)),
+  //     enabledBorder: OutlineInputBorder(
+  //         borderRadius: BorderRadius.circular(12),
+  //         borderSide: BorderSide(color: Colors.grey.shade200)),
+  //     focusedBorder: OutlineInputBorder(
+  //         borderRadius: BorderRadius.circular(12),
+  //         borderSide:
+  //         const BorderSide(color: Color(0xFF2563EB), width: 1.5)),
+  //     suffixIcon:
+  //     Icon(Icons.arrow_drop_down, color: Colors.grey.shade500),
+  //   );
+  // }
 
   Widget _buildDropdownCard(
-      {required IconData icon, required Widget child}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.grey.withOpacity(0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 2))
-        ],
-      ),
-      padding:
-      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF2563EB).withOpacity(0.08),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon,
-                color: const Color(0xFF2563EB), size: 16),
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: child),
-        ],
-      ),
+      {required Widget child}) {
+    return Row(
+      children: [
+
+        Expanded(child: child),
+      ],
     );
   }
 
-  Widget _buildDropdownSkeleton() {
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(14)),
-    );
-  }
+
 
   // ─────────────────────────────────────────────
   // INPUT FIELDS

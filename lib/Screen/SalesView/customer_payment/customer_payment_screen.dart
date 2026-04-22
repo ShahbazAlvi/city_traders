@@ -58,6 +58,7 @@ class _CustomerPaymentScreenState extends State<CustomerPaymentScreen> {
     }).toList();
 
     return Scaffold(
+
       backgroundColor: const Color(0xfff5f7fb),
       appBar: _buildAppBar(),
 
@@ -265,6 +266,7 @@ class _CustomerPaymentScreenState extends State<CustomerPaymentScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
+      iconTheme: IconThemeData(color: AppColors.text),
       elevation: 0,
       backgroundColor: Colors.transparent,
       flexibleSpace: Container(

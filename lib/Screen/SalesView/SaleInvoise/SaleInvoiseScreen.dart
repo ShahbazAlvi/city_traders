@@ -213,6 +213,7 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
   // }
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
+      iconTheme: IconThemeData(color: AppColors.text),
       elevation: 0,
       backgroundColor: Colors.transparent,
       flexibleSpace: Container(

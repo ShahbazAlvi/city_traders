@@ -27,6 +27,7 @@ class _StockMainState extends State<StockMain> {
   bool canViewLedger          = false;
   bool canViewAging           = false;
   bool canViewDailySales      = false;
+  bool canViewLowStock = false;
 
   @override
   void initState() {
@@ -42,7 +43,8 @@ class _StockMainState extends State<StockMain> {
     final receivable       = await AccessControl.canDo("can_view_amount_receivables");
     final ledger           = await AccessControl.canDo("can_view_customer_ledger_report");
     final aging            = await AccessControl.canDo("can_view_credit_aging");
-    final dailySales       = await AccessControl.canDo("can_view_daily_sales_report");
+    final dailySales       = await AccessControl.canDo("can_view_daily_sales_report"); //can_view_low_level_stock
+    final low_level_stock       = await AccessControl.canDo("can_view_low_level_stock");
 
     setState(() {
       canViewItem    = itemDefinity;
@@ -54,6 +56,7 @@ class _StockMainState extends State<StockMain> {
       canViewLedger          = ledger;
       canViewAging           = aging;
       canViewDailySales      = dailySales;
+      canViewLowStock = low_level_stock;
     });
   }
   @override
@@ -131,6 +134,7 @@ class _StockMainState extends State<StockMain> {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemListScreen()));
                     },
                   ),
+                if(canViewLowStock)
                 DashboardCard(
                   icon: Icons.inventory_2,
                   title: "Low stock",
