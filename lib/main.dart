@@ -59,14 +59,16 @@ void main()async {
   // ✅ Initialize SharedPreferences safely
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('token');
+  final bool isFirstTime = prefs.getBool('isFirstTime') ?? true;
 
-  runApp(MyApp(token: token));
+  runApp(MyApp(token: token, isFirstTime: isFirstTime));
 
 }
 class MyApp extends StatelessWidget {
   final String? token;
+  final bool isFirstTime;
 
-  const MyApp({super.key, this.token});
+  const MyApp({super.key, this.token, required this.isFirstTime});
 
   // This widget is the root of your application.
   @override
@@ -130,11 +132,9 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF5B86E5)),
         ),
-        // ✅ If token found → go to dashboard, otherwise splash
-        home: token != null ? const SplashLogo() : const SplashLogo(),
+        // ✅ Pass token and firstTime flag to SplashLogo to decide where to go next
+        home: SplashLogo(token: token, isFirstTime: isFirstTime),
       ),
     );
   }
 }
-
-

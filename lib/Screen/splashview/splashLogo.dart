@@ -61,9 +61,13 @@ import 'dart:math' as math;
 import 'package:demo_distribution/Screen/splashview/splashOne.dart';
 import 'package:flutter/material.dart';
 import '../../compoents/AppButton.dart';
+import '../Auth/LoginScreen.dart';
+import '../DashBoardScreen.dart';
 
 class SplashLogo extends StatefulWidget {
-  const SplashLogo({super.key});
+  final String? token;
+  final bool isFirstTime;
+  const SplashLogo({super.key, this.token, this.isFirstTime = false});
 
   @override
   State<SplashLogo> createState() => _SplashLogoState();
@@ -156,18 +160,47 @@ class _SplashLogoState extends State<SplashLogo> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // ── Navigation (UNCHANGED) ─────────────────────────────────────────────────
+  // ── Navigation (UPDATED) ─────────────────────────────────────────────────
   void _goNext() {
     if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const SplashOne(),
-        transitionsBuilder: (_, anim, __, child) =>
-            FadeTransition(opacity: anim, child: child),
-        transitionDuration: const Duration(milliseconds: 500),
-      ),
-    );
+
+    if (widget.token != null && widget.token!.isNotEmpty) {
+      // ✅ If logged in → Dashboard
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const DashboardScreen(),
+          transitionsBuilder: (_, anim, __, child) =>
+              FadeTransition(opacity: anim, child: child),
+          transitionDuration: const Duration(milliseconds: 800),
+        ),
+      );
+    } else {
+      // ❌ Not logged in
+      if (widget.isFirstTime) {
+        // First time → Onboarding (SplashOne)
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => const SplashOne(),
+            transitionsBuilder: (_, anim, __, child) =>
+                FadeTransition(opacity: anim, child: child),
+            transitionDuration: const Duration(milliseconds: 800),
+          ),
+        );
+      } else {
+        // Not first time → Login Screen
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => const LoginScreen(),
+            transitionsBuilder: (_, anim, __, child) =>
+                FadeTransition(opacity: anim, child: child),
+            transitionDuration: const Duration(milliseconds: 800),
+          ),
+        );
+      }
+    }
   }
 
   // ── Palette (Pure White theme) ─────────────────────────────────────────────

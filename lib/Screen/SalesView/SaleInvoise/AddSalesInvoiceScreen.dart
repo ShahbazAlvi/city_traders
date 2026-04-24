@@ -2191,9 +2191,11 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
             const SizedBox(height: 12),
 
             // ── Customer & Salesman — ALWAYS VISIBLE ──
-            _buildCustomerDropdown(),
+
             const SizedBox(height: 12), // const SizedBox(width: 10),
                 _buildSalesmanDropdown(),
+            const SizedBox(height: 12),
+            _buildCustomerDropdown(),
 
             const SizedBox(height: 12),
 

@@ -51,6 +51,8 @@ class LoginProvider with ChangeNotifier{
 
       if (response.statusCode == 200 && data["success"] == true) {
         message = "Login successful!";
+        emailController.clear();
+        passwordController.clear();
 
         final prefs = await SharedPreferences.getInstance();
 
@@ -112,6 +114,11 @@ class LoginProvider with ChangeNotifier{
           context,
           MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );
+      }
+      else {
+        // ⭐ YEH ADD KARO - server ka message show karo
+        message = data["message"] ?? "Login failed. Please try again.";
+        notifyListeners();
       }
 
 
