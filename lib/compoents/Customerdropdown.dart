@@ -11,6 +11,7 @@ class CustomerDropdown extends StatefulWidget {
   final ValueChanged<CustomerData?> onChanged;
   final bool showDetails;
   final int? salesmanId;
+  final int? areaId;
 
   const CustomerDropdown({
     super.key,
@@ -18,6 +19,7 @@ class CustomerDropdown extends StatefulWidget {
     this.selectedCustomerId,
     this.showDetails = true,
     this.salesmanId,
+    this.areaId,
   });
 
   @override
@@ -70,8 +72,14 @@ class _CustomerDropdownState extends State<CustomerDropdown>
 
   /// Returns the customer list filtered by salesmanId (if provided).
   List<CustomerData> _applyFilter(List<CustomerData> all) {
-    if (widget.salesmanId == null) return all;
-    return all.where((c) => c.salesmanId == widget.salesmanId).toList();
+    List<CustomerData> filtered = all;
+    if (widget.salesmanId != null) {
+      filtered = filtered.where((c) => c.salesmanId == widget.salesmanId).toList();
+    }
+    if (widget.areaId != null) {
+      filtered = filtered.where((c) => c.salesAreaId == widget.areaId).toList();
+    }
+    return filtered;
   }
 
   @override

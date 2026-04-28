@@ -45,6 +45,7 @@ import 'Provider/SalemanRecoveryReport/salemanReport.dart';
 import 'Provider/SalessProvider/SalessProvider.dart';
 import 'Provider/SupplierProvider/supplierProvider.dart';
 import 'Provider/customer_Payment/customer_payment_provider.dart';
+import 'Provider/setup/Delivery_boy_provider.dart';
 import 'Provider/setup/location_provider.dart';
 import 'Provider/stock_provider/low_level_stock_provider.dart';
 import 'Provider/stock_provider/stock_position_provider.dart';
@@ -121,7 +122,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SalesAreasProvider()),
         ChangeNotifierProvider(create: (_) => DepartmentProvider()),
         ChangeNotifierProvider(create: (_) => DesignationProvider()),
-        ChangeNotifierProvider(create: (_) => LowLevelStockProvider()),
+        ChangeNotifierProvider(create: (_) => LowLevelStockProvider()),//DeliveryBoyProvider
+        ChangeNotifierProvider(create: (_) => DeliveryBoyProvider())
 
 
 

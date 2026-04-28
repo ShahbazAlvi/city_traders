@@ -17,10 +17,13 @@ import '../../../compoents/Customerdropdown.dart';
 import '../../../compoents/ProductDropdown.dart';
 import '../../../compoents/SaleManDropdown.dart';
 
+import '../../../compoents/SalesAreaDropdown.dart';
 import '../../../model/CustomerModel/CustomerModel.dart';
 import '../../../model/CustomerModel/CustomersDefineModel.dart';
 import '../../../model/OrderTakingModel/OrderTakingModel.dart';
 import '../../../model/ProductModel/itemsdetailsModel.dart';
+import '../../../utils/access_control.dart';
+import '../../../Provider/setup/SalesAreasProvider.dart';
 
 class AddOrderScreen extends StatefulWidget {
   final String nextOrderId;
@@ -77,6 +80,8 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
 
  // String? selectedSalesmanId;
   String? _salesmanId;
+  String?  _selectedAreaId;
+  List<int>? _allowedAreaIds;
   CustomerData? selectedCustomer;
   ItemDetails? selectedProduct;
   final formatted=NumberFormat("#,##,###");
@@ -98,7 +103,10 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
     _loadSalesmanFromPrefs();
     currentDate = DateFormat('dd-MMM-yyyy').format(DateTime.now());
 
-    Future.microtask(() => context.read<SaleManProvider>().fetchEmployees());
+    Future.microtask(() {
+      context.read<SaleManProvider>().fetchEmployees();
+      context.read<SalesAreasProvider>().fetchSalesAreas();
+    });
 
     if (widget.isUpdate && widget.existingOrder != null) {
       final order = widget.existingOrder!;
@@ -117,11 +125,19 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
   Future<void> _loadSalesmanFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     final id = prefs.getInt('salesman_id');
+    final assignedAreas = await AccessControl.getAssignedAreaIds();
+
     setState(() {
       if (!widget.isUpdate || _salesmanId == null) {
         _salesmanId = id?.toString();
       }
-      _isLocked = id != null; // salesman hai to lock, admin hai to open
+      _isLocked = id != null;
+      _allowedAreaIds = assignedAreas.isNotEmpty ? assignedAreas : null;
+
+      // If salesman has exactly one area, pre-select it
+      if (_allowedAreaIds != null && _allowedAreaIds!.length == 1) {
+        _selectedAreaId = _allowedAreaIds!.first.toString();
+      }
     });
   }
 
@@ -261,11 +277,21 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
           _buildSalesmanField(),
           const SizedBox(height: 24),
 
+          // Sales Area Section
+          if (_salesmanId != null) ...[
+            _buildSectionTitle('Sales Area'),
+            const SizedBox(height: 12),
+            _buildSalesAreaField(),
+            const SizedBox(height: 24),
+          ],
+
           // Customer Section
-          _buildSectionTitle('Customer Information'),
-          const SizedBox(height: 12),
-          _buildCustomerField(),
-          const SizedBox(height: 24),
+          if (_selectedAreaId != null) ...[
+            _buildSectionTitle('Customer Information'),
+            const SizedBox(height: 12),
+            _buildCustomerField(),
+            const SizedBox(height: 24),
+          ],
 
 
           _buildSectionTitle('Add Products'),
@@ -423,16 +449,42 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
       ),
       child: SalesmanDropdown(
         selectedId: _salesmanId,
-        isLocked: _isLocked,       // ⬅️ salesman=true, admin=false
+        isLocked: _isLocked,
         onChanged: (id) {
           setState(() {
             _salesmanId = id;
-            // Reset customer when salesman changes
+            _selectedAreaId = null;
             selectedCustomer = null;
           });
         },
       ),
+    );
+  }
 
+  Widget _buildSalesAreaField() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.08),
+            spreadRadius: 1,
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: SalesAreaDropdown(
+        selectedId: _selectedAreaId,
+        allowedAreaIds: _allowedAreaIds,
+        onChanged: (id) {
+          setState(() {
+            _selectedAreaId = id;
+            selectedCustomer = null;
+          });
+        },
+      ),
     );
   }
 
@@ -453,6 +505,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
       child: CustomerDropdown(
         selectedCustomerId: selectedCustomer?.id,
         salesmanId: _salesmanId != null ? int.tryParse(_salesmanId!) : null,
+        areaId: _selectedAreaId != null ? int.tryParse(_selectedAreaId!) : null,
         onChanged: (customer) {
           setState(() => selectedCustomer = customer);
         },
@@ -921,6 +974,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
               customerId: selectedCustomer!.id.toString(),
               status: selectedStatus,
               products: orderItems,
+              salesAreaId: _selectedAreaId,
             );
 
             if (!mounted) return;

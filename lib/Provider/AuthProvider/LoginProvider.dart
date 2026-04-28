@@ -64,6 +64,7 @@ class LoginProvider with ChangeNotifier{
         await prefs.remove('roles');
         await prefs.remove('permission_codes');
         await prefs.remove('user_type');
+        await prefs.remove('assigned_area_ids');
 
         final access = data["data"]["access"];
         final user = data["data"]["user"];
@@ -78,6 +79,16 @@ class LoginProvider with ChangeNotifier{
               'roles',
               List<String>.from(access["roles"].map((e) => e["name"]))
           );
+        }
+        if (user["assigned_area_ids"] != null) {
+          await prefs.setString(
+            'assigned_area_ids',
+            jsonEncode(user["assigned_area_ids"]),
+          );
+        }
+        final deliveryBoyId = user["delivery_boy_id"];
+        if (deliveryBoyId != null) {
+          await prefs.setInt('delivery_boy_id', deliveryBoyId);
         }
 
         // ⭐ SAVE PERMISSIONS
@@ -98,6 +109,14 @@ class LoginProvider with ChangeNotifier{
         final userType = user["user_type"];
         if (userType != null) {
           await prefs.setString('user_type', userType);
+        }
+
+        // ⭐ SAVE ASSIGNED AREAS
+        if (user["assigned_area_ids"] != null) {
+          await prefs.setStringList(
+              'assigned_area_ids',
+              List<String>.from(user["assigned_area_ids"].map((e) => e.toString()))
+          );
         }
 
         // ⭐ OWNER CHECK (ADMIN)

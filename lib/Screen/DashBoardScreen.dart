@@ -551,12 +551,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       screenBuilder: () => const PurchaseDashboard(),
     ),
 
-    // _NavItem(
-    //   icon: Icons.sync_alt,
-    //   label: 'setup',
-    //   permissionKey: 'can_view_setup',
-    //   screenBuilder: () => const SetUpDashboard(),
-    // ),
+    _NavItem(
+      icon: Icons.sync_alt,
+      label: 'setup',
+      permissionKey: 'can_view_setup',
+      screenBuilder: () => const SetUpDashboard(),
+    ),
     _NavItem(
       icon: Icons.warehouse_outlined,
       label: 'Stock',

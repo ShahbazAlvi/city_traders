@@ -55,11 +55,23 @@ class OrderTakingProvider with ChangeNotifier{
         return;
       }
 
-      // Build URL with salesman_id filter if user is a salesman
+      // Build URL with salesman_id and assigned areas filter
       final salesmanId = prefs.getInt('salesman_id');
+      final assignedAreaIds = prefs.getStringList('assigned_area_ids');
+
       String url = '${ApiEndpoints.baseUrl}/sales-orders';
+      List<String> queryParams = [];
+
       if (salesmanId != null) {
-        url += '?salesman_id=$salesmanId';
+        queryParams.add('salesman_id=$salesmanId');
+      }
+
+      if (assignedAreaIds != null && assignedAreaIds.isNotEmpty) {
+        queryParams.add('sales_area_ids=${assignedAreaIds.join(',')}');
+      }
+
+      if (queryParams.isNotEmpty) {
+        url += '?${queryParams.join('&')}';
       }
 
       final response = await http.get(
@@ -98,6 +110,7 @@ class OrderTakingProvider with ChangeNotifier{
     required String orderId,
     required String salesmanId,
     required String customerId,
+    required String? salesAreaId,
     required List<Map<String, dynamic>> products, required String status,
   }) async {
     try {
@@ -120,6 +133,7 @@ class OrderTakingProvider with ChangeNotifier{
         "so_no": orderId,
         "salesman_id": int.parse(salesmanId),
         "customer_id": int.parse(customerId),
+        "sales_area_id": salesAreaId != null ? int.tryParse(salesAreaId) : null,
         "status": status,
         "order_date": DateTime.now().toIso8601String().split('T').first,
         "details": products.map((item) => {

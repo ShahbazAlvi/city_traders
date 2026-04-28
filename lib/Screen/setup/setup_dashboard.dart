@@ -17,6 +17,7 @@ import '../SalesView/SetUp/ItemsListScreen/ItemUnitScreen.dart';
 import '../SalesView/SetUp/ItemsListScreen/ItemsListsScreen.dart';
 
 import '../SalesView/SetUp/supplier/SupplierScreen.dart';
+import 'Delivery_boys/Delivery_boys_screen.dart';
 import 'locations/locatioins_screen.dart';
 
 
@@ -248,6 +249,14 @@ class _SalesDashboardState extends State<SetUpDashboard> {
                     color: Colors.blueAccent,
                     onTap: () {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => DesignationScreen()));
+                    },
+                  ),
+                  DashboardCard(
+                    icon: Icons.layers,
+                    title: "Delivery Boy",
+                    color: Colors.blueAccent,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const DeliveryBoysScreen()));
                     },
                   ),
                 ],
