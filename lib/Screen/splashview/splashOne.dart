@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Auth/LoginScreen.dart';
-import '../DashBoardScreen.dart';
+import '../HomeScreen.dart';
 
 class AppColors {
   static const Color primary = Color(0xFF5B86E5);
@@ -134,7 +134,7 @@ class _SplashOneState extends State<SplashOne> with TickerProviderStateMixin {
     if (token != null && token.isNotEmpty) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
     } else {
       Navigator.pushReplacement(

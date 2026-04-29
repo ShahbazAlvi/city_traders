@@ -87,4 +87,10 @@ class AccessControl {
     if (!prefs.containsKey('salesman_id')) return null;
     return prefs.getInt('salesman_id');
   }
+  
+  /// Returns the delivery_boy_id if logged-in user is a delivery boy, null otherwise
+  static Future<int?> getDeliveryBoyId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('delivery_boy_id');
+  }
 }

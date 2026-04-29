@@ -62,7 +62,7 @@ import 'package:demo_distribution/Screen/splashview/splashOne.dart';
 import 'package:flutter/material.dart';
 import '../../compoents/AppButton.dart';
 import '../Auth/LoginScreen.dart';
-import '../DashBoardScreen.dart';
+import '../HomeScreen.dart';
 
 class SplashLogo extends StatefulWidget {
   final String? token;
@@ -169,7 +169,7 @@ class _SplashLogoState extends State<SplashLogo> with TickerProviderStateMixin {
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const DashboardScreen(),
+          pageBuilder: (_, __, ___) => const HomeScreen(),
           transitionsBuilder: (_, anim, __, child) =>
               FadeTransition(opacity: anim, child: child),
           transitionDuration: const Duration(milliseconds: 800),

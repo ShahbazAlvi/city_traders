@@ -31,6 +31,7 @@ class SingleOrderData {
   final String customerName;
   final int salesmanId;
   final String salesmanName;
+  final int? salesAreaId; // ✅ Added field
   final DateTime orderDate;
   final String status;
   final String? remarks;
@@ -45,6 +46,7 @@ class SingleOrderData {
     required this.customerName,
     required this.salesmanId,
     required this.salesmanName,
+    this.salesAreaId, // ✅ Added to constructor
     required this.orderDate,
     required this.status,
     this.remarks,
@@ -61,6 +63,7 @@ class SingleOrderData {
       customerName: json['customer_name'] ?? '',
       salesmanId: json['salesman_id'] ?? 0,
       salesmanName: json['salesman_name'] ?? '',
+      salesAreaId: json['sales_area_id'], // ✅ Map from JSON
       orderDate: DateTime.parse(json['order_date'] ?? DateTime.now().toIso8601String()),
       status: json['status'] ?? '',
       remarks: json['remarks'],
@@ -80,6 +83,7 @@ class SingleOrderData {
     'customer_name': customerName,
     'salesman_id': salesmanId,
     'salesman_name': salesmanName,
+    'sales_area_id': salesAreaId, // ✅ Include in JSON
     'order_date': orderDate.toIso8601String(),
     'status': status,
     'remarks': remarks,

@@ -1685,6 +1685,9 @@ import '../../../compoents/Customerdropdown.dart';
 import '../../../compoents/ProductDropdown.dart';
 import '../../../compoents/SaleManDropdown.dart';
 import '../../../compoents/location_dropdown.dart';
+import '../../../compoents/SalesAreaDropdown.dart';
+import '../../../Provider/setup/SalesAreasProvider.dart';
+import '../../../utils/access_control.dart';
 import '../../../compoents/tax_types_dropdown.dart';
 
 import '../../../model/ProductModel/itemsdetailsModel.dart';
@@ -1715,6 +1718,9 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   List<DropdownMenuItem<int>> _loadSheetDropdownItems = [];
   String? _loggedInSalesmanId;
   bool _isLocked = false;
+  String? _selectedAreaId;
+  List<int>? _allowedAreaIds;
+  bool _isDeliveryBoy = false;
 
 
   // Customer & Salesman override
@@ -1733,35 +1739,45 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   @override
   void initState() {
     super.initState();
-    _loadSalesmanAndOrders();
+    _loadSalesmanAndOrders(); // This now calls _loadOrders internally after areas are loaded
     Future.microtask(() {
       Provider.of<SaleInvoicesProvider>(context, listen: false).clearSelectedOrder();
       Provider.of<LocationProvider>(context, listen: false).getLocations();
       Provider.of<CustomerProvider>(context, listen: false).fetchCustomers();
       Provider.of<SaleManProvider>(context, listen: false).fetchEmployees();
+      Provider.of<SalesAreasProvider>(context, listen: false).fetchSalesAreas();
       Provider.of<ItemDetailsProvider>(context, listen: false).fetchItems();
     });
 
     _shimmerController = AnimationController.unbounded(vsync: this)
       ..repeat(min: 0, max: 1, period: const Duration(milliseconds: 1500));
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadOrders();
-      _loadLoadSheets();
-    });
   }
 
   Future<void> _loadSalesmanAndOrders() async {
     final prefs = await SharedPreferences.getInstance();
 
     final id = prefs.getInt('salesman_id');
+    final deliveryBoyId = prefs.getInt('delivery_boy_id');
+    final assignedAreas = await AccessControl.getAssignedAreaIds();
+
     setState(() {
       _loggedInSalesmanId = id?.toString();
       selectedSalesmanId = id?.toString(); // auto-select logged-in salesman
       _isLocked = id != null; // lock if salesman, open if admin
+      _isDeliveryBoy = deliveryBoyId != null;
+      _allowedAreaIds = assignedAreas.isNotEmpty ? assignedAreas : null;
+
+      // If salesman has exactly one area, pre-select it
+      if (_allowedAreaIds != null && _allowedAreaIds!.length == 1) {
+        _selectedAreaId = _allowedAreaIds!.first.toString();
+      }
     });
 
     if (!mounted) return;
+
+    // ✅ Load orders & load sheets AFTER _allowedAreaIds is set
+    _loadOrders();
+    _loadLoadSheets();
     Provider.of<LocationProvider>(context, listen: false).getLocations();
     Provider.of<CustomerProvider>(context, listen: false).fetchCustomers();
     Provider.of<SaleManProvider>(context, listen: false).fetchEmployees();
@@ -1782,12 +1798,19 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
     if (provider.orderData?.data != null &&
         provider.orderData!.data.isNotEmpty) {
       // Salesman filter: admin = all, salesman = only their own
-      final filteredOrders = _loggedInSalesmanId == null
-          ? provider.orderData!.data
-          : provider.orderData!.data
-          .where((order) =>
-      order.salesmanId?.toString() == _loggedInSalesmanId)
-          .toList();
+      var filteredOrders = provider.orderData!.data;
+
+      // Filter by salesman if not admin
+      if (_loggedInSalesmanId != null) {
+        filteredOrders = filteredOrders.where((order) =>
+        order.salesmanId?.toString() == _loggedInSalesmanId).toList();
+      }
+
+      // Filter by assigned areas if restricted
+      if (_allowedAreaIds != null && _allowedAreaIds!.isNotEmpty) {
+        filteredOrders = filteredOrders.where((order) =>
+            _allowedAreaIds!.contains(order.salesAreaId)).toList();
+      }
 
       setState(() {
         _dropdownItems = filteredOrders.map((order) {
@@ -1923,6 +1946,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
           selectedSalesmanId =
               provider.selectedOrder!.salesmanId.toString();
         }
+        _selectedAreaId = provider.selectedOrder!.salesAreaId?.toString();
       });
     }
   }
@@ -1950,6 +1974,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
           selectedSalesmanId =
               provider.selectedOrder!.salesmanId.toString();
         }
+        _selectedAreaId = provider.selectedOrder!.salesAreaId?.toString();
       });
     }
   }
@@ -2064,6 +2089,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString("token");
+    final deliveryBoyId = prefs.getInt('delivery_boy_id');
 
     final List<Map<String, dynamic>> allDetails = [];
 
@@ -2092,6 +2118,8 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
       isLoadSheetSource ? provider.selectedOrder?.id : null,
       "customer_id": selectedCustomerId,
       "salesman_id": int.tryParse(selectedSalesmanId ?? ''),
+      "delivery_boy_id": deliveryBoyId,
+      "sales_area_id": int.tryParse(_selectedAreaId ?? ''),
       "location_id": selectedLocationId,
       "invoice_date":
       DateTime.now().toIso8601String().split("T").first,
@@ -2192,9 +2220,13 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
 
             // ── Customer & Salesman — ALWAYS VISIBLE ──
 
-            const SizedBox(height: 12), // const SizedBox(width: 10),
-                _buildSalesmanDropdown(),
             const SizedBox(height: 12),
+            _buildSalesmanDropdown(),
+            const SizedBox(height: 12),
+            if (selectedSalesmanId != null) ...[
+              _buildSalesAreaDropdown(),
+              const SizedBox(height: 12),
+            ],
             _buildCustomerDropdown(),
 
             const SizedBox(height: 12),
@@ -2282,24 +2314,25 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
               }),
             ),
           ),
-          Expanded(
-            child: _buildSourceButton(
-              title: "Load Sheet",
-              isSelected: isLoadSheetSource && !isDirectSource,
-              onTap: () => setState(() {
-                isLoadSheetSource = true;
-                isDirectSource = false;
-                selectedOrderId = null;
-                selectedLoadSheetId = null;
-                // Preserve locked salesman
-                selectedSalesmanId =
-                _isLocked ? _loggedInSalesmanId : null;
-                selectedCustomerId = null;
-                Provider.of<SaleInvoicesProvider>(context, listen: false)
-                    .clearSelectedOrder();
-              }),
+          if (!_isDeliveryBoy)
+            Expanded(
+              child: _buildSourceButton(
+                title: "Load Sheet",
+                isSelected: isLoadSheetSource && !isDirectSource,
+                onTap: () => setState(() {
+                  isLoadSheetSource = true;
+                  isDirectSource = false;
+                  selectedOrderId = null;
+                  selectedLoadSheetId = null;
+                  // Preserve locked salesman
+                  selectedSalesmanId =
+                  _isLocked ? _loggedInSalesmanId : null;
+                  selectedCustomerId = null;
+                  Provider.of<SaleInvoicesProvider>(context, listen: false)
+                      .clearSelectedOrder();
+                }),
+              ),
             ),
-          ),
           Expanded(
             child: _buildSourceButton(
               title: "Direct",
@@ -3080,26 +3113,39 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   // }
   Widget _buildCustomerDropdown() {
     return _buildDropdownCard(
-    //  icon: Icons.person_outline,
       child: CustomerDropdown(
         selectedCustomerId: selectedCustomerId,
         salesmanId: selectedSalesmanId != null
             ? int.tryParse(selectedSalesmanId!)
             : null,
+        areaId: _selectedAreaId != null ? int.tryParse(_selectedAreaId!) : null,
         onChanged: (customer) =>
             setState(() => selectedCustomerId = customer?.id),
       ),
     );
   }
 
+  Widget _buildSalesAreaDropdown() {
+    return _buildDropdownCard(
+      child: SalesAreaDropdown(
+        selectedId: _selectedAreaId,
+        allowedAreaIds: _allowedAreaIds,
+        onChanged: (id) => setState(() {
+          _selectedAreaId = id;
+          selectedCustomerId = null; // reset customer when area changes
+        }),
+      ),
+    );
+  }
+
   Widget _buildSalesmanDropdown() {
     return _buildDropdownCard(
-     // icon: Icons.badge_outlined,
       child: SalesmanDropdown(
         selectedId: selectedSalesmanId,
         isLocked: _isLocked,
         onChanged: (val) => setState(() {
           selectedSalesmanId = val;
+          _selectedAreaId = null; // reset area when salesman changes
           selectedCustomerId = null; // reset customer when salesman changes
         }),
       ),

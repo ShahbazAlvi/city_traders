@@ -342,6 +342,7 @@ class SaleInvoicesProvider with ChangeNotifier {
           customerName: customerName,
           salesmanId: data['salesman_id'] ?? 0,
           salesmanName: data['salesman_name'] ?? '',
+          salesAreaId: data['sales_area_id'],
           orderDate: DateTime.parse(data['load_date'] ?? DateTime.now().toIso8601String()),
           status: data['status'] ?? '',
           createdAt: DateTime.parse(data['created_at'] ?? DateTime.now().toIso8601String()),
@@ -358,5 +359,34 @@ class SaleInvoicesProvider with ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<String?> fetchNextInvoiceNo() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString("token");
+
+      final response = await http.get(
+        Uri.parse("${ApiEndpoints.baseUrl}/sales-invoices-notax/next-invoice-no"),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+          "x-company-id": "2",
+        },
+      );
+
+      debugPrint("📡 Next Invoice No Status: ${response.statusCode}");
+      debugPrint("📡 Next Invoice No Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          return data['data']['next_invoice_no']?.toString();
+        }
+      }
+    } catch (e) {
+      debugPrint("❌ Error fetching next invoice no: $e");
+    }
+    return null;
   }
 }

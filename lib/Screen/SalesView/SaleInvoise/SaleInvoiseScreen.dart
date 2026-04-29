@@ -245,29 +245,67 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
     );
   }
 
-  void _navigateToAddInvoice() {
-    final invoiceProvider =
-    Provider.of<SaleInvoicesProvider>(context, listen: false);
-    String nextInvNo = "INV-0001";
+  Future<void> _navigateToAddInvoice() async {
+    final invoiceProvider = Provider.of<SaleInvoicesProvider>(context, listen: false);
 
-    if (invoiceProvider.orderData != null &&
-        invoiceProvider.orderData!.invoices.isNotEmpty) {
-      final allNumbers = invoiceProvider.orderData!.invoices.map((invoice) {
-        final id = invoice.invNo ?? "";
-        final match = RegExp(r'INV-(\d+)$').firstMatch(id);
-        return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
-      }).toList();
-      final max =
-      allNumbers.isNotEmpty ? allNumbers.reduce((a, b) => a > b ? a : b) : 0;
-      nextInvNo = "INV-${(max + 1).toString().padLeft(4, '0')}";
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AddSalesInvoiceScreen(nextOrderId: nextInvNo),
+    // 1. Show professional loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text("Fetching Next Invoice No...",
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
       ),
     );
+
+    // 2. Fetch from server
+    String? nextInvNo = await invoiceProvider.fetchNextInvoiceNo();
+
+    // 3. Remove dialog
+    if (mounted) Navigator.pop(context);
+
+    // 4. Fallback if server fails
+    if (nextInvNo == null) {
+      nextInvNo = "INV-0001";
+      if (invoiceProvider.orderData != null &&
+          invoiceProvider.orderData!.invoices.isNotEmpty) {
+        final allNumbers = invoiceProvider.orderData!.invoices.map((invoice) {
+          final id = invoice.invNo ?? "";
+          final match = RegExp(r'INV-(\d+)$').firstMatch(id);
+          return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
+        }).toList();
+        final max = allNumbers.isNotEmpty ? allNumbers.reduce((a, b) => a > b ? a : b) : 0;
+        nextInvNo = "INV-${(max + 1).toString().padLeft(4, '0')}";
+      }
+    }
+
+    // 5. Navigate
+    if (mounted) {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AddSalesInvoiceScreen(nextOrderId: nextInvNo!),
+        ),
+      );
+
+      if (result == true) {
+        invoiceProvider.fetchOrders();
+      }
+    }
   }
 
   // ── Filter Row ──────────────────────────────────────────────────────────────

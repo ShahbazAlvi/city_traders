@@ -123,11 +123,36 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
 
       floatingActionButton: canAddsheet?
       FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (_) => const CreateLoadSheetScreen()),
-        ).then((_) => provider.fetchLoadSheets()),
+        onPressed: () async {
+          // Show loading dialog
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+
+          try {
+            final nextNo = await provider.fetchNextLoadNo();
+            if (context.mounted) {
+              Navigator.pop(context); // Close loading dialog
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CreateLoadSheetScreen(initialLoadNo: nextNo),
+                ),
+              ).then((_) => provider.fetchLoadSheets());
+            }
+          } catch (e) {
+            if (context.mounted) {
+              Navigator.pop(context); // Close loading dialog
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error: $e')),
+              );
+            }
+          }
+        },
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
         label: const Text('New Load Sheet',
@@ -410,7 +435,8 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class CreateLoadSheetScreen extends StatefulWidget {
-  const CreateLoadSheetScreen({super.key});
+  final String? initialLoadNo;
+  const CreateLoadSheetScreen({super.key, this.initialLoadNo});
 
   @override
   State<CreateLoadSheetScreen> createState() =>
@@ -448,9 +474,15 @@ class _CreateLoadSheetScreenState extends State<CreateLoadSheetScreen> {
       Provider.of<SaleManProvider>(context, listen: false).fetchEmployees();
       final lsProvider = Provider.of<LoadSheetProvider>(context, listen: false);
       await lsProvider.fetchLoadSheets();
+
+      String? finalLoadNo = widget.initialLoadNo;
+      if (finalLoadNo == null) {
+        finalLoadNo = await lsProvider.fetchNextLoadNo();
+      }
+
       if (mounted) {
         setState(() {
-          _loadNoController.text = lsProvider.nextLoadNo;
+          _loadNoController.text = finalLoadNo!;
         });
       }
     });

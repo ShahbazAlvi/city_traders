@@ -39,7 +39,7 @@ class LoadSheetProvider with ChangeNotifier {
   bool get isLoadingItems => _isLoadingItems;
   String? get itemsError => _itemsError;
 
-  /// Returns the next auto-incremented load number like LO-0003
+  /// Returns the next auto-incremented load number like LO-0003 (Local fallback)
   String get nextLoadNo {
     int maxNum = 0;
     // Use unfiltered list for collective/global ID generation
@@ -53,6 +53,31 @@ class LoadSheetProvider with ChangeNotifier {
     }
     return 'LS-${(maxNum + 1).toString().padLeft(4, '0')}';
   }
+
+  Future<String> fetchNextLoadNo() async {
+    try {
+      final token = await _getToken();
+      final response = await http.get(
+        Uri.parse('${ApiEndpoints.baseUrl}/load-sheets/next-load-no'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          // Correctly access the nested 'next_load_no' field based on your API response
+          return data['data']['next_load_no']?.toString() ?? nextLoadNo;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching next load number: $e');
+    }
+    return nextLoadNo; // Fallback to local calculation
+  }
+
 
   Future<String> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -72,6 +97,7 @@ class LoadSheetProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       final salesmanId = prefs.getInt('salesman_id');
+      final deliveryBoyId = prefs.getInt('delivery_boy_id');
       final assignedAreaIds = prefs.getStringList('assigned_area_ids');
 
       if (token == null) {
@@ -85,13 +111,17 @@ class LoadSheetProvider with ChangeNotifier {
       String url = '${ApiEndpoints.baseUrl}/load-sheets';
       List<String> queryParams = [];
 
-      // Add params only if they have values (Server-side filtering logic)
-      if (salesmanId != null) {
-        queryParams.add('salesman_id=$salesmanId');
-      }
-
-      if (assignedAreaIds != null && assignedAreaIds.isNotEmpty) {
-        queryParams.add('sales_area_ids=${assignedAreaIds.join(',')}');
+      // Priority Filter: Delivery Boy ID
+      if (deliveryBoyId != null) {
+        queryParams.add('delivery_boy_id=$deliveryBoyId');
+      } else {
+        // Fallback: Salesman and Areas
+        if (salesmanId != null) {
+          queryParams.add('salesman_id=$salesmanId');
+        }
+        if (assignedAreaIds != null && assignedAreaIds.isNotEmpty) {
+          queryParams.add('sales_area_ids=${assignedAreaIds.join(',')}');
+        }
       }
 
       if (queryParams.isNotEmpty) {
@@ -139,10 +169,22 @@ class LoadSheetProvider with ChangeNotifier {
 
     try {
       final token = await _getToken();
-      final uri = Uri.parse(
-          '${ApiEndpoints.baseUrl}/load-sheets/sales-orders/by-salesman/$salesmanId');
+      final prefs = await SharedPreferences.getInstance();
+      final assignedAreaIds = prefs.getStringList('assigned_area_ids');
 
-      final res = await http.get(uri, headers: {
+      // Use the generic sales-orders endpoint as requested
+      String url = '${ApiEndpoints.baseUrl}/sales-orders';
+      List<String> queryParams = ['salesman_id=$salesmanId'];
+
+      if (assignedAreaIds != null && assignedAreaIds.isNotEmpty) {
+        queryParams.add('sales_area_ids=${assignedAreaIds.join(',')}');
+      }
+
+      if (queryParams.isNotEmpty) {
+        url += '?${queryParams.join('&')}';
+      }
+
+      final res = await http.get(Uri.parse(url), headers: {
         'Authorization': 'Bearer $token',
         'Accept': 'application/json',
       }).timeout(const Duration(seconds: 15));

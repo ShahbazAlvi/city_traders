@@ -8,7 +8,7 @@ import 'package:http/http.dart'as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../ApiLink/ApiEndpoint.dart';
-import '../../Screen/DashBoardScreen.dart';
+import '../../Screen/HomeScreen.dart';
 
 
 
@@ -65,6 +65,7 @@ class LoginProvider with ChangeNotifier{
         await prefs.remove('permission_codes');
         await prefs.remove('user_type');
         await prefs.remove('assigned_area_ids');
+        await prefs.remove('delivery_boy_id');
 
         final access = data["data"]["access"];
         final user = data["data"]["user"];
@@ -134,7 +135,7 @@ class LoginProvider with ChangeNotifier{
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
       }
       else {
