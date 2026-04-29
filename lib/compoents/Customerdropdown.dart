@@ -87,7 +87,7 @@ class _CustomerDropdownState extends State<CustomerDropdown>
     final provider = Provider.of<CustomerProvider>(context);
 
     if (provider.isLoading) return _buildShimmerLoading();
-    if (provider.error!.isNotEmpty) return _buildErrorWidget(provider.error!);
+    if (provider.error != null && provider.error!.isNotEmpty) return _buildErrorWidget(provider.error!);
     if (provider.accessFilteredCustomers.isEmpty) return _buildEmptyState();
 
     // Apply salesman filter and sort alphabetically

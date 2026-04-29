@@ -69,29 +69,26 @@ class LoginProvider with ChangeNotifier{
         final access = data["data"]["access"];
         final user = data["data"]["user"];
         final accessToken = data["data"]["accessToken"];
+        final companies = data["data"]["companies"];
 
+        // 1. Core Auth Data
         await prefs.setString('token', accessToken);
         await prefs.setString('user', jsonEncode(user));
+        
+        // 2. Companies Data
+        if (companies != null) {
+          await prefs.setString('companies', jsonEncode(companies));
+        }
 
-        // ⭐ SAVE ROLES
+        // 3. Roles (Save as List for easy check)
         if (access["roles"] != null) {
           await prefs.setStringList(
               'roles',
               List<String>.from(access["roles"].map((e) => e["name"]))
           );
         }
-        if (user["assigned_area_ids"] != null) {
-          await prefs.setString(
-            'assigned_area_ids',
-            jsonEncode(user["assigned_area_ids"]),
-          );
-        }
-        final deliveryBoyId = user["delivery_boy_id"];
-        if (deliveryBoyId != null) {
-          await prefs.setInt('delivery_boy_id', deliveryBoyId);
-        }
 
-        // ⭐ SAVE PERMISSIONS
+        // 4. Permissions (Codes are most important)
         if (access["permission_codes"] != null) {
           await prefs.setStringList(
               'permission_codes',
@@ -99,33 +96,39 @@ class LoginProvider with ChangeNotifier{
           );
         }
 
-        // ⭐ SAVE SALESMAN ID
-        final salesmanId = user["salesman_id"];
-        if (salesmanId != null) {
-          await prefs.setInt('salesman_id', salesmanId);
+        // 5. Specific IDs for Convenience
+        // 5. Specific IDs (Clear if null to prevent data overlap from previous login)
+        if (user["salesman_id"] != null) {
+          await prefs.setInt('salesman_id', user["salesman_id"]);
+        } else {
+          await prefs.remove('salesman_id');
         }
 
-        // ⭐ SAVE USER TYPE
-        final userType = user["user_type"];
-        if (userType != null) {
-          await prefs.setString('user_type', userType);
+        if (user["delivery_boy_id"] != null) {
+          await prefs.setInt('delivery_boy_id', user["delivery_boy_id"]);
+        } else {
+          await prefs.remove('delivery_boy_id');
         }
 
-        // ⭐ SAVE ASSIGNED AREAS
-        if (user["assigned_area_ids"] != null) {
+        if (user["user_type"] != null) {
+          await prefs.setString('user_type', user["user_type"]);
+        }
+
+        // 6. Assigned Areas (Clear if null or empty)
+        if (user["assigned_area_ids"] != null && (user["assigned_area_ids"] as List).isNotEmpty) {
           await prefs.setStringList(
               'assigned_area_ids',
               List<String>.from(user["assigned_area_ids"].map((e) => e.toString()))
           );
+        } else {
+          await prefs.remove('assigned_area_ids');
         }
 
-        // ⭐ OWNER CHECK (ADMIN)
+        // 7. Owner/Admin Check
         bool isOwner = access["is_owner"] == true;
-        // Fallback: also check companies list
-        if (!isOwner &&
-            data["data"]["companies"] != null &&
-            data["data"]["companies"].isNotEmpty) {
-          isOwner = data["data"]["companies"][0]["is_owner"] == 1;
+        if (!isOwner && companies != null && companies.isNotEmpty) {
+          // Check if first company has owner flag
+          isOwner = companies[0]["is_owner"] == 1 || companies[0]["is_owner"] == true;
         }
         await prefs.setBool('is_owner', isOwner);
 

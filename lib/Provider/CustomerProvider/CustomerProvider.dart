@@ -84,13 +84,37 @@ bool get isLoading=>_isLoading;
     notifyListeners();
 
     try {
-      final url = Uri.parse("${ApiEndpoints.baseUrl}/customers");
-
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
+      final salesmanId = prefs.getInt('salesman_id');
+      final assignedAreaIds = prefs.getStringList('assigned_area_ids');
+
+      if (token == null) {
+        _error = "Token not found. Please login again.";
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      // Build URL with salesman_id and assigned areas filter (Server-side filtering)
+      String url = '${ApiEndpoints.baseUrl}/customers';
+      List<String> queryParams = [];
+
+      // Add params only if they have values
+      if (salesmanId != null) {
+        queryParams.add('salesman_id=$salesmanId');
+      }
+
+      if (assignedAreaIds != null && assignedAreaIds.isNotEmpty) {
+        queryParams.add('sales_area_ids=${assignedAreaIds.join(',')}');
+      }
+
+      if (queryParams.isNotEmpty) {
+        url += '?${queryParams.join('&')}';
+      }
 
       final response = await http.get(
-        url,
+        Uri.parse(url),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -102,8 +126,10 @@ bool get isLoading=>_isLoading;
 
       if (response.statusCode == 200 && jsonData["success"] == true) {
         final List list = jsonData["data"]["data"] ?? [];
-
         _customers = list.map((e) => CustomerData.fromJson(e)).toList();
+        
+        // Update filtered list for UI (No notifyListeners inside _applyInternalAccessFilter for now)
+        await _applyInternalAccessFilter(); 
       } else {
         _error = jsonData["message"] ?? "Failed to load customers";
       }
@@ -112,8 +138,21 @@ bool get isLoading=>_isLoading;
     }
 
     _isLoading = false;
-    await applyAccessFilter();
     notifyListeners();
+  }
+
+  /// Internal filter application without notifyListeners
+  Future<void> _applyInternalAccessFilter() async {
+    final prefs = await SharedPreferences.getInstance();
+    final salesmanId = prefs.getInt('salesman_id');
+
+    if (salesmanId == null) {
+      _salesmanFilteredCustomers = List.from(_customers);
+    } else {
+      _salesmanFilteredCustomers = _customers
+          .where((c) => c.salesmanId == salesmanId)
+          .toList();
+    }
   }
 
 

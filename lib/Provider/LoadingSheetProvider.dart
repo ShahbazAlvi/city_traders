@@ -71,12 +71,35 @@ class LoadSheetProvider with ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
-      final int? salesmanId = prefs.containsKey('salesman_id')
-          ? prefs.getInt('salesman_id')
-          : null;
+      final salesmanId = prefs.getInt('salesman_id');
+      final assignedAreaIds = prefs.getStringList('assigned_area_ids');
+
+      if (token == null) {
+        _error = "Token not found. Please login again.";
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      // Build URL with salesman_id and assigned areas filter (Server-side filtering)
+      String url = '${ApiEndpoints.baseUrl}/load-sheets';
+      List<String> queryParams = [];
+
+      // Add params only if they have values (Server-side filtering logic)
+      if (salesmanId != null) {
+        queryParams.add('salesman_id=$salesmanId');
+      }
+
+      if (assignedAreaIds != null && assignedAreaIds.isNotEmpty) {
+        queryParams.add('sales_area_ids=${assignedAreaIds.join(',')}');
+      }
+
+      if (queryParams.isNotEmpty) {
+        url += '?${queryParams.join('&')}';
+      }
 
       final response = await http.get(
-        Uri.parse('${ApiEndpoints.baseUrl}/load-sheets'),
+        Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -84,20 +107,14 @@ class LoadSheetProvider with ChangeNotifier {
       );
 
       final data = jsonDecode(response.body);
+      print("LOAD SHEETS API => $data");
 
       if (response.statusCode == 200 && data['success'] == true) {
         final list = (data['data']['data'] as List? ?? [])
             .cast<Map<String, dynamic>>();
 
-        _unfilteredSheets = list; // Keep full list for ID generation
-
-        if (salesmanId != null) {
-          _loadSheets = list
-              .where((sheet) => sheet['salesman_id'] == salesmanId)
-              .toList();
-        } else {
-          _loadSheets = list;
-        }
+        _unfilteredSheets = list; // Keep list for ID generation (now filtered by server)
+        _loadSheets = list;
       } else {
         _error = data['message'] ?? 'Failed to load sheets';
       }

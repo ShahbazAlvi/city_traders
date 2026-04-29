@@ -41,23 +41,39 @@ class SaleInvoicesProvider with ChangeNotifier {
       error = null;
       notifyListeners();
 
+      final prefs = await SharedPreferences.getInstance();
       await loadToken();
 
       if (token == null) {
         error = "Token not found";
+        isLoading = false;
+        notifyListeners();
         return;
       }
 
+      // Build URL with salesman_id and assigned areas filter (Server-side filtering)
       String url = "${ApiEndpoints.baseUrl}/sales-invoices-notax";
+      List<String> queryParams = [];
 
-      Map<String, String> params = {};
-      if (date != null && date.isNotEmpty) params['date'] = date;
-      if (salesmanId != null && salesmanId.isNotEmpty) {
-        params['salesmanId'] = salesmanId;
+      if (date != null && date.isNotEmpty) {
+        queryParams.add('date=$date');
       }
 
-      if (params.isNotEmpty) {
-        url += "?" + Uri(queryParameters: params).query;
+      // Use provided salesmanId (from UI filter) OR from prefs (from login)
+      final String? effectiveSalesmanId = salesmanId ?? prefs.getInt('salesman_id')?.toString();
+      final List<String>? assignedAreaIds = prefs.getStringList('assigned_area_ids');
+
+      if (effectiveSalesmanId != null && effectiveSalesmanId.isNotEmpty) {
+        queryParams.add('salesman_id=$effectiveSalesmanId');
+      }
+
+      // Only apply area filters if using the logged-in user's context (i.e. not an admin override)
+      if (salesmanId == null && assignedAreaIds != null && assignedAreaIds.isNotEmpty) {
+        queryParams.add('sales_area_ids=${assignedAreaIds.join(',')}');
+      }
+
+      if (queryParams.isNotEmpty) {
+        url += "?${queryParams.join('&')}";
       }
 
       final response = await http.get(
@@ -70,6 +86,8 @@ class SaleInvoicesProvider with ChangeNotifier {
           "Pragma": "no-cache",
         },
       );
+
+      print("INVOICES API => $url");
 
       if (response.statusCode == 200) {
         orderData = SaleInvoiceModel.fromJson(jsonDecode(response.body));

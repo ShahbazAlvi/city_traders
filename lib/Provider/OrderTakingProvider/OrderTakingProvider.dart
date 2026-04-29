@@ -55,13 +55,14 @@ class OrderTakingProvider with ChangeNotifier{
         return;
       }
 
-      // Build URL with salesman_id and assigned areas filter
+      // Build URL with salesman_id and assigned areas filter if they exist
       final salesmanId = prefs.getInt('salesman_id');
       final assignedAreaIds = prefs.getStringList('assigned_area_ids');
 
       String url = '${ApiEndpoints.baseUrl}/sales-orders';
       List<String> queryParams = [];
 
+      // Add params only if they have values (works for Salesman, bypasses for Admin)
       if (salesmanId != null) {
         queryParams.add('salesman_id=$salesmanId');
       }
