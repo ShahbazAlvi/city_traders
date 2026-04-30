@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:demo_distribution/ApiLink/ApiEndpoint.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,7 +10,7 @@ import '../../model/setup/Delivery_boy_model.dart';
 enum DeliveryBoyStatus { initial, loading, success, error }
 
 class DeliveryBoyProvider extends ChangeNotifier {
-  static const String _baseUrl = 'https://api.siddiquitd.com/api';
+  static  final String _baseUrl = '${ApiEndpoints.baseUrl}';
 
   DeliveryBoyStatus _status = DeliveryBoyStatus.initial;
   List<DeliveryBoy> _deliveryBoys = [];

@@ -240,14 +240,6 @@ class _DeliveryBoyCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
 
-                  // Phone
-                  _InfoRow(
-                    icon: Icons.phone_outlined,
-                    label: 'Phone',
-                    value: deliveryBoy.phone ?? 'N/A',
-                  ),
-                  const SizedBox(height: 8),
-
                   // Areas chip row
                   Wrap(
                     spacing: 6,

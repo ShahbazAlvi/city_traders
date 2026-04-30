@@ -892,6 +892,8 @@ import '../../../Provider/OrderTakingProvider/OrderTakingProvider.dart';
 import '../../../Provider/SaleManProvider/SaleManProvider.dart';
 import '../../../compoents/AppColors.dart';
 import '../../../compoents/ProductDropdown.dart';
+import '../../../compoents/SalesAreaDropdown.dart';
+import '../../../Provider/setup/SalesAreasProvider.dart';
 import '../../../model/OrderTakingModel/OrderTakingModel.dart';
 import '../../../model/ProductModel/itemsdetailsModel.dart';
 
@@ -914,6 +916,7 @@ class _UpdateOrderScreenState extends State<UpdateOrderScreen> {
   String? selectedCustomerName;
   int? selectedSalesmanId;
   String? selectedSalesmanName;
+  int? selectedSalesAreaId;
 
   // Live editable items loaded from fetchSingleOrder
   List<_EditableItem> editableItems = [];
@@ -951,6 +954,9 @@ class _UpdateOrderScreenState extends State<UpdateOrderScreen> {
       // Fetch providers
       Provider.of<CustomerProvider>(context, listen: false).fetchCustomers();
       Provider.of<SaleManProvider>(context, listen: false).fetchEmployees();
+      Provider.of<SalesAreasProvider>(context, listen: false).fetchSalesAreas();
+
+      selectedSalesAreaId = widget.order.salesAreaId;
 
       // Fetch live order details
       await Provider.of<OrderTakingProvider>(context, listen: false)
@@ -1065,7 +1071,8 @@ class _UpdateOrderScreenState extends State<UpdateOrderScreen> {
         "so_no": widget.order.soNo,
         "customer_id": selectedCustomerId,
         "salesman_id": selectedSalesmanId,
-        "order_date": dateController.text,
+        "sales_area_id": selectedSalesAreaId,
+        "order_date": DateFormat('dd MMMM yyyy').format(DateTime.parse(dateController.text)),
         "status": selectedStatus,
         "details": editableItems
             .map((i) => {
@@ -1219,6 +1226,12 @@ class _UpdateOrderScreenState extends State<UpdateOrderScreen> {
           _buildSectionLabel("Salesman"),
           const SizedBox(height: 8),
           _buildSalesmanDropdown(),
+          const SizedBox(height: 14),
+
+          // ── Sales Area ──
+          _buildSectionLabel("Sales Area"),
+          const SizedBox(height: 8),
+          _buildSalesAreaDropdown(),
           const SizedBox(height: 14),
 
           // ── Date + Status ──
@@ -1407,6 +1420,27 @@ class _UpdateOrderScreenState extends State<UpdateOrderScreen> {
                 selectedSalesmanName = sp.employees
                     .firstWhere((e) => e.id == id)
                     .name;
+              });
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Sales Area Dropdown ──────────────────────
+
+  Widget _buildSalesAreaDropdown() {
+    return Consumer<SalesAreasProvider>(
+      builder: (context, ap, _) {
+        if (ap.isLoading) return _skeleton(50);
+        return _dropdownCard(
+          icon: Icons.map_outlined,
+          child: SalesAreaDropdown(
+            selectedId: selectedSalesAreaId?.toString(),
+            onChanged: (id) {
+              setState(() {
+                selectedSalesAreaId = id != null ? int.tryParse(id) : null;
               });
             },
           ),

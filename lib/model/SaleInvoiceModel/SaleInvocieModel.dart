@@ -40,6 +40,12 @@ class SaleInvoiceData {
   final int? loadId;
   final String? loadNo;
 
+  final int? salesAreaId;         // ✅ Added
+  final String? salesAreaName;
+
+  final int? deliveryBoyId;       // ✅ Added
+  final String? deliveryBoyName;
+
   final DateTime invoiceDate;
 
   final int locationId;
@@ -70,6 +76,10 @@ class SaleInvoiceData {
     required this.salesmanName,
     this.loadId,
     this.loadNo,
+    this.salesAreaId,
+    this.salesAreaName,
+    this.deliveryBoyId,
+    this.deliveryBoyName,
     required this.invoiceDate,
     required this.locationId,
     required this.locationName,
@@ -100,6 +110,12 @@ class SaleInvoiceData {
 
       loadId: json["load_id"],
       loadNo: json["load_no"],
+
+      salesAreaId: json["sales_area_id"],
+      salesAreaName: json["sales_area_name"],
+
+      deliveryBoyId: json["delivery_boy_id"],
+      deliveryBoyName: json["delivery_boy_name"],
 
       invoiceDate: DateTime.tryParse(json["invoice_date"] ?? "") ?? DateTime.now(),
 

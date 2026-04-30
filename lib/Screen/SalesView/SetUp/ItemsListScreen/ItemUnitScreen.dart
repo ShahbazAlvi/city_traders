@@ -106,29 +106,29 @@ class _ItemUnitScreenState extends State<ItemUnitScreen> {
             ),
           ),
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: ElevatedButton.icon(
-              onPressed: () {
-                _showAddItemUnitDialog();
-                // Navigator.push(context,MaterialPageRoute(builder:(context)=>AddCustomerScreen()));
-              },
-              icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-              label: const Text(
-                " Add item Units",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-            ),
-          ),
-        ],
+        // actions: [
+        //   Padding(
+        //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        //     child: ElevatedButton.icon(
+        //       onPressed: () {
+        //         _showAddItemUnitDialog();
+        //         // Navigator.push(context,MaterialPageRoute(builder:(context)=>AddCustomerScreen()));
+        //       },
+        //       icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+        //       label: const Text(
+        //         " Add item Units",
+        //         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        //       ),
+        //       style: ElevatedButton.styleFrom(
+        //         backgroundColor: Colors.transparent,
+        //         shadowColor: Colors.transparent,
+        //         shape: RoundedRectangleBorder(
+        //           borderRadius: BorderRadius.circular(20),
+        //         ),
+        //       ),
+        //     ),
+        //   ),
+        // ],
         centerTitle: true,
         elevation: 6,
         flexibleSpace: Container(

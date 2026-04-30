@@ -235,22 +235,22 @@ class _SalesDashboardState extends State<SetUpDashboard> {
                     },
                   ),
                 if (canViewEmployees) ...[
-                  DashboardCard(
-                    icon: Icons.local_fire_department,
-                    title: "Department",
-                    color: Colors.blueAccent,
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => DepartmentScreen()));
-                    },
-                  ),
-                  DashboardCard(
-                    icon: Icons.settings_system_daydream,
-                    title: "Designation",
-                    color: Colors.blueAccent,
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => DesignationScreen()));
-                    },
-                  ),
+                  // DashboardCard(
+                  //   icon: Icons.local_fire_department,
+                  //   title: "Department",
+                  //   color: Colors.blueAccent,
+                  //   onTap: () {
+                  //     Navigator.push(context, MaterialPageRoute(builder: (_) => DepartmentScreen()));
+                  //   },
+                  // ),
+                  // DashboardCard(
+                  //   icon: Icons.settings_system_daydream,
+                  //   title: "Designation",
+                  //   color: Colors.blueAccent,
+                  //   onTap: () {
+                  //     Navigator.push(context, MaterialPageRoute(builder: (_) => DesignationScreen()));
+                  //   },
+                  // ),
                   DashboardCard(
                     icon: Icons.layers,
                     title: "Delivery Boy",

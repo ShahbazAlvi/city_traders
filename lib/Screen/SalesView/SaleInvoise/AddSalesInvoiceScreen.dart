@@ -1731,6 +1731,8 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   // Add New Product state
   bool _showAddProduct = false;
   ItemDetails? selectedProduct;
+  int? _stockQty;
+  bool _isFetchingStock = false;
   final TextEditingController qtyController = TextEditingController();
   final TextEditingController rateController = TextEditingController();
 
@@ -1908,6 +1910,39 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
     }
   }
 
+  Future<void> _fetchStockQty(int itemId) async {
+    debugPrint('📦 Fetching stock for item: $itemId');
+    setState(() {
+      _isFetchingStock = true;
+      _stockQty = null;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final response = await http.get(
+        Uri.parse('${ApiEndpoints.baseUrl}/stock-position/item/$itemId'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      debugPrint('📦 Stock response: ${response.statusCode} - ${response.body}');
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final totalBalance = data['data']['total_balance'];
+        setState(() {
+          _stockQty = (totalBalance as num).toInt();
+        });
+      }
+    } catch (e) {
+      debugPrint('Stock fetch error: $e');
+    } finally {
+      setState(() {
+        _isFetchingStock = false;
+      });
+    }
+  }
+
   void onLoadSheetSelected(int loadId) async {
     setState(() {
       selectedLoadSheetId = loadId;
@@ -2001,6 +2036,12 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
 
     if (qty <= 0) {
       _showSnack("Please enter a valid quantity", Colors.orange);
+      return;
+    }
+
+    // Stock check
+    if (_stockQty != null && qty > _stockQty!) {
+      _showSnack("Insufficient stock! Available: $_stockQty, Requested: ${qty.toInt()}", Colors.red);
       return;
     }
 
@@ -2122,7 +2163,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
       "sales_area_id": int.tryParse(_selectedAreaId ?? ''),
       "location_id": selectedLocationId,
       "invoice_date":
-      DateTime.now().toIso8601String().split("T").first,
+      DateFormat('dd MMMM yyyy').format(DateTime.now()),
       "invoice_type": "CASH",
       "status": "POSTED",
       "details": allDetails,
@@ -2811,10 +2852,22 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
             ),
             child: ItemDetailsDropdown(
               onItemSelected: (item) {
-                setState(() => selectedProduct = item);
+                setState(() {
+                  selectedProduct = item;
+                  _stockQty = null;
+                });
                 if (item != null) {
-                  rateController.text =
-                      item.salePrice?.toString() ?? '';
+                  rateController.text = item.salePrice?.toString() ?? '';
+
+                  // Handle both int and String id types safely
+                  final rawId = item.id;
+                  final int? id = rawId is int
+                      ? rawId as int
+                      : int.tryParse(rawId?.toString() ?? '');
+
+                  if (id != null) {
+                    _fetchStockQty(id);
+                  }
                 }
               },
             ),
@@ -2843,11 +2896,31 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
                               fontSize: 13,
                               fontWeight: FontWeight.w600),
                         ),
-                        Text(
-                          'Stock: ${selectedProduct!.minLevelQty ?? 'N/A'}',
+                        _isFetchingStock
+                            ? Row(children: [
+                          SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 1.5,
+                                  color: AppColors.primary)),
+                          const SizedBox(width: 6),
+                          Text('Fetching stock...',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade500)),
+                        ])
+                            : Text(
+                          'Stock: ${_stockQty ?? 'N/A'}',
                           style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey.shade600),
+                            fontSize: 11,
+                            color: (_stockQty != null && _stockQty! < 10)
+                                ? Colors.red.shade600 // low stock = red
+                                : Colors.grey.shade600,
+                            fontWeight: (_stockQty != null && _stockQty! < 10)
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
                         ),
                       ],
                     ),

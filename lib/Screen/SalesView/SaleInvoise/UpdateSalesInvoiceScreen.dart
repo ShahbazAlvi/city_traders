@@ -10,9 +10,13 @@ import '../../../ApiLink/ApiEndpoint.dart';
 import '../../../Provider/CustomerProvider/CustomerProvider.dart';
 import '../../../Provider/SaleInvoiceProvider/SaleInvoicesProvider.dart';
 import '../../../Provider/SaleManProvider/SaleManProvider.dart';
+import '../../../Provider/setup/Delivery_boy_provider.dart';
 import '../../../Provider/setup/location_provider.dart';
 import '../../../compoents/AppColors.dart';
 import '../../../compoents/ProductDropdown.dart';
+import '../../../compoents/SalesAreaDropdown.dart';
+import '../../../compoents/DeliveryBoyDropdown.dart';
+import '../../../Provider/setup/SalesAreasProvider.dart';
 import '../../../model/ProductModel/itemsdetailsModel.dart';
 import '../../../model/SaleInvoiceModel/SaleInvoiceDetailsModel.dart';
 
@@ -39,6 +43,8 @@ class _UpdateSalesInvoiceScreenState extends State<UpdateSalesInvoiceScreen> {
   int? selectedCustomerId;
   int? selectedSalesmanId;
   int? selectedLocationId;
+  int? selectedSalesAreaId;
+  int? selectedDeliveryBoyId;
   String selectedStatus = 'POSTED';
   String selectedInvoiceType = 'CASH';
   late TextEditingController dateController;
@@ -68,6 +74,8 @@ class _UpdateSalesInvoiceScreenState extends State<UpdateSalesInvoiceScreen> {
       Provider.of<CustomerProvider>(context, listen: false).fetchCustomers();
       Provider.of<SaleManProvider>(context, listen: false).fetchEmployees();
       Provider.of<LocationProvider>(context, listen: false).getLocations();
+      Provider.of<SalesAreasProvider>(context, listen: false).fetchSalesAreas();
+      Provider.of<DeliveryBoyProvider>(context, listen: false).fetchDeliveryBoys();
 
       // Load invoice detail
       await Provider.of<SaleInvoicesProvider>(context, listen: false)
@@ -82,6 +90,8 @@ class _UpdateSalesInvoiceScreenState extends State<UpdateSalesInvoiceScreen> {
           selectedCustomerId = invoice.customerId;
           selectedSalesmanId = invoice.salesmanId;
           selectedLocationId = invoice.locationId;
+          selectedSalesAreaId = invoice.salesAreaId;
+          selectedDeliveryBoyId = invoice.deliveryBoyId;
           selectedStatus = invoice.status;
           selectedInvoiceType = invoice.invoiceType;
           dateController.text = dateFormat.format(invoice.invoiceDate);
@@ -200,7 +210,9 @@ class _UpdateSalesInvoiceScreenState extends State<UpdateSalesInvoiceScreen> {
         "salesman_id": selectedSalesmanId,
         "load_id": null,
         "location_id": selectedLocationId,
-        "invoice_date": dateController.text,
+        "sales_area_id": selectedSalesAreaId,
+        "delivery_boy_id": selectedDeliveryBoyId,
+        "invoice_date": DateFormat('dd MMMM yyyy').format(DateTime.parse(dateController.text)),
         "invoice_type": selectedInvoiceType,
         "status": selectedStatus,
         "details": editableItems
@@ -359,6 +371,18 @@ class _UpdateSalesInvoiceScreenState extends State<UpdateSalesInvoiceScreen> {
           _buildSectionLabel("Location"),
           const SizedBox(height: 8),
           _buildLocationDropdown(),
+          const SizedBox(height: 14),
+
+          // ── Sales Area ──
+          _buildSectionLabel("Sales Area"),
+          const SizedBox(height: 8),
+          _buildSalesAreaDropdown(),
+          const SizedBox(height: 14),
+
+          // ── Delivery Boy ──
+          _buildSectionLabel("Delivery Boy"),
+          const SizedBox(height: 8),
+          _buildDeliveryBoyDropdown(),
           const SizedBox(height: 14),
 
           // ── Date + Invoice Type ──
@@ -558,6 +582,48 @@ class _UpdateSalesInvoiceScreenState extends State<UpdateSalesInvoiceScreen> {
             ))
                 .toList(),
             onChanged: (id) => setState(() => selectedLocationId = id),
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Sales Area Dropdown ──────────────────────
+
+  Widget _buildSalesAreaDropdown() {
+    return Consumer<SalesAreasProvider>(
+      builder: (context, ap, _) {
+        if (ap.isLoading) return _skeleton(50);
+        return _dropdownCard(
+          icon: Icons.map_outlined,
+          child: SalesAreaDropdown(
+            selectedId: selectedSalesAreaId?.toString(),
+            onChanged: (id) {
+              setState(() {
+                selectedSalesAreaId = id != null ? int.tryParse(id) : null;
+              });
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Delivery Boy Dropdown ────────────────────
+
+  Widget _buildDeliveryBoyDropdown() {
+    return Consumer<DeliveryBoyProvider>(
+      builder: (context, dp, _) {
+        if (dp.isLoading) return _skeleton(50);
+        return _dropdownCard(
+          icon: Icons.delivery_dining_outlined,
+          child: DeliveryBoyDropdown(
+            selectedId: selectedDeliveryBoyId?.toString(),
+            onChanged: (id) {
+              setState(() {
+                selectedDeliveryBoyId = id != null ? int.tryParse(id) : null;
+              });
+            },
           ),
         );
       },

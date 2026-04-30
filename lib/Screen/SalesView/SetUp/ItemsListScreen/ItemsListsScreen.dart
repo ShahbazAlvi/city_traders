@@ -41,37 +41,37 @@ class _ItemListScreenState extends State<ItemListScreen> {
             ),
           ),
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: ElevatedButton.icon(
-              onPressed: () {
-                final provider = Provider.of<ItemDetailsProvider>(context, listen: false);
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AddItemScreen(nextItemId: ''),
-                  ),
-                ).then((_) {
-                  Provider.of<ItemDetailsProvider>(context, listen: false).fetchItems();
-                });
-              },
-              icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-              label: const Text(
-                "Add Items",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-            ),
-          ),
-        ],
+        // actions: [
+        //   Padding(
+        //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        //     child: ElevatedButton.icon(
+        //       onPressed: () {
+        //         final provider = Provider.of<ItemDetailsProvider>(context, listen: false);
+        //
+        //         Navigator.push(
+        //           context,
+        //           MaterialPageRoute(
+        //             builder: (context) => const AddItemScreen(nextItemId: ''),
+        //           ),
+        //         ).then((_) {
+        //           Provider.of<ItemDetailsProvider>(context, listen: false).fetchItems();
+        //         });
+        //       },
+        //       icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+        //       label: const Text(
+        //         "Add Items",
+        //         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        //       ),
+        //       style: ElevatedButton.styleFrom(
+        //         backgroundColor: Colors.transparent,
+        //         shadowColor: Colors.transparent,
+        //         shape: RoundedRectangleBorder(
+        //           borderRadius: BorderRadius.circular(20),
+        //         ),
+        //       ),
+        //     ),
+        //   ),
+        // ],
         centerTitle: true,
         elevation: 6,
         flexibleSpace: Container(

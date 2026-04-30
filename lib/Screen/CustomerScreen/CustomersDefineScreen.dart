@@ -111,23 +111,23 @@ class _CustomersDefineScreenState extends State<CustomersDefineScreen>
         ],
       ),
       // ── FAB ───────────────────────────────────────────────────────────────
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => const AddCustomerScreen()),
-          );
-          if (result == true && mounted) {
-            context.read<CustomerProvider>().fetchCustomers();
-          }
-        },
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.person_add_alt_1, color: Colors.white),
-        label: const Text("Add Customer",
-            style: TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w600)),
-      ),
+      // floatingActionButton: FloatingActionButton.extended(
+      //   onPressed: () async {
+      //     final result = await Navigator.push(
+      //       context,
+      //       MaterialPageRoute(
+      //           builder: (_) => const AddCustomerScreen()),
+      //     );
+      //     if (result == true && mounted) {
+      //       context.read<CustomerProvider>().fetchCustomers();
+      //     }
+      //   },
+      //   backgroundColor: AppColors.primary,
+      //   icon: const Icon(Icons.person_add_alt_1, color: Colors.white),
+      //   label: const Text("Add Customer",
+      //       style: TextStyle(
+      //           color: Colors.white, fontWeight: FontWeight.w600)),
+      // ),
       body: Column(
         children: [
           // ── Summary ───────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:intl/intl.dart';
 
 
 import 'package:flutter/cupertino.dart';
@@ -136,7 +137,7 @@ class OrderTakingProvider with ChangeNotifier{
         "customer_id": int.parse(customerId),
         "sales_area_id": salesAreaId != null ? int.tryParse(salesAreaId) : null,
         "status": status,
-        "order_date": DateTime.now().toIso8601String().split('T').first,
+        "order_date": DateFormat('dd MMMM yyyy').format(DateTime.now()),
         "details": products.map((item) => {
           "item_id": int.parse(item["product"].id.toString()),
           "qty": (item["qty"] as num).toDouble(),
@@ -225,7 +226,7 @@ class OrderTakingProvider with ChangeNotifier{
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString("token");
 
-      final url = Uri.parse("${ApiEndpoints.baseUrl}/order-taker/$orderId");
+      final url = Uri.parse("${ApiEndpoints.baseUrl}/sales-orders/$orderId");
 
       final response = await http.put(
         url,
