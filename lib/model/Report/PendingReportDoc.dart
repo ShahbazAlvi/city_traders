@@ -12,24 +12,41 @@ class PendingReportDoc {
   });
 
   factory PendingReportDoc.fromJson(Map<String, dynamic> json) {
-    final innerData = json['data'];
+    // Some APIs wrap the actual result in another 'data' key, some don't.
+    // Based on the snippet, the top level has 'data' (list) and 'summary'.
+    // If 'success' is missing, default to true if data is present.
+    
+    final bool success = json['success'] ?? true;
+    final String message = json['message'] ?? "";
+    
+    // Check if the data is at the root or nested
+    dynamic dataPart = json['data'];
+    dynamic summaryPart = json['summary'];
+    
+    List<PendingInvoice> invoices = [];
+    if (dataPart is List) {
+      invoices = dataPart.map((e) => PendingInvoice.fromJson(e)).toList();
+    } else if (dataPart is Map && dataPart['data'] is List) {
+      // Handle double nesting if it exists
+      invoices = (dataPart['data'] as List).map((e) => PendingInvoice.fromJson(e)).toList();
+      summaryPart ??= dataPart['summary'];
+    }
 
     return PendingReportDoc(
-      success: json['success'],
-      message: json['message'],
-      data: (innerData['data'] as List)
-          .map((e) => PendingInvoice.fromJson(e))
-          .toList(),
-      summary: PendingSummary.fromJson(innerData['summary']),
+      success: success,
+      message: message,
+      data: invoices,
+      summary: PendingSummary.fromJson(summaryPart ?? {}),
     );
   }
 }
+
 class PendingInvoice {
-  final int invoiceId;
+  final int? invoiceId;
   final String invNo;
-  final String invoiceDate;
+  final String? invoiceDate;
   final String invoiceType;
-  final int customerId;
+  final int? customerId;
   final String customerName;
   final String? customerPhone;
   final double netTotal;
@@ -37,11 +54,11 @@ class PendingInvoice {
   final double pendingAmount;
 
   PendingInvoice({
-    required this.invoiceId,
+    this.invoiceId,
     required this.invNo,
-    required this.invoiceDate,
+    this.invoiceDate,
     required this.invoiceType,
-    required this.customerId,
+    this.customerId,
     required this.customerName,
     this.customerPhone,
     required this.netTotal,
@@ -52,18 +69,19 @@ class PendingInvoice {
   factory PendingInvoice.fromJson(Map<String, dynamic> json) {
     return PendingInvoice(
       invoiceId: json['invoice_id'],
-      invNo: json['inv_no'],
+      invNo: json['inv_no'] ?? "",
       invoiceDate: json['invoice_date'],
-      invoiceType: json['invoice_type'],
+      invoiceType: json['invoice_type'] ?? "",
       customerId: json['customer_id'],
-      customerName: json['customer_name'],
+      customerName: json['customer_name'] ?? "",
       customerPhone: json['customer_phone'],
-      netTotal: double.parse(json['net_total'].toString()),
-      paidAmount: double.parse(json['paid_amount'].toString()),
-      pendingAmount: double.parse(json['pending_amount'].toString()),
+      netTotal: double.tryParse(json['net_total']?.toString() ?? "0") ?? 0.0,
+      paidAmount: double.tryParse(json['paid_amount']?.toString() ?? "0") ?? 0.0,
+      pendingAmount: double.tryParse(json['pending_amount']?.toString() ?? "0") ?? 0.0,
     );
   }
 }
+
 class PendingSummary {
   final int pendingInvoiceCount;
   final double totalNetAmount;
@@ -79,13 +97,10 @@ class PendingSummary {
 
   factory PendingSummary.fromJson(Map<String, dynamic> json) {
     return PendingSummary(
-      pendingInvoiceCount: json['pending_invoice_count'],
-      totalNetAmount:
-      double.parse(json['total_net_amount'].toString()),
-      totalPaidAmount:
-      double.parse(json['total_paid_amount'].toString()),
-      totalPendingAmount:
-      double.parse(json['total_pending_amount'].toString()),
+      pendingInvoiceCount: json['pending_invoice_count'] ?? 0,
+      totalNetAmount: double.tryParse(json['total_net_amount']?.toString() ?? "0") ?? 0.0,
+      totalPaidAmount: double.tryParse(json['total_paid_amount']?.toString() ?? "0") ?? 0.0,
+      totalPendingAmount: double.tryParse(json['total_pending_amount']?.toString() ?? "0") ?? 0.0,
     );
   }
-}
+}

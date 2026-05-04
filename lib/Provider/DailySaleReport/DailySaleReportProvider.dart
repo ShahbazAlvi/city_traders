@@ -88,6 +88,7 @@ class DailySaleReportProvider extends ChangeNotifier {
       String token = prefs.getString("token") ?? "";
 
       final Map<String, String> queryParams = {
+        "date": date,
         "date_from": date,
         "date_to": date,
       };

@@ -3,6 +3,7 @@
 
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -159,12 +160,24 @@ class _CustomerPaymentScreenState extends State<CustomerPaymentScreen> {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  payment.paymentNo,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      payment.paymentNo,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      DateFormat('dd MMM yyyy').format(payment.paymentDate),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               _statusBadge(payment.status),
@@ -281,7 +294,7 @@ class _CustomerPaymentScreenState extends State<CustomerPaymentScreen> {
         ),
       ),
       title: const Text(
-        "Customer Payments",
+        "Customer Receipt",
         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       ),
       centerTitle: true,

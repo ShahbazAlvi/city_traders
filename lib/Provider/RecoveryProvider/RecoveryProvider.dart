@@ -1,5 +1,3 @@
-
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -9,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../ApiLink/ApiEndpoint.dart';
 import '../../model/SaleRecoveryModel/RecoveryCustomerInvoice.dart';
 import '../../model/SaleRecoveryModel/SaleRecoveryModel.dart';
+import '../../utils/access_control.dart';
 
 class RecoveryProvider extends ChangeNotifier {
   bool isLoading = false;
@@ -20,33 +19,59 @@ class RecoveryProvider extends ChangeNotifier {
   String baseUrl = ApiEndpoints.baseUrl;
 
   List<CustomerInvoice> customerInvoices = [];
+  
+  int? salesmanId;
+  bool isAdmin = false;
+  String? errorMessage;
 
   Future<void> loadToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     token = prefs.getString("token") ?? "";
+    
+    // Use AccessControl to check if user is admin/owner
+    isAdmin = await AccessControl.isAdmin();
+    
+    // Only set salesmanId from prefs if not an admin
+    if (!isAdmin) {
+      salesmanId = prefs.getInt("salesman_id");
+    }
   }
 
   Future<void> fetchRecoveryReport() async {
     await loadToken();
     try {
       isLoading = true;
+      errorMessage = null;
       notifyListeners();
 
+      String urlStr = "$baseUrl/recovery-vouchers";
+      if (salesmanId != null) {
+        urlStr += "?salesman_id=$salesmanId";
+      }
+
       final response = await http.get(
-        Uri.parse("$baseUrl/recovery-vouchers"),
+        Uri.parse(urlStr),
         headers: {"Authorization": "Bearer $token"},
       );
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
         recoveryReport = RecoveryReport.fromJson(jsonData);
+      } else {
+        errorMessage = "Server Error: ${response.statusCode}";
       }
     } catch (e) {
       print(e);
+      errorMessage = "Connection Error: $e";
     } finally {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  void updateSalesmanId(int? id) {
+    salesmanId = id;
+    fetchRecoveryReport();
   }
 
   Future<void> fetchCustomerInvoices(int customerId) async {

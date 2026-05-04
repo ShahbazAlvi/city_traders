@@ -9,6 +9,7 @@ import '../../Provider/SaleManProvider/SaleManProvider.dart';
 import '../../Provider/SalemanRecoveryReport/salemanReport.dart';
 import '../../compoents/AppColors.dart';
 import '../../compoents/SaleManDropdown.dart';
+import '../../utils/access_control.dart';
 import 'SalemanRecoveryReportShimmer.dart';
 
 
@@ -22,19 +23,29 @@ class SaleManRecoveryScreen extends StatefulWidget {
 class _RecoveryScreenState extends State<SaleManRecoveryScreen> {
   DateTime selectedDate = DateTime.now();
   String? selectedSalesmanId;
+  bool isAdmin = true; // Default to true
 
   @override
   void initState() {
     super.initState();
+    _checkRole();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchData();
       Future.microtask(() => context.read<SaleManProvider>().fetchEmployees());
-
-      // if (widget.isUpdate && widget.existingOrder != null) {
-      //   final order = widget.existingOrder!;
-      //   selectedSalesmanId = order.salesmanId?.toString();
-      // }
     });
+  }
+
+  Future<void> _checkRole() async {
+    final sId = await AccessControl.getSalesmanId();
+    final admin = await AccessControl.isAdmin();
+    setState(() {
+      isAdmin = admin;
+      if (sId != null) {
+        selectedSalesmanId = sId.toString();
+      }
+    });
+    // Re-fetch data once we know the salesmanId
+    _fetchData();
   }
 
   // Update _fetchData to pass salesmanId
@@ -134,10 +145,12 @@ class _RecoveryScreenState extends State<SaleManRecoveryScreen> {
             const SizedBox(height: 24),
 
            // Salesman Section
-            _buildSectionTitle('Salesman Information'),
-            const SizedBox(height: 12),
-            _buildSalesmanField(),
-            const SizedBox(height: 24),
+            if (isAdmin) ...[
+              _buildSectionTitle('Salesman Information'),
+              const SizedBox(height: 12),
+              _buildSalesmanField(),
+              const SizedBox(height: 24),
+            ],
             Expanded(
               child: Consumer<SaleManRecoveryProvider>(
                 builder: (context, provider, _) {

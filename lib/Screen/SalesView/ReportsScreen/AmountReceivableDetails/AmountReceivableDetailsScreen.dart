@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../Provider/AmountReceivableDetailsProvider/AmountReceivableDetailsProvider.dart';
+import '../../../../Provider/SaleManProvider/SaleManProvider.dart';
 import '../../../../compoents/AppColors.dart';
 import '../../../../model/AmountReceivableDetailsModel/AmountReceivableDetailsModel.dart';
+import '../../../../model/SaleManModel/EmployeesModel.dart';
 
 class ReceivableScreen extends StatefulWidget {
   const ReceivableScreen({super.key});
@@ -25,8 +27,12 @@ class _ReceivableScreenState extends State<ReceivableScreen>
     _shimmerController = AnimationController.unbounded(vsync: this)
       ..repeat(min: 0, max: 1, period: const Duration(milliseconds: 1500));
 
-    Future.microtask(() {
-      context.read<ReceivableProvider>().fetchReceivables();
+    Future.microtask(() async {
+      final provider = context.read<ReceivableProvider>();
+      await provider.fetchReceivables();
+      if (provider.isAdmin) {
+        context.read<SaleManProvider>().fetchEmployees();
+      }
     });
   }
 
@@ -150,6 +156,72 @@ class _ReceivableScreenState extends State<ReceivableScreen>
                     onChanged: (v) =>
                         context.read<ReceivableProvider>().updateSearch(v),
                   ),
+                ),
+                const SizedBox(height: 12),
+                // Filter Chips
+                Consumer<ReceivableProvider>(
+                  builder: (context, provider, _) => Row(
+                    children: [
+                      FilterChip(
+                        label: const Text("Show Zero Balance"),
+                        selected: provider.withZero ?? false,
+                        onSelected: (val) => provider.updateWithZero(val),
+                        selectedColor: AppColors.primary.withOpacity(0.2),
+                        checkmarkColor: AppColors.primary,
+                      ),
+                    ],
+                  ),
+                ),
+                // Error Message
+                Consumer<ReceivableProvider>(
+                  builder: (context, provider, _) {
+                    if (provider.errorMessage == null) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        provider.errorMessage!,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    );
+                  },
+                ),
+                // Salesman Dropdown (Admin only)
+                Consumer2<ReceivableProvider, SaleManProvider>(
+                  builder: (context, recvProv, saleProv, _) {
+                    if (!recvProv.isAdmin) return const SizedBox.shrink();
+                    
+                    return Column(
+                      children: [
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey.shade200, width: 1.5),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<int?>(
+                              value: recvProv.salesmanId,
+                              isExpanded: true,
+                              hint: const Text("Select Salesman"),
+                              items: [
+                                const DropdownMenuItem<int?>(
+                                  value: null,
+                                  child: Text("All Salesmen"),
+                                ),
+                                ...saleProv.employees.map((e) => DropdownMenuItem<int?>(
+                                  value: e.id,
+                                  child: Text(e.name),
+                                )),
+                              ],
+                              onChanged: (val) => recvProv.updateSalesmanId(val),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),

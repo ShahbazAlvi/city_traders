@@ -161,7 +161,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
                 if (canViewCustomerPayment)
                   DashboardCard(
                     icon: Icons.wallet,
-                    title: "Customer Payment",
+                    title: "Customer Receipt",
                     color: Colors.greenAccent,
                     onTap: () {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerPaymentScreen()));

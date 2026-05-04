@@ -91,7 +91,7 @@ class CustomerPaymentProvider with ChangeNotifier {
     required String paymentNo,
     required String paymentDate,
     required int customerId,
-    required CustomerInvoice invoice,
+    CustomerInvoice? invoice, // Made optional
     required double paymentAmount,
     required String status,
     required String paymentMode,
@@ -105,17 +105,17 @@ class CustomerPaymentProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString("token");
 
-      final double balance = invoice.netTotal - paymentAmount;
+      final double balance = invoice != null ? (invoice.netTotal - paymentAmount) : 0;
       final salesmanId = prefs.getInt('salesman_id');
 
       final Map<String, dynamic> body = {
         "payment_no": paymentNo,
         "payment_date": paymentDate,
         "customer_id": customerId,
-        "invoice_id": invoice.id,
-        "invoice_no": invoice.invNo,
-        "invoice_type": invoice.sourceTable,
-        "invoice_amount": invoice.netTotal,
+        "invoice_id": invoice?.id,
+        "invoice_no": invoice?.invNo,
+        "invoice_type": invoice?.sourceTable,
+        "invoice_amount": invoice?.netTotal ?? 0,
         "payment_amount": paymentAmount,
         "payment_balance": balance,
         "payment_mode": paymentMode,

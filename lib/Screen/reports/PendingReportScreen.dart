@@ -5,6 +5,7 @@ import '../../Provider/Report/Pending Report.dart';
 import '../../Provider/SaleManProvider/SaleManProvider.dart';
 import '../../compoents/AppColors.dart';
 import '../../compoents/SaleManDropdown.dart';
+import '../../utils/access_control.dart';
 import 'SalemanRecoveryReportShimmer.dart';
 
 class PendingReportScreen extends StatefulWidget {
@@ -18,14 +19,28 @@ class _PendingReportScreenState extends State<PendingReportScreen> {
   DateTime? selectedDate;        // ✅ null means not selected yet
   String?   selectedSalesmanId;
   bool      _dateSelected = false; // ✅ track if user picked date
+  bool      isAdmin = true;
 
   @override
   void initState() {
     super.initState();
+    _checkRole();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<SaleManProvider>(context, listen: false).fetchEmployees();
       _fetchData(); // ✅ first load — no date, no salesman
     });
+  }
+
+  Future<void> _checkRole() async {
+    final sId = await AccessControl.getSalesmanId();
+    final admin = await AccessControl.isAdmin();
+    setState(() {
+      isAdmin = admin;
+      if (sId != null) {
+        selectedSalesmanId = sId.toString();
+      }
+    });
+    _fetchData();
   }
 
   void _fetchData() {
@@ -123,10 +138,12 @@ class _PendingReportScreenState extends State<PendingReportScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            _buildSectionTitle('Filter by Salesman'),
-            const SizedBox(height: 10),
-            _buildSalesmanField(),
+            if (isAdmin) ...[
+              const SizedBox(height: 12),
+              _buildSectionTitle('Filter by Salesman'),
+              const SizedBox(height: 10),
+              _buildSalesmanField(),
+            ],
             const SizedBox(height: 16),
             Expanded(
               child: Consumer<RecoveryPendingReportProvider>(
@@ -588,8 +605,10 @@ class _PendingDetailSheet extends StatelessWidget {
                                     ),
                                     const Spacer(),
                                     Text(
-                                      DateFormat('dd MMM yyyy').format(
-                                          DateTime.parse(inv.invoiceDate)),
+                                      inv.invoiceDate != null && inv.invoiceDate!.isNotEmpty
+                                          ? DateFormat('dd MMM yyyy').format(
+                                              DateTime.parse(inv.invoiceDate!))
+                                          : "N/A",
                                       style: TextStyle(
                                           fontSize: 11, color: Colors.grey[500]),
                                     ),

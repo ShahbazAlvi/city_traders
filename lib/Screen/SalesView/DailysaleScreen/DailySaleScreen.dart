@@ -1112,6 +1112,7 @@ import '../../../Provider/DailySaleReport/DailySaleReportProvider.dart';
 import '../../../Provider/SaleManProvider/SaleManProvider.dart';
 import '../../../compoents/AppColors.dart';
 import '../../../compoents/SaleManDropdown.dart';
+import '../../../utils/access_control.dart';
 
 class DailySaleReportScreen extends StatefulWidget {
   const DailySaleReportScreen({super.key});
@@ -1125,11 +1126,12 @@ class _DailySaleReportScreenState extends State<DailySaleReportScreen>
   String? selectedSalesmanId;
   String selectedDate = "";
   late AnimationController _shimmerController;
+  bool isAdmin = true;
 
   @override
   void initState() {
     super.initState();
-
+    _checkRole();
     // Set today's date with proper zero-padding
     final now = DateTime.now();
     selectedDate =
@@ -1137,15 +1139,23 @@ class _DailySaleReportScreenState extends State<DailySaleReportScreen>
 
     _shimmerController = AnimationController.unbounded(vsync: this)
       ..repeat(min: 0, max: 1, period: const Duration(milliseconds: 1500));
+  }
 
-    // Auto-fetch today's data on screen open
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<DailySaleReportProvider>(context, listen: false)
-          .fetchDailyReport(
-        salesmanId: selectedSalesmanId,
-        date: selectedDate,
-      );
+  Future<void> _checkRole() async {
+    final sId = await AccessControl.getSalesmanId();
+    final admin = await AccessControl.isAdmin();
+    setState(() {
+      isAdmin = admin;
+      if (sId != null) {
+        selectedSalesmanId = sId.toString();
+      }
     });
+    // Trigger fetch once role is known
+    Provider.of<DailySaleReportProvider>(context, listen: false)
+        .fetchDailyReport(
+      salesmanId: selectedSalesmanId,
+      date: selectedDate,
+    );
   }
 
   @override
@@ -1326,29 +1336,30 @@ class _DailySaleReportScreenState extends State<DailySaleReportScreen>
                     const SizedBox(height: 16),
 
                     // Salesman Dropdown
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.grey.shade200,
-                          width: 1.5,
+                    if (isAdmin) ...[
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.grey.shade200,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: SalesmanDropdown(
+                          selectedId: selectedSalesmanId,
+                          onChanged: (value) {
+                            setState(() => selectedSalesmanId = value);
+                            Provider.of<DailySaleReportProvider>(context,
+                                listen: false)
+                                .fetchDailyReport(
+                              salesmanId: selectedSalesmanId,
+                              date: selectedDate,
+                            );
+                          },
                         ),
                       ),
-                      child: SalesmanDropdown(
-                        selectedId: selectedSalesmanId,
-                        onChanged: (value) {
-                          setState(() => selectedSalesmanId = value);
-                          Provider.of<DailySaleReportProvider>(context,
-                              listen: false)
-                              .fetchDailyReport(
-                            salesmanId: selectedSalesmanId,
-                            date: selectedDate,
-                          );
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
+                    ],
 
                     // Date Picker
                     const Text(

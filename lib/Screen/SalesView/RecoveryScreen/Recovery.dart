@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Provider/RecoveryProvider/RecoveryProvider.dart';
+import '../../../Provider/SaleManProvider/SaleManProvider.dart';
 import '../../../compoents/AppColors.dart';
 import '../../../compoents/Customerdropdown.dart';
 import '../../../compoents/SaleManDropdown.dart';
@@ -43,10 +44,14 @@ class _RecoveryListScreenState extends State<RecoveryListScreen>
     _shimmerController = AnimationController.unbounded(vsync: this)
       ..repeat(min: 0, max: 1, period: const Duration(milliseconds: 1500));
 
-    final provider = Provider.of<RecoveryProvider>(context, listen: false);
-    provider.fetchRecoveryReport();
+    Future.microtask(() async {
+      final provider = context.read<RecoveryProvider>();
+      await provider.fetchRecoveryReport();
+      if (provider.isAdmin) {
+        context.read<SaleManProvider>().fetchEmployees();
+      }
+    });
     _loadPermissions(); // ✅ Load permissions
-    _loadSalesmanId(); // Load salesman id to filter list
   }
   Future<void> _loadPermissions() async {
     final add    = await AccessControl.canDo("can_add_recovery_voucher");
@@ -221,11 +226,7 @@ class _RecoveryListScreenState extends State<RecoveryListScreen>
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<RecoveryProvider>(context);
-    final List<RecoveryVoucher> allRecords = provider.recoveryReport?.data.vouchers ?? [];
-    
-    final List<RecoveryVoucher> records = _loggedInSalesmanId == null 
-        ? allRecords 
-        : allRecords.where((r) => r.salesmanId.toString() == _loggedInSalesmanId).toList();
+    final List<RecoveryVoucher> records = provider.recoveryReport?.data.vouchers ?? [];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -458,7 +459,44 @@ class _RecoveryListScreenState extends State<RecoveryListScreen>
                         ],
                       ),
                     ),
-                  ),
+                  ),),
+                // Salesman Dropdown (Admin only)
+                Consumer2<RecoveryProvider, SaleManProvider>(
+                  builder: (context, recvProv, saleProv, _) {
+                    if (!recvProv.isAdmin) return const SizedBox.shrink();
+                    
+                    return Column(
+                      children: [
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey.shade200, width: 1.5),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<int?>(
+                              value: recvProv.salesmanId,
+                              isExpanded: true,
+                              hint: const Text("Select Salesman"),
+                              items: [
+                                const DropdownMenuItem<int?>(
+                                  value: null,
+                                  child: Text("All Salesmen"),
+                                ),
+                                ...saleProv.employees.map((e) => DropdownMenuItem<int?>(
+                                  value: e.id,
+                                  child: Text(e.name),
+                                )),
+                              ],
+                              onChanged: (val) => recvProv.updateSalesmanId(val),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 12),
 

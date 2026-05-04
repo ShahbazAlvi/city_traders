@@ -31,6 +31,8 @@ class _AddCustomerPaymentScreenState extends State<AddCustomerPaymentScreen>
   CustomerData? selectedCustomer;
   String selectedStatus = "POSTED";
   CustomerInvoice? selectedInvoice;
+  DateTime selectedDate = DateTime.now();
+  bool isInvoiceLinked = true;
 
   final TextEditingController invoiceAmountController =
   TextEditingController();
@@ -65,6 +67,10 @@ class _AddCustomerPaymentScreenState extends State<AddCustomerPaymentScreen>
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   void _calculateBalance() {
+    if (selectedInvoice == null) {
+      balanceController.text = "0";
+      return;
+    }
     final invoiceAmount =
         double.tryParse(invoiceAmountController.text) ?? 0;
     final payment = double.tryParse(paymentController.text) ?? 0;
@@ -99,6 +105,19 @@ class _AddCustomerPaymentScreenState extends State<AddCustomerPaymentScreen>
             children: [
               _buildPaymentHeader(),
               const SizedBox(height: 24),
+
+              // ── Date Selection ──────────────────────────────────
+              _buildGlassCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionTitle('Payment Date', Icons.calendar_today_outlined),
+                    const SizedBox(height: 16),
+                    _buildDateField(),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
 
               // ── Customer ────────────────────────────────────────
               _buildGlassCard(
@@ -136,7 +155,22 @@ class _AddCustomerPaymentScreenState extends State<AddCustomerPaymentScreen>
                     _buildSectionTitle(
                         'Invoice Details', Icons.receipt_outlined),
                     const SizedBox(height: 16),
-                    _buildInvoiceField(),
+                    _buildPaymentTypeSelection(),
+                    const SizedBox(height: 16),
+                    if (isInvoiceLinked) ...[
+                      _buildInvoiceField(),
+                    ],
+                    if (selectedInvoice == null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0, left: 4),
+                        child: Text(
+                          "ℹ️ No invoice selected. This will be recorded as a general payment.",
+                          style: TextStyle(
+                              color: Colors.blueGrey.shade600,
+                              fontSize: 11,
+                              fontStyle: FontStyle.italic),
+                        ),
+                      ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
@@ -445,7 +479,7 @@ class _AddCustomerPaymentScreenState extends State<AddCustomerPaymentScreen>
           ),
         ),
       ),
-      title: const Text("Customer Payments",
+      title: const Text("Customer Receipt",
           style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -495,9 +529,17 @@ class _AddCustomerPaymentScreenState extends State<AddCustomerPaymentScreen>
                     style: const TextStyle(
                         fontSize: 20, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text("Create new customer payment",
-                    style: TextStyle(
-                        color: Colors.grey.shade600, fontSize: 14)),
+                Text(
+                  selectedInvoice != null
+                      ? "Linked to Invoice: ${selectedInvoice!.invNo}"
+                      : "General Payment (Without Invoice)",
+                  style: TextStyle(
+                      color: selectedInvoice != null
+                          ? AppColors.primary
+                          : Colors.orange.shade700,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13),
+                ),
               ],
             ),
           ),
@@ -569,6 +611,74 @@ class _AddCustomerPaymentScreenState extends State<AddCustomerPaymentScreen>
     );
   }
 
+  Widget _buildPaymentTypeSelection() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          _buildTypeOption("With Invoice", true),
+          _buildTypeOption("Without Invoice", false),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTypeOption(String title, bool value) {
+    final isSelected = isInvoiceLinked == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() {
+          isInvoiceLinked = value;
+          if (!value) {
+            selectedInvoice = null;
+            invoiceAmountController.text = "0";
+            balanceController.text = "0";
+          }
+        }),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: isSelected
+                ? [
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2))
+            ]
+                : [],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                isSelected
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_off_rounded,
+                size: 18,
+                color: isSelected ? AppColors.primary : Colors.grey,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected ? AppColors.primary : Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildStatusField() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -612,88 +722,122 @@ class _AddCustomerPaymentScreenState extends State<AddCustomerPaymentScreen>
     final provider = context.watch<CustomerPaymentProvider>();
     return provider.invoiceLoading
         ? _buildShimmer()
-        : Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-          color: Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200)),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<CustomerInvoice>(
-          hint: Row(
-            children: [
-              Icon(Icons.receipt_rounded,
-                  color: Colors.grey.shade400, size: 20),
-              const SizedBox(width: 12),
-              Text("Select Invoice",
-                  style:
-                  TextStyle(color: Colors.grey.shade600)),
-            ],
-          ),
-          value: selectedInvoice,
-          isExpanded: true,
-          icon: Container(
-            padding: const EdgeInsets.all(4),
+        : Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8)),
-            child: const Icon(Icons.keyboard_arrow_down_rounded,
-                color: AppColors.primary),
-          ),
-          items: provider.customerInvoices.map((inv) {
-            return DropdownMenuItem(
-              value: inv,
-              child: Row(
-                mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(inv.invNo,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14)),
-                      Text(inv.sourceTable,
-                          style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey.shade500)),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                        color:
-                        AppColors.primary.withOpacity(0.1),
-                        borderRadius:
-                        BorderRadius.circular(20)),
-                    child: Text(
-                      "Rs ${inv.netTotal.toStringAsFixed(0)}",
-                      style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12),
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200)),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<CustomerInvoice>(
+                hint: Row(
+                  children: [
+                    Icon(Icons.receipt_rounded,
+                        color: Colors.grey.shade400, size: 20),
+                    const SizedBox(width: 12),
+                    Text("Select Invoice",
+                        style:
+                        TextStyle(color: Colors.grey.shade600)),
+                  ],
+                ),
+                value: selectedInvoice,
+                isExpanded: true,
+                icon: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8)),
+                  child: const Icon(Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.primary),
+                ),
+                items: provider.customerInvoices.map((inv) {
+                  return DropdownMenuItem(
+                    value: inv,
+                    child: Row(
+                      mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(inv.invNo,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14)),
+                            Text(inv.sourceTable,
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey.shade500)),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                              color:
+                              AppColors.primary.withOpacity(0.1),
+                              borderRadius:
+                              BorderRadius.circular(20)),
+                          child: Text(
+                            "Rs ${inv.netTotal.toStringAsFixed(0)}",
+                            style: const TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  );
+                }).toList(),
+                onChanged: (invoice) {
+                  setState(() {
+                    selectedInvoice = invoice;
+                    if (invoice != null) {
+                      invoiceAmountController.text =
+                          invoice.netTotal.toStringAsFixed(0);
+                      paymentController.clear();
+                      balanceController.text =
+                          invoice.netTotal.toStringAsFixed(0);
+                    } else {
+                      invoiceAmountController.text = "0";
+                      balanceController.text = "0";
+                    }
+                  });
+                },
               ),
-            );
-          }).toList(),
-          onChanged: (invoice) {
-            setState(() {
-              selectedInvoice = invoice;
-              invoiceAmountController.text =
-                  invoice!.netTotal.toStringAsFixed(0);
-              paymentController.clear();
-              balanceController.text =
-                  invoice.netTotal.toStringAsFixed(0);
-            });
-          },
+            ),
+          ),
         ),
-      ),
+        if (selectedInvoice != null) ...[
+          const SizedBox(width: 8),
+          IconButton(
+            onPressed: () {
+              setState(() {
+                selectedInvoice = null;
+                invoiceAmountController.text = "0";
+                balanceController.text = "0";
+                paymentController.clear();
+              });
+            },
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.close_rounded,
+                  color: Colors.red, size: 20),
+            ),
+            tooltip: "Clear Selection",
+          ),
+        ],
+      ],
     );
   }
 
@@ -805,6 +949,61 @@ class _AddCustomerPaymentScreenState extends State<AddCustomerPaymentScreen>
     );
   }
 
+  Widget _buildDateField() {
+    return GestureDetector(
+      onTap: () async {
+        final DateTime? picked = await showDatePicker(
+          context: context,
+          initialDate: selectedDate,
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2101),
+          builder: (context, child) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: const ColorScheme.light(
+                  primary: AppColors.primary,
+                  onPrimary: Colors.white,
+                  onSurface: AppColors.secondary,
+                ),
+              ),
+              child: child!,
+            );
+          },
+        );
+        if (picked != null && picked != selectedDate) {
+          setState(() {
+            selectedDate = picked;
+          });
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.calendar_month_rounded, color: AppColors.primary, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                DateFormat('dd MMMM yyyy').format(selectedDate),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            const Icon(Icons.arrow_drop_down_rounded, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildStatusChip(String status) {
     return Container(
       padding:
@@ -885,8 +1084,7 @@ class _AddCustomerPaymentScreenState extends State<AddCustomerPaymentScreen>
   Future<void> _submitPayment() async {
     if (selectedCustomer == null)
       return _showMsg("Please select customer");
-    if (selectedInvoice == null)
-      return _showMsg("Please select invoice");
+    // Removed mandatory invoice check
     if (paymentMode == "BANK" && selectedBank == null)
       return _showMsg("Please select bank");
 
@@ -898,9 +1096,9 @@ class _AddCustomerPaymentScreenState extends State<AddCustomerPaymentScreen>
     final provider = context.read<CustomerPaymentProvider>();
     final success = await provider.submitCustomerPayment(
       paymentNo: widget.paymentNo,
-      paymentDate: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+      paymentDate: DateFormat('yyyy-MM-dd').format(selectedDate),
       customerId: selectedCustomer!.id,
-      invoice: selectedInvoice!,
+      invoice: selectedInvoice, // Now optional
       paymentAmount: paymentAmount,
       status: selectedStatus,
       paymentMode: paymentMode,

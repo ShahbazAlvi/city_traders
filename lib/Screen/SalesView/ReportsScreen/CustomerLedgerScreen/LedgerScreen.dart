@@ -845,6 +845,8 @@ import '../../../../Provider/CustomerLedgerProvider/LedgerProvider.dart';
 import '../../../../compoents/AppColors.dart';
 import '../../../../compoents/Customerdropdown.dart';
 import '../../../../model/CustomerModel/CustomersDefineModel.dart';
+import '../../../../utils/access_control.dart';
+import '../../../../utils/access_control.dart';
 
 class CustomerLedgerScreen extends StatefulWidget {
   const CustomerLedgerScreen({super.key});
@@ -859,6 +861,8 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen>
   DateTime? fromDate;
   DateTime? toDate;
   late AnimationController _shimmerController;
+  bool isAdmin = true;
+  int? salesmanId;
 
   final dateFormat = DateFormat("yyyy-MM-dd");
   final displayDateFormat = DateFormat("dd MMM yyyy");
@@ -931,8 +935,20 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen>
   @override
   void initState() {
     super.initState();
+    fromDate = DateTime.now();
+    toDate = DateTime.now();
+    _checkRole();
     _shimmerController = AnimationController.unbounded(vsync: this)
       ..repeat(min: 0, max: 1, period: const Duration(milliseconds: 1500));
+  }
+
+  Future<void> _checkRole() async {
+    final sId = await AccessControl.getSalesmanId();
+    final admin = await AccessControl.isAdmin();
+    setState(() {
+      isAdmin = admin;
+      salesmanId = sId;
+    });
   }
 
   @override
@@ -1124,6 +1140,7 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen>
                     ),
                     child: CustomerDropdown(
                       selectedCustomerId: selectedCustomer?.id,
+                      salesmanId: salesmanId,
                       onChanged: (customer) {
                         setState(() => selectedCustomer = customer);
                         loadLedger();
