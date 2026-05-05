@@ -1072,7 +1072,7 @@ class _UpdateOrderScreenState extends State<UpdateOrderScreen> {
         "customer_id": selectedCustomerId,
         "salesman_id": selectedSalesmanId,
         "sales_area_id": selectedSalesAreaId,
-        "order_date": DateFormat('dd MMMM yyyy').format(DateTime.parse(dateController.text)),
+        "order_date": dateController.text,
         "status": selectedStatus,
         "details": editableItems
             .map((i) => {

@@ -157,21 +157,21 @@ class _ReceivableScreenState extends State<ReceivableScreen>
                         context.read<ReceivableProvider>().updateSearch(v),
                   ),
                 ),
-                const SizedBox(height: 12),
-                // Filter Chips
-                Consumer<ReceivableProvider>(
-                  builder: (context, provider, _) => Row(
-                    children: [
-                      FilterChip(
-                        label: const Text("Show Zero Balance"),
-                        selected: provider.withZero ?? false,
-                        onSelected: (val) => provider.updateWithZero(val),
-                        selectedColor: AppColors.primary.withOpacity(0.2),
-                        checkmarkColor: AppColors.primary,
-                      ),
-                    ],
-                  ),
-                ),
+                // const SizedBox(height: 12),
+                // // Filter Chips
+                // Consumer<ReceivableProvider>(
+                //   builder: (context, provider, _) => Row(
+                //     children: [
+                //       FilterChip(
+                //         label: const Text("Show Zero Balance"),
+                //         selected: provider.withZero ?? false,
+                //         onSelected: (val) => provider.updateWithZero(val),
+                //         selectedColor: AppColors.primary.withOpacity(0.2),
+                //         checkmarkColor: AppColors.primary,
+                //       ),
+                //     ],
+                //   ),
+                // ),
                 // Error Message
                 Consumer<ReceivableProvider>(
                   builder: (context, provider, _) {

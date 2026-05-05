@@ -1737,6 +1737,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   final TextEditingController rateController = TextEditingController();
 
   List<_ExtraItem> extraItems = [];
+  DateTime selectedDate = DateTime.now();
 
   @override
   void initState() {
@@ -1939,6 +1940,20 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
     } finally {
       setState(() {
         _isFetchingStock = false;
+      });
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = picked;
       });
     }
   }
@@ -2163,7 +2178,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
       "sales_area_id": int.tryParse(_selectedAreaId ?? ''),
       "location_id": selectedLocationId,
       "invoice_date":
-      DateFormat('dd MMMM yyyy').format(DateTime.now()),
+      DateFormat('yyyy-MM-dd').format(selectedDate),
       "invoice_type": "CASH",
       "status": "POSTED",
       "details": allDetails,
@@ -2236,6 +2251,10 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
           children: [
             // ── Source Selector ──
             _buildSourceSelector(),
+            const SizedBox(height: 12),
+
+            // ── Invoice Date ──
+            _buildDateField(),
             const SizedBox(height: 12),
 
             // ── Order / LoadSheet Dropdown ──
@@ -2327,6 +2346,56 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   // ─────────────────────────────────────────────
   // UI WIDGETS
   // ─────────────────────────────────────────────
+
+  Widget _buildDateField() {
+    return GestureDetector(
+      onTap: () => _selectDate(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.calendar_today, color: AppColors.primary, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Invoice Date",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    DateFormat('dd MMMM yyyy').format(selectedDate),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.edit_calendar, color: Colors.grey, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildSourceSelector() {
     return Container(

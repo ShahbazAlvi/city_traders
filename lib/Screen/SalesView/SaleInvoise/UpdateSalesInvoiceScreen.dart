@@ -212,7 +212,7 @@ class _UpdateSalesInvoiceScreenState extends State<UpdateSalesInvoiceScreen> {
         "location_id": selectedLocationId,
         "sales_area_id": selectedSalesAreaId,
         "delivery_boy_id": selectedDeliveryBoyId,
-        "invoice_date": DateFormat('dd MMMM yyyy').format(DateTime.parse(dateController.text)),
+        "invoice_date": dateController.text,
         "invoice_type": selectedInvoiceType,
         "status": selectedStatus,
         "details": editableItems

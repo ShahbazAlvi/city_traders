@@ -42,7 +42,7 @@ class AddOrderScreen extends StatefulWidget {
 }
 
 class _AddOrderScreenState extends State<AddOrderScreen> {
-  late String currentDate;
+  DateTime selectedDate = DateTime.now();
   bool isLoading = false;
   String selectedStatus = "APPROVED";
   bool _isLocked = false;
@@ -101,7 +101,8 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
   void initState() {
     super.initState();
     _loadSalesmanFromPrefs();
-    currentDate = DateFormat('dd-MMM-yyyy').format(DateTime.now());
+    // Initialize with today's date
+    selectedDate = DateTime.now();
 
     Future.microtask(() {
       context.read<SaleManProvider>().fetchEmployees();
@@ -195,7 +196,31 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
     });
   }
 
-
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              onSurface: AppColors.secondary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = picked;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -373,36 +398,41 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.calendar_today,
-                  size: 14,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  currentDate,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+          GestureDetector(
+            onTap: () => _selectDate(context),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 4,
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.calendar_today,
+                    size: 14,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    DateFormat('dd-MMM-yyyy').format(selectedDate),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.edit, size: 12, color: Colors.grey),
+                ],
+              ),
             ),
           ),
         ],
@@ -968,14 +998,15 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
           setState(() => isLoading = true);
 
           try {
-            await orderProvider.createOrder(
-              orderId: widget.nextOrderId,
-              salesmanId: _salesmanId!,//selectedSalesmanId!,
-              customerId: selectedCustomer!.id.toString(),
-              status: selectedStatus,
-              products: orderItems,
-              salesAreaId: _selectedAreaId,
-            );
+              await orderProvider.createOrder(
+                orderId: widget.nextOrderId,
+                salesmanId: _salesmanId!,//selectedSalesmanId!,
+                customerId: selectedCustomer!.id.toString(),
+                status: selectedStatus,
+                products: orderItems,
+                salesAreaId: _selectedAreaId,
+                orderDate: selectedDate,
+              );
 
             if (!mounted) return;
 

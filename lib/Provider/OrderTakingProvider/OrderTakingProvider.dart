@@ -113,7 +113,9 @@ class OrderTakingProvider with ChangeNotifier{
     required String salesmanId,
     required String customerId,
     required String? salesAreaId,
-    required List<Map<String, dynamic>> products, required String status,
+    required List<Map<String, dynamic>> products,
+    required String status,
+    DateTime? orderDate,
   }) async {
     try {
       _isLoading = true;
@@ -137,7 +139,7 @@ class OrderTakingProvider with ChangeNotifier{
         "customer_id": int.parse(customerId),
         "sales_area_id": salesAreaId != null ? int.tryParse(salesAreaId) : null,
         "status": status,
-        "order_date": DateFormat('dd MMMM yyyy').format(DateTime.now()),
+        "order_date": DateFormat('yyyy-MM-dd').format(orderDate ?? DateTime.now()),
         "details": products.map((item) => {
           "item_id": int.parse(item["product"].id.toString()),
           "qty": (item["qty"] as num).toDouble(),
