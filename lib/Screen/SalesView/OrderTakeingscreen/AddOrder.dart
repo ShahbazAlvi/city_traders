@@ -147,27 +147,26 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
     if (selectedProduct != null && qtyController.text.isNotEmpty) {
       final qty = double.tryParse(qtyController.text) ?? 0;
 
-      // Stock check
+      // Stock check warning (removed blocking condition)
       if (_stockQty != null && qty > _stockQty!) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+                const Icon(Icons.info_outline, color: Colors.white, size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Insufficient stock! Available: $_stockQty, Requested: ${qty.toInt()}',
+                    'Note: Adding with low stock. Available: $_stockQty, Requested: ${qty.toInt()}',
                   ),
                 ),
               ],
             ),
-            backgroundColor: Colors.red.shade600,
+            backgroundColor: Colors.orange.shade700,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
-        return; // ← block adding
       }
 
       final price = double.tryParse(rateController.text) ??

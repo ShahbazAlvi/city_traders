@@ -2054,10 +2054,9 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
       return;
     }
 
-    // Stock check
+    // Stock check warning (removed blocking condition)
     if (_stockQty != null && qty > _stockQty!) {
-      _showSnack("Insufficient stock! Available: $_stockQty, Requested: ${qty.toInt()}", Colors.red);
-      return;
+      _showSnack("Note: Adding with low stock. Available: $_stockQty, Requested: ${qty.toInt()}", Colors.orange.shade700);
     }
 
     if (rate <= 0) {
