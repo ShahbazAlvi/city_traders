@@ -1761,13 +1761,16 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
 
     final id = prefs.getInt('salesman_id');
     final deliveryBoyId = prefs.getInt('delivery_boy_id');
+    final userType = prefs.getString('user_type');
     final assignedAreas = await AccessControl.getAssignedAreaIds();
 
     setState(() {
       _loggedInSalesmanId = id?.toString();
-      selectedSalesmanId = id?.toString(); // auto-select logged-in salesman
-      _isLocked = id != null; // lock if salesman, open if admin
-      _isDeliveryBoy = deliveryBoyId != null;
+      // Auto-select ONLY if not a delivery boy
+      selectedSalesmanId = (userType == 'deliveryboy') ? null : id?.toString();
+      // Unlock if it's a delivery boy, even if salesman_id exists
+      _isLocked = id != null && userType != 'deliveryboy';
+      _isDeliveryBoy = deliveryBoyId != null || userType == 'deliveryboy';
       _allowedAreaIds = assignedAreas.isNotEmpty ? assignedAreas : null;
 
       // If salesman has exactly one area, pre-select it

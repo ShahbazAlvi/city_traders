@@ -41,9 +41,12 @@ class _SaleInvoiseScreenState extends State<SaleInvoiseScreen> {
   Future<void> _loadSalesmanId() async {
     final prefs = await SharedPreferences.getInstance();
     final id = prefs.getInt('salesman_id');
+    final userType = prefs.getString('user_type');
     setState(() {
-      _loggedInSalesmanId = id?.toString();
-      _isSalesmanLocked = id != null;
+      // If delivery boy, don't auto-filter by their salesman_id (if any)
+      _loggedInSalesmanId = (userType == 'deliveryboy') ? null : id?.toString();
+      // Unlock if it's a delivery boy, even if salesman_id exists
+      _isSalesmanLocked = id != null && userType != 'deliveryboy';
     });
   }
 

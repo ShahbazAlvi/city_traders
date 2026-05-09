@@ -493,8 +493,9 @@ class _CreateLoadSheetScreenState extends State<CreateLoadSheetScreen> {
     final salesmanId = prefs.containsKey('salesman_id')
         ? prefs.getInt('salesman_id')
         : null;
+    final userType = prefs.getString('user_type');
 
-    if (salesmanId != null && mounted) {
+    if (salesmanId != null && userType != 'deliveryboy' && mounted) {
       final provider =
       Provider.of<SaleManProvider>(context, listen: false);
       setState(() {

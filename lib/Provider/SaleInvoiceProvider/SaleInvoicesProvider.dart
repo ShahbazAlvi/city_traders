@@ -60,7 +60,9 @@ class SaleInvoicesProvider with ChangeNotifier {
       }
 
       // Use provided salesmanId (from UI filter) OR from prefs (from login)
-      final String? effectiveSalesmanId = salesmanId ?? prefs.getInt('salesman_id')?.toString();
+      final userType = prefs.getString('user_type');
+      final String? effectiveSalesmanId = salesmanId ?? 
+          ((userType == 'admin' || userType == 'deliveryboy') ? null : prefs.getInt('salesman_id')?.toString());
       final List<String>? assignedAreaIds = prefs.getStringList('assigned_area_ids');
 
       if (effectiveSalesmanId != null && effectiveSalesmanId.isNotEmpty) {
