@@ -1,18 +1,16 @@
 import 'dart:convert';
 import 'package:intl/intl.dart';
 
-
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../ApiLink/ApiEndpoint.dart';
 import '../../model/OrderTakingModel/DetailsOrderModel.dart';
 import '../../model/OrderTakingModel/OrderTakingModel.dart';
-import 'package:http/http.dart'as http;
+import '../../utils/access_control.dart';
+import 'package:http/http.dart' as http;
 
-
-
-class OrderTakingProvider with ChangeNotifier{
+class OrderTakingProvider with ChangeNotifier {
   bool _isFetched = false;
   bool _isLoading = false;
   OrderTakingModel? _orderData;
@@ -20,13 +18,11 @@ class OrderTakingProvider with ChangeNotifier{
   bool _isCreatingOrder = false;
   bool get isCreatingOrder => _isCreatingOrder;
 
-
   // gets
 
   bool get isLoading => _isLoading;
   OrderTakingModel? get orderData => _orderData;
   String? get error => _error;
-
 
   // Filtered orders for salesman
   List<dynamic> getFilteredOrders(String? salesmanId) {
@@ -37,7 +33,6 @@ class OrderTakingProvider with ChangeNotifier{
       return order.salesmanId?.toString() == salesmanId;
     }).toList();
   }
-
 
   Future<void> FetchOrderTaking() async {
     if (_isFetched) return;
@@ -58,13 +53,17 @@ class OrderTakingProvider with ChangeNotifier{
 
       // Build URL with salesman_id and assigned areas filter if they exist
       final salesmanId = prefs.getInt('salesman_id');
+      final userType = prefs.getString('user_type');
       final assignedAreaIds = prefs.getStringList('assigned_area_ids');
+      final isDeliveryBoy =
+          AccessControl.isDeliveryBoyType(userType) ||
+          prefs.getInt('delivery_boy_id') != null;
 
       String url = '${ApiEndpoints.baseUrl}/sales-orders';
       List<String> queryParams = [];
 
-      // Add params only if they have values (works for Salesman, bypasses for Admin)
-      if (salesmanId != null) {
+      // Delivery boys can invoice orders from their assigned areas, not only one salesman.
+      if (salesmanId != null && !isDeliveryBoy && userType != 'admin') {
         queryParams.add('salesman_id=$salesmanId');
       }
 
@@ -91,11 +90,9 @@ class OrderTakingProvider with ChangeNotifier{
         _orderData = OrderTakingModel.fromJson(data);
         _isFetched = true;
         _error = null;
-      }
-      else if (response.statusCode == 304) {
+      } else if (response.statusCode == 304) {
         debugPrint("Data not modified (304)");
-      }
-      else {
+      } else {
         _error = "Failed to load orders (${response.statusCode})";
         debugPrint(response.body);
       }
@@ -106,7 +103,6 @@ class OrderTakingProvider with ChangeNotifier{
     _isLoading = false;
     notifyListeners();
   }
-
 
   Future<void> createOrder({
     required String orderId,
@@ -139,14 +135,19 @@ class OrderTakingProvider with ChangeNotifier{
         "customer_id": int.parse(customerId),
         "sales_area_id": salesAreaId != null ? int.tryParse(salesAreaId) : null,
         "status": status,
-        "order_date": DateFormat('yyyy-MM-dd').format(orderDate ?? DateTime.now()),
-        "details": products.map((item) => {
-          "item_id": int.parse(item["product"].id.toString()),
-          "qty": (item["qty"] as num).toDouble(),
-          "rate": (item["price"] as num).toDouble(),
-        }).toList(),
+        "order_date": DateFormat(
+          'yyyy-MM-dd',
+        ).format(orderDate ?? DateTime.now()),
+        "details": products
+            .map(
+              (item) => {
+                "item_id": int.parse(item["product"].id.toString()),
+                "qty": (item["qty"] as num).toDouble(),
+                "rate": (item["price"] as num).toDouble(),
+              },
+            )
+            .toList(),
       });
-
 
       final response = await http.post(
         url,
@@ -155,7 +156,6 @@ class OrderTakingProvider with ChangeNotifier{
           'Authorization': 'Bearer $token',
         },
         body: body,
-
       );
       print(body);
 
@@ -174,7 +174,6 @@ class OrderTakingProvider with ChangeNotifier{
       notifyListeners();
     }
   }
-
 
   /// Returns null on success, or an error message string on failure.
   Future<String?> deleteOrder(String orderId) async {
@@ -205,7 +204,8 @@ class OrderTakingProvider with ChangeNotifier{
         notifyListeners();
         return null; // success
       } else {
-        final errMsg = "Failed to delete: ${response.statusCode} - ${response.body}";
+        final errMsg =
+            "Failed to delete: ${response.statusCode} - ${response.body}";
         debugPrint(errMsg);
         _isLoading = false;
         notifyListeners();
@@ -303,13 +303,12 @@ class OrderTakingProvider with ChangeNotifier{
     notifyListeners();
   }
 
-
   // Add this to OrderTakingProvider
   void resetFetch() {
     _isFetched = false;
   }
 
- // so-number form api
+  // so-number form api
 
   Future<String> fetchNextSoNumber() async {
     try {
@@ -347,11 +346,4 @@ class OrderTakingProvider with ChangeNotifier{
     }
     return 'SO-0001'; // fallback
   }
-
-
-
-
-
-
-
 }

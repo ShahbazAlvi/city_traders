@@ -56,11 +56,10 @@
 //   }
 // }
 
-
 import 'dart:math' as math;
 import 'package:demo_distribution/Screen/splashview/splashOne.dart';
 import 'package:flutter/material.dart';
-import '../../compoents/AppButton.dart';
+import '../../utils/session_manager.dart';
 import '../Auth/LoginScreen.dart';
 import '../HomeScreen.dart';
 
@@ -80,14 +79,15 @@ class _SplashLogoState extends State<SplashLogo> with TickerProviderStateMixin {
   late final AnimationController _rotateController;
 
   // ── Animations ─────────────────────────────────────────────────────────────
-  late final Animation<double>  _logoFade;
-  late final Animation<double>  _logoScale;
-  late final Animation<Offset>  _taglineSlide;
-  late final Animation<double>  _taglineFade;
-  late final Animation<double>  _buttonFade;
-  late final Animation<Offset>  _buttonSlide;
-  late final Animation<double>  _pulse;
-  late final Animation<double>  _ringRotate;
+  late final Animation<double> _logoFade;
+  late final Animation<double> _logoScale;
+  late final Animation<Offset> _taglineSlide;
+  late final Animation<double> _taglineFade;
+  late final Animation<double> _buttonFade;
+  late final Animation<Offset> _buttonSlide;
+  late final Animation<double> _pulse;
+  late final Animation<double> _ringRotate;
+  bool _didNavigate = false;
 
   @override
   void initState() {
@@ -116,26 +116,26 @@ class _SplashLogoState extends State<SplashLogo> with TickerProviderStateMixin {
         curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
       ),
     );
-    _taglineSlide = Tween<Offset>(
-      begin: const Offset(0, 0.5),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _entryController,
-      curve: const Interval(0.35, 0.75, curve: Curves.easeOutCubic),
-    ));
+    _taglineSlide = Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _entryController,
+            curve: const Interval(0.35, 0.75, curve: Curves.easeOutCubic),
+          ),
+        );
     _taglineFade = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _entryController,
         curve: const Interval(0.35, 0.7, curve: Curves.easeOut),
       ),
     );
-    _buttonSlide = Tween<Offset>(
-      begin: const Offset(0, 0.7),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _entryController,
-      curve: const Interval(0.55, 1.0, curve: Curves.easeOutCubic),
-    ));
+    _buttonSlide = Tween<Offset>(begin: const Offset(0, 0.7), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _entryController,
+            curve: const Interval(0.55, 1.0, curve: Curves.easeOutCubic),
+          ),
+        );
     _buttonFade = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _entryController,
@@ -145,11 +145,13 @@ class _SplashLogoState extends State<SplashLogo> with TickerProviderStateMixin {
     _pulse = Tween<double>(begin: 0.88, end: 1.05).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-    _ringRotate = Tween<double>(begin: 0, end: 2 * math.pi).animate(
-      CurvedAnimation(parent: _rotateController, curve: Curves.linear),
-    );
+    _ringRotate = Tween<double>(
+      begin: 0,
+      end: 2 * math.pi,
+    ).animate(CurvedAnimation(parent: _rotateController, curve: Curves.linear));
 
     _entryController.forward();
+    Future.delayed(const Duration(milliseconds: 1400), _goNext);
   }
 
   @override
@@ -163,6 +165,23 @@ class _SplashLogoState extends State<SplashLogo> with TickerProviderStateMixin {
   // ── Navigation (UPDATED) ─────────────────────────────────────────────────
   void _goNext() {
     if (!mounted) return;
+    if (_didNavigate) return;
+    _didNavigate = true;
+
+    SessionManager.getToken().then((token) {
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) =>
+              token == null ? const LoginScreen() : const HomeScreen(),
+          transitionsBuilder: (_, anim, __, child) =>
+              FadeTransition(opacity: anim, child: child),
+          transitionDuration: const Duration(milliseconds: 800),
+        ),
+      );
+    });
+    if (_didNavigate) return;
 
     if (widget.token != null && widget.token!.isNotEmpty) {
       // ✅ If logged in → Dashboard
@@ -204,11 +223,11 @@ class _SplashLogoState extends State<SplashLogo> with TickerProviderStateMixin {
   }
 
   // ── Palette (Pure White theme) ─────────────────────────────────────────────
-  static const Color _indigo      = Color(0xFF3B5BDB);
+  static const Color _indigo = Color(0xFF3B5BDB);
   static const Color _indigoLight = Color(0xFF748FFC);
-  static const Color _amber       = Color(0xFFF59F00);
-  static const Color _textDark    = Color(0xFF1C2340);
-  static const Color _textMuted   = Color(0xFF8C98B8);
+  static const Color _amber = Color(0xFFF59F00);
+  static const Color _textDark = Color(0xFF1C2340);
+  static const Color _textMuted = Color(0xFF8C98B8);
 
   @override
   Widget build(BuildContext context) {
@@ -221,9 +240,7 @@ class _SplashLogoState extends State<SplashLogo> with TickerProviderStateMixin {
         body: Stack(
           children: [
             // ── Soft background blobs ──────────────────────────────────────
-            Positioned.fill(
-              child: CustomPaint(painter: _BlobPainter()),
-            ),
+            Positioned.fill(child: CustomPaint(painter: _BlobPainter())),
 
             // ── Top-right decorative circle ────────────────────────────────
             Positioned(
@@ -235,10 +252,7 @@ class _SplashLogoState extends State<SplashLogo> with TickerProviderStateMixin {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
-                    colors: [
-                      _indigo.withOpacity(0.07),
-                      Colors.transparent,
-                    ],
+                    colors: [_indigo.withOpacity(0.07), Colors.transparent],
                   ),
                 ),
               ),
@@ -274,8 +288,11 @@ class _SplashLogoState extends State<SplashLogo> with TickerProviderStateMixin {
 
                   // Logo
                   AnimatedBuilder(
-                    animation: Listenable.merge(
-                        [_logoFade, _logoScale, _pulse]),
+                    animation: Listenable.merge([
+                      _logoFade,
+                      _logoScale,
+                      _pulse,
+                    ]),
                     builder: (_, __) => FadeTransition(
                       opacity: _logoFade,
                       child: Transform.scale(
@@ -534,10 +551,10 @@ class _SplashLogoState extends State<SplashLogo> with TickerProviderStateMixin {
   List<Widget> _orbitDots() {
     const r = 100.0;
     final configs = <(double, Color, double)>[
-      (0.0,              const Color(0xFFF59F00), 10.0),
-      (math.pi / 2,      const Color(0xFF748FFC),  7.0),
-      (math.pi,          const Color(0xFF3B5BDB),  8.0),
-      (3 * math.pi / 2,  const Color(0xFFFCC419),  6.0),
+      (0.0, const Color(0xFFF59F00), 10.0),
+      (math.pi / 2, const Color(0xFF748FFC), 7.0),
+      (math.pi, const Color(0xFF3B5BDB), 8.0),
+      (3 * math.pi / 2, const Color(0xFFFCC419), 6.0),
     ];
     return configs.map((c) {
       final (angle, color, dotSize) = c;
@@ -550,10 +567,7 @@ class _SplashLogoState extends State<SplashLogo> with TickerProviderStateMixin {
             shape: BoxShape.circle,
             color: color,
             boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.55),
-                blurRadius: 8,
-              ),
+              BoxShadow(color: color.withOpacity(0.55), blurRadius: 8),
             ],
           ),
         ),

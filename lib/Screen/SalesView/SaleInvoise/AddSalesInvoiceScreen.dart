@@ -1722,7 +1722,6 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   List<int>? _allowedAreaIds;
   bool _isDeliveryBoy = false;
 
-
   // Customer & Salesman override
   int? selectedCustomerId;
   String? selectedSalesmanId;
@@ -1744,7 +1743,10 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
     super.initState();
     _loadSalesmanAndOrders(); // This now calls _loadOrders internally after areas are loaded
     Future.microtask(() {
-      Provider.of<SaleInvoicesProvider>(context, listen: false).clearSelectedOrder();
+      Provider.of<SaleInvoicesProvider>(
+        context,
+        listen: false,
+      ).clearSelectedOrder();
       Provider.of<LocationProvider>(context, listen: false).getLocations();
       Provider.of<CustomerProvider>(context, listen: false).fetchCustomers();
       Provider.of<SaleManProvider>(context, listen: false).fetchEmployees();
@@ -1762,15 +1764,17 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
     final id = prefs.getInt('salesman_id');
     final deliveryBoyId = prefs.getInt('delivery_boy_id');
     final userType = prefs.getString('user_type');
+    final isDeliveryBoy =
+        AccessControl.isDeliveryBoyType(userType) || deliveryBoyId != null;
     final assignedAreas = await AccessControl.getAssignedAreaIds();
 
     setState(() {
       _loggedInSalesmanId = id?.toString();
       // Auto-select ONLY if not a delivery boy
-      selectedSalesmanId = (userType == 'deliveryboy') ? null : id?.toString();
+      selectedSalesmanId = isDeliveryBoy ? null : id?.toString();
       // Unlock if it's a delivery boy, even if salesman_id exists
-      _isLocked = id != null && userType != 'deliveryboy';
-      _isDeliveryBoy = deliveryBoyId != null || userType == 'deliveryboy';
+      _isLocked = id != null && !isDeliveryBoy;
+      _isDeliveryBoy = isDeliveryBoy;
       _allowedAreaIds = assignedAreas.isNotEmpty ? assignedAreas : null;
 
       // If salesman has exactly one area, pre-select it
@@ -1799,6 +1803,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
 
   Future<void> _loadOrders() async {
     final provider = Provider.of<OrderTakingProvider>(context, listen: false);
+    provider.resetFetch();
     await provider.FetchOrderTaking();
 
     if (provider.orderData?.data != null &&
@@ -1807,15 +1812,19 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
       var filteredOrders = provider.orderData!.data;
 
       // Filter by salesman if not admin
-      if (_loggedInSalesmanId != null) {
-        filteredOrders = filteredOrders.where((order) =>
-        order.salesmanId?.toString() == _loggedInSalesmanId).toList();
+      if (_loggedInSalesmanId != null && !_isDeliveryBoy) {
+        filteredOrders = filteredOrders
+            .where(
+              (order) => order.salesmanId?.toString() == _loggedInSalesmanId,
+            )
+            .toList();
       }
 
       // Filter by assigned areas if restricted
       if (_allowedAreaIds != null && _allowedAreaIds!.isNotEmpty) {
-        filteredOrders = filteredOrders.where((order) =>
-            _allowedAreaIds!.contains(order.salesAreaId)).toList();
+        filteredOrders = filteredOrders
+            .where((order) => _allowedAreaIds!.contains(order.salesAreaId))
+            .toList();
       }
 
       setState(() {
@@ -1930,7 +1939,9 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
           'Authorization': 'Bearer $token',
         },
       );
-      debugPrint('📦 Stock response: ${response.statusCode} - ${response.body}');
+      debugPrint(
+        '📦 Stock response: ${response.statusCode} - ${response.body}',
+      );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final totalBalance = data['data']['total_balance'];
@@ -1972,19 +1983,22 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
       rateController.clear();
     });
 
-    await Provider.of<SaleInvoicesProvider>(context, listen: false)
-        .fetchSingleLoadSheet(loadId);
+    await Provider.of<SaleInvoicesProvider>(
+      context,
+      listen: false,
+    ).fetchSingleLoadSheet(loadId);
 
-    final provider =
-    Provider.of<SaleInvoicesProvider>(context, listen: false);
-    final productProvider =
-    Provider.of<ItemDetailsProvider>(context, listen: false);
+    final provider = Provider.of<SaleInvoicesProvider>(context, listen: false);
+    final productProvider = Provider.of<ItemDetailsProvider>(
+      context,
+      listen: false,
+    );
 
     if (provider.selectedOrder != null) {
       for (var detail in provider.selectedOrder!.details) {
         try {
           final product = productProvider.items.firstWhere(
-                (p) => p.id == detail.itemId.toString(),
+            (p) => p.id == detail.itemId.toString(),
           );
           detail.rate = product.salePrice;
           detail.lineTotal = detail.qty * detail.rate;
@@ -1996,8 +2010,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
         selectedCustomerId = provider.selectedOrder!.customerId;
         // Only override salesman if not locked
         if (!_isLocked) {
-          selectedSalesmanId =
-              provider.selectedOrder!.salesmanId.toString();
+          selectedSalesmanId = provider.selectedOrder!.salesmanId.toString();
         }
         _selectedAreaId = provider.selectedOrder!.salesAreaId?.toString();
       });
@@ -2014,18 +2027,18 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
       rateController.clear();
     });
 
-    await Provider.of<SaleInvoicesProvider>(context, listen: false)
-        .fetchSingleOrder(orderId);
+    await Provider.of<SaleInvoicesProvider>(
+      context,
+      listen: false,
+    ).fetchSingleOrder(orderId);
 
-    final provider =
-    Provider.of<SaleInvoicesProvider>(context, listen: false);
+    final provider = Provider.of<SaleInvoicesProvider>(context, listen: false);
     if (provider.selectedOrder != null) {
       setState(() {
         selectedCustomerId = provider.selectedOrder!.customerId;
         // Only override salesman if not locked
         if (!_isLocked) {
-          selectedSalesmanId =
-              provider.selectedOrder!.salesmanId.toString();
+          selectedSalesmanId = provider.selectedOrder!.salesmanId.toString();
         }
         _selectedAreaId = provider.selectedOrder!.salesAreaId?.toString();
       });
@@ -2047,8 +2060,9 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
 
     if (selectedProduct!.id == null) {
       _showSnack(
-          "Selected product has no valid ID. Please choose another.",
-          Colors.red);
+        "Selected product has no valid ID. Please choose another.",
+        Colors.red,
+      );
       return;
     }
 
@@ -2059,7 +2073,10 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
 
     // Stock check warning (removed blocking condition)
     if (_stockQty != null && qty > _stockQty!) {
-      _showSnack("Note: Adding with low stock. Available: $_stockQty, Requested: ${qty.toInt()}", Colors.orange.shade700);
+      _showSnack(
+        "Note: Adding with low stock. Available: $_stockQty, Requested: ${qty.toInt()}",
+        Colors.orange.shade700,
+      );
     }
 
     if (rate <= 0) {
@@ -2068,11 +2085,9 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
     }
 
     setState(() {
-      extraItems.add(_ExtraItem(
-        product: selectedProduct!,
-        qty: qty,
-        rate: rate,
-      ));
+      extraItems.add(
+        _ExtraItem(product: selectedProduct!, qty: qty, rate: rate),
+      );
       selectedProduct = null;
       qtyController.clear();
       rateController.clear();
@@ -2086,8 +2101,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
         content: Text(message),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
-        shape:
-        RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
@@ -2105,12 +2119,10 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   }
 
   Future<void> createInvoice() async {
-    final provider =
-    Provider.of<SaleInvoicesProvider>(context, listen: false);
+    final provider = Provider.of<SaleInvoicesProvider>(context, listen: false);
 
     if (!isDirectSource && provider.selectedOrder == null) {
-      _showSnack(
-          "Please select a Sales Order or Load Sheet", Colors.orange);
+      _showSnack("Please select a Sales Order or Load Sheet", Colors.orange);
       return;
     }
 
@@ -2152,35 +2164,41 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
     final List<Map<String, dynamic>> allDetails = [];
 
     if (provider.selectedOrder != null) {
-      allDetails.addAll(provider.selectedOrder!.details.map((item) => {
-        "item_id": item.itemId,
-        "qty": item.qty,
-        "rate": item.rate,
-        "tax_type_id": selectedTax?.id,
-      }));
+      allDetails.addAll(
+        provider.selectedOrder!.details.map(
+          (item) => {
+            "item_id": item.itemId,
+            "qty": item.qty,
+            "rate": item.rate,
+            "tax_type_id": selectedTax?.id,
+          },
+        ),
+      );
     }
 
-    allDetails.addAll(extraItems.map((item) => {
-      "item_id": _toInt(item.product.id),
-      "qty": item.qty,
-      "rate": item.rate,
-      "tax_type_id": selectedTax?.id,
-    }));
+    allDetails.addAll(
+      extraItems.map(
+        (item) => {
+          "item_id": _toInt(item.product.id),
+          "qty": item.qty,
+          "rate": item.rate,
+          "tax_type_id": selectedTax?.id,
+        },
+      ),
+    );
 
     final body = {
       "inv_no": widget.nextOrderId,
       "sales_order_id": (isDirectSource || isLoadSheetSource)
           ? null
           : provider.selectedOrder?.id,
-      "load_id":
-      isLoadSheetSource ? provider.selectedOrder?.id : null,
+      "load_id": isLoadSheetSource ? provider.selectedOrder?.id : null,
       "customer_id": selectedCustomerId,
       "salesman_id": int.tryParse(selectedSalesmanId ?? ''),
       "delivery_boy_id": deliveryBoyId,
       "sales_area_id": int.tryParse(_selectedAreaId ?? ''),
       "location_id": selectedLocationId,
-      "invoice_date":
-      DateFormat('yyyy-MM-dd').format(selectedDate),
+      "invoice_date": DateFormat('yyyy-MM-dd').format(selectedDate),
       "invoice_type": "CASH",
       "status": "POSTED",
       "details": allDetails,
@@ -2190,8 +2208,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
 
     try {
       final response = await http.post(
-        Uri.parse(
-            "${ApiEndpoints.baseUrl}/sales-invoices-notax"),
+        Uri.parse("${ApiEndpoints.baseUrl}/sales-invoices-notax"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -2207,13 +2224,14 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         _showSnack(
-            res["message"] ?? "Invoice created successfully",
-            Colors.green);
-        Provider.of<SaleInvoicesProvider>(context, listen: false)
-            .fetchOrders();
+          res["message"] ?? "Invoice created successfully",
+          Colors.green,
+        );
+        Provider.of<SaleInvoicesProvider>(context, listen: false).fetchOrders();
         Navigator.pop(context, true);
       } else {
-        final errorMsg = res["message"] ??
+        final errorMsg =
+            res["message"] ??
             res["error"] ??
             res["errors"]?.toString() ??
             "Failed to create invoice (${response.statusCode})";
@@ -2231,15 +2249,26 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<SaleInvoicesProvider>(context);
-    final orderTotal = provider.selectedOrder?.details
-        .fold(0.0, (sum, item) => sum + item.lineTotal) ??
+    final orderTotal =
+        provider.selectedOrder?.details.fold(
+          0.0,
+          (sum, item) => sum + item.lineTotal,
+        ) ??
         0.0;
-    final extraTotal =
-    extraItems.fold(0.0, (sum, item) => sum + item.total);
+    final extraTotal = extraItems.fold(0.0, (sum, item) => sum + item.total);
     final total = orderTotal + extraTotal;
 
-    final hasContentToShow =
-        provider.selectedOrder != null || isDirectSource;
+    final hasContentToShow = provider.selectedOrder != null || isDirectSource;
+    final showNoSalesOrders =
+        !isDirectSource &&
+        !isLoadSheetSource &&
+        selectedOrderId == null &&
+        _dropdownItems.isEmpty;
+    final showNoLoadSheets =
+        !isDirectSource &&
+        isLoadSheetSource &&
+        selectedLoadSheetId == null &&
+        _loadSheetDropdownItems.isEmpty;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -2247,101 +2276,100 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
       body: provider.isLoading
           ? _buildShimmerEffect(child: _buildShimmerLoading())
           : Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Source Selector ──
-            _buildSourceSelector(),
-            const SizedBox(height: 12),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Source Selector ──
+                  _buildSourceSelector(),
+                  const SizedBox(height: 12),
 
-            // ── Invoice Date ──
-            _buildDateField(),
-            const SizedBox(height: 12),
+                  // ── Invoice Date ──
+                  _buildDateField(),
+                  const SizedBox(height: 12),
 
-            // ── Order / LoadSheet Dropdown ──
-            if (!isDirectSource) ...[
-              isLoadSheetSource
-                  ? _buildLoadSheetDropdown()
-                  : _buildSalesOrderDropdown(provider),
-              const SizedBox(height: 12),
-            ],
-
-            // ── Location ──
-            Consumer<LocationProvider>(
-              builder: (context, locProvider, _) {
-                return LocationDropdown(
-                  locations: locProvider.locationList,
-                  selectedId: selectedLocationId,
-                  onChanged: (value) =>
-                      setState(() => selectedLocationId = value),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-
-            // ── Customer & Salesman — ALWAYS VISIBLE ──
-
-            const SizedBox(height: 12),
-            _buildSalesmanDropdown(),
-            const SizedBox(height: 12),
-            if (selectedSalesmanId != null) ...[
-              _buildSalesAreaDropdown(),
-              const SizedBox(height: 12),
-            ],
-            _buildCustomerDropdown(),
-
-            const SizedBox(height: 12),
-
-            if (!isDirectSource &&
-                (provider.orderData?.invoices == null ||
-                    provider.orderData!.invoices.isEmpty))
-              _buildNoOrdersWidget(),
-
-            // ── Items Section ──
-            if (hasContentToShow) ...[
-              _buildItemsHeader(total),
-              const SizedBox(height: 8),
-
-              Expanded(
-                child: ListView(
-                  children: [
-                    if (provider.selectedOrder != null)
-                      ...provider.selectedOrder!.details
-                          .asMap()
-                          .entries
-                          .map((e) =>
-                          _buildOrderItemCard(e.value, e.key)),
-
-                    if (extraItems.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      _buildExtraItemsSection(),
-                    ],
-
-                    if (_showAddProduct ||
-                        (isDirectSource &&
-                            extraItems.isEmpty &&
-                            provider.selectedOrder == null)) ...[
-                      const SizedBox(height: 8),
-                      _buildAddProductPanel(),
-                    ],
-
+                  // ── Order / LoadSheet Dropdown ──
+                  if (!isDirectSource) ...[
+                    isLoadSheetSource
+                        ? _buildLoadSheetDropdown()
+                        : _buildSalesOrderDropdown(provider),
                     const SizedBox(height: 12),
-                    _buildBottomBar(total),
-                    const SizedBox(height: 8),
                   ],
-                ),
-              ),
-            ],
 
-            if (!hasContentToShow &&
-                !provider.isLoading &&
-                provider.orderData?.invoices != null &&
-                provider.orderData!.invoices.isNotEmpty)
-              _buildEmptyState(),
-          ],
-        ),
-      ),
+                  // ── Location ──
+                  Consumer<LocationProvider>(
+                    builder: (context, locProvider, _) {
+                      return LocationDropdown(
+                        locations: locProvider.locationList,
+                        selectedId: selectedLocationId,
+                        onChanged: (value) =>
+                            setState(() => selectedLocationId = value),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  // ── Customer & Salesman — ALWAYS VISIBLE ──
+                  const SizedBox(height: 12),
+                  _buildSalesmanDropdown(),
+                  const SizedBox(height: 12),
+                  if (selectedSalesmanId != null) ...[
+                    _buildSalesAreaDropdown(),
+                    const SizedBox(height: 12),
+                  ],
+                  _buildCustomerDropdown(),
+
+                  const SizedBox(height: 12),
+
+                  if (!hasContentToShow &&
+                      (showNoSalesOrders || showNoLoadSheets))
+                    Expanded(child: _buildNoOrdersWidget()),
+
+                  // ── Items Section ──
+                  if (hasContentToShow) ...[
+                    _buildItemsHeader(total),
+                    const SizedBox(height: 8),
+
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          if (provider.selectedOrder != null)
+                            ...provider.selectedOrder!.details
+                                .asMap()
+                                .entries
+                                .map(
+                                  (e) => _buildOrderItemCard(e.value, e.key),
+                                ),
+
+                          if (extraItems.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            _buildExtraItemsSection(),
+                          ],
+
+                          if (_showAddProduct ||
+                              (isDirectSource &&
+                                  extraItems.isEmpty &&
+                                  provider.selectedOrder == null)) ...[
+                            const SizedBox(height: 8),
+                            _buildAddProductPanel(),
+                          ],
+
+                          const SizedBox(height: 12),
+                          _buildBottomBar(total),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  if (!hasContentToShow &&
+                      !provider.isLoading &&
+                      !showNoSalesOrders &&
+                      !showNoLoadSheets)
+                    _buildEmptyState(),
+                ],
+              ),
+            ),
     );
   }
 
@@ -2367,7 +2395,11 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today, color: AppColors.primary, size: 20),
+            const Icon(
+              Icons.calendar_today,
+              color: AppColors.primary,
+              size: 20,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -2418,11 +2450,12 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
                 selectedOrderId = null;
                 selectedLoadSheetId = null;
                 // Preserve locked salesman
-                selectedSalesmanId =
-                _isLocked ? _loggedInSalesmanId : null;
+                selectedSalesmanId = _isLocked ? _loggedInSalesmanId : null;
                 selectedCustomerId = null;
-                Provider.of<SaleInvoicesProvider>(context, listen: false)
-                    .clearSelectedOrder();
+                Provider.of<SaleInvoicesProvider>(
+                  context,
+                  listen: false,
+                ).clearSelectedOrder();
               }),
             ),
           ),
@@ -2437,11 +2470,12 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
                   selectedOrderId = null;
                   selectedLoadSheetId = null;
                   // Preserve locked salesman
-                  selectedSalesmanId =
-                  _isLocked ? _loggedInSalesmanId : null;
+                  selectedSalesmanId = _isLocked ? _loggedInSalesmanId : null;
                   selectedCustomerId = null;
-                  Provider.of<SaleInvoicesProvider>(context, listen: false)
-                      .clearSelectedOrder();
+                  Provider.of<SaleInvoicesProvider>(
+                    context,
+                    listen: false,
+                  ).clearSelectedOrder();
                 }),
               ),
             ),
@@ -2456,10 +2490,11 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
                 selectedLoadSheetId = null;
                 selectedCustomerId = null;
                 // Preserve locked salesman, clear only for admin
-                selectedSalesmanId =
-                _isLocked ? _loggedInSalesmanId : null;
-                Provider.of<SaleInvoicesProvider>(context, listen: false)
-                    .clearSelectedOrder();
+                selectedSalesmanId = _isLocked ? _loggedInSalesmanId : null;
+                Provider.of<SaleInvoicesProvider>(
+                  context,
+                  listen: false,
+                ).clearSelectedOrder();
               }),
             ),
           ),
@@ -2482,12 +2517,12 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
           borderRadius: BorderRadius.circular(10),
           boxShadow: isSelected
               ? [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            )
-          ]
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
               : [],
         ),
         child: Center(
@@ -2495,10 +2530,8 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
             title,
             style: TextStyle(
               fontSize: 14,
-              fontWeight:
-              isSelected ? FontWeight.bold : FontWeight.normal,
-              color:
-              isSelected ? AppColors.primary : Colors.grey[600],
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected ? AppColors.primary : Colors.grey[600],
             ),
           ),
         ),
@@ -2523,13 +2556,16 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
         value: selectedOrderId,
         hint: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text("Select Sales Order",
-              style:
-              TextStyle(color: Colors.grey[600], fontSize: 15)),
+          child: Text(
+            "Select Sales Order",
+            style: TextStyle(color: Colors.grey[600], fontSize: 15),
+          ),
         ),
         decoration: InputDecoration(
-          contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
             borderSide: BorderSide.none,
@@ -2539,8 +2575,11 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
         ),
         icon: const Padding(
           padding: EdgeInsets.only(right: 16),
-          child: Icon(Icons.keyboard_arrow_down_rounded,
-              color: Color(0xFF2563EB), size: 28),
+          child: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: Color(0xFF2563EB),
+            size: 28,
+          ),
         ),
         isExpanded: true,
         items: _dropdownItems,
@@ -2568,13 +2607,16 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
         value: selectedLoadSheetId,
         hint: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text("Select Load Sheet",
-              style:
-              TextStyle(color: Colors.grey[600], fontSize: 15)),
+          child: Text(
+            "Select Load Sheet",
+            style: TextStyle(color: Colors.grey[600], fontSize: 15),
+          ),
         ),
         decoration: InputDecoration(
-          contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
             borderSide: BorderSide.none,
@@ -2584,8 +2626,11 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
         ),
         icon: const Padding(
           padding: EdgeInsets.only(right: 16),
-          child: Icon(Icons.keyboard_arrow_down_rounded,
-              color: Color(0xFF2563EB), size: 28),
+          child: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: Color(0xFF2563EB),
+            size: 28,
+          ),
         ),
         isExpanded: true,
         items: _loadSheetDropdownItems,
@@ -2602,14 +2647,14 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
         const Text(
           "Order Items",
           style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1E293B)),
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1E293B),
+          ),
         ),
         const SizedBox(width: 8),
         Container(
-          padding:
-          const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: const Color(0xFF2563EB).withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
@@ -2617,9 +2662,10 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
           child: Text(
             "Rs${formatted.format(total)}",
             style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF2563EB)),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF2563EB),
+            ),
           ),
         ),
         const Spacer(),
@@ -2636,8 +2682,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(
-                horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: _showAddProduct
                   ? Colors.red.shade50
@@ -2687,9 +2732,10 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.grey.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
+            color: Colors.grey.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -2708,9 +2754,10 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
                   child: Text(
                     '${index + 1}',
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2563EB),
-                        fontSize: 13),
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2563EB),
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ),
@@ -2719,9 +2766,10 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
                 child: Text(
                   item.itemName,
                   style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                      color: Color(0xFF1E293B)),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: Color(0xFF1E293B),
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -2767,23 +2815,25 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding:
-          const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
           child: Row(
             children: [
               Container(
-                  width: 3,
-                  height: 14,
-                  decoration: BoxDecoration(
-                      color: Colors.green.shade400,
-                      borderRadius: BorderRadius.circular(2))),
+                width: 3,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: Colors.green.shade400,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               const SizedBox(width: 6),
               Text(
                 "Added Products (${extraItems.length})",
                 style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.green.shade700),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.green.shade700,
+                ),
               ),
             ],
           ),
@@ -2806,19 +2856,24 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                          color: Colors.green.shade100,
-                          borderRadius: BorderRadius.circular(8)),
-                      child: Icon(Icons.add_box_outlined,
-                          color: Colors.green.shade700, size: 15),
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.add_box_outlined,
+                        color: Colors.green.shade700,
+                        size: 15,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         item.product.name ?? 'Product',
                         style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                            color: Color(0xFF1E293B)),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          color: Color(0xFF1E293B),
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -2827,10 +2882,14 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(6)),
-                        child: Icon(Icons.close,
-                            color: Colors.red.shade400, size: 15),
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.red.shade400,
+                          size: 15,
+                        ),
                       ),
                     ),
                   ],
@@ -2838,18 +2897,25 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    _buildMiniChip("Qty: ${item.qty}",
-                        Colors.blue.shade50, Colors.blue.shade700),
+                    _buildMiniChip(
+                      "Qty: ${item.qty}",
+                      Colors.blue.shade50,
+                      Colors.blue.shade700,
+                    ),
                     const SizedBox(width: 6),
-                    _buildMiniChip("Rs${item.rate}",
-                        Colors.orange.shade50, Colors.orange.shade700),
+                    _buildMiniChip(
+                      "Rs${item.rate}",
+                      Colors.orange.shade50,
+                      Colors.orange.shade700,
+                    ),
                     const Spacer(),
                     Text(
                       "Rs${item.total}",
                       style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: Colors.green.shade700),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.green.shade700,
+                      ),
                     ),
                   ],
                 ),
@@ -2863,15 +2929,15 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
 
   Widget _buildMiniChip(String text, Color bg, Color fg) {
     return Container(
-      padding:
-      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-          color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(text,
-          style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: fg)),
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: fg),
+      ),
     );
   }
 
@@ -2881,13 +2947,13 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border:
-        Border.all(color: AppColors.primary.withOpacity(0.2)),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
         boxShadow: [
           BoxShadow(
-              color: AppColors.primary.withOpacity(0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 3)),
+            color: AppColors.primary.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
       child: Column(
@@ -2898,18 +2964,23 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8)),
-                child: Icon(Icons.add_shopping_cart,
-                    color: AppColors.primary, size: 16),
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.add_shopping_cart,
+                  color: AppColors.primary,
+                  size: 16,
+                ),
               ),
               const SizedBox(width: 8),
               const Text(
                 "Add New Product",
                 style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E293B)),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E293B),
+                ),
               ),
             ],
           ),
@@ -2951,8 +3022,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
               decoration: BoxDecoration(
                 color: AppColors.primary.withOpacity(0.04),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: AppColors.primary.withOpacity(0.15)),
+                border: Border.all(color: AppColors.primary.withOpacity(0.15)),
               ),
               child: Row(
                 children: [
@@ -2961,53 +3031,67 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          selectedProduct!.name ??
-                              'Selected Product',
+                          selectedProduct!.name ?? 'Selected Product',
                           style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600),
-                        ),
-                        _isFetchingStock
-                            ? Row(children: [
-                          SizedBox(
-                              width: 12,
-                              height: 12,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 1.5,
-                                  color: AppColors.primary)),
-                          const SizedBox(width: 6),
-                          Text('Fetching stock...',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey.shade500)),
-                        ])
-                            : Text(
-                          'Stock: ${_stockQty ?? 'N/A'}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: (_stockQty != null && _stockQty! < 10)
-                                ? Colors.red.shade600 // low stock = red
-                                : Colors.grey.shade600,
-                            fontWeight: (_stockQty != null && _stockQty! < 10)
-                                ? FontWeight.w600
-                                : FontWeight.normal,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
+                        _isFetchingStock
+                            ? Row(
+                                children: [
+                                  SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 1.5,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Fetching stock...',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Text(
+                                'Stock: ${_stockQty ?? 'N/A'}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: (_stockQty != null && _stockQty! < 10)
+                                      ? Colors
+                                            .red
+                                            .shade600 // low stock = red
+                                      : Colors.grey.shade600,
+                                  fontWeight:
+                                      (_stockQty != null && _stockQty! < 10)
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
                       ],
                     ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(20)),
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     child: Text(
                       'Rs${selectedProduct!.salePrice?.toStringAsFixed(2) ?? '0.00'}',
                       style: TextStyle(
-                          color: Colors.green.shade700,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12),
+                        color: Colors.green.shade700,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ],
@@ -3044,15 +3128,17 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
             child: ElevatedButton.icon(
               onPressed: addProductToOrder,
               icon: const Icon(Icons.add_shopping_cart, size: 18),
-              label: const Text('Add to Order',
-                  style: TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w600)),
+              label: const Text(
+                'Add to Order',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.secondary,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
@@ -3064,11 +3150,11 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   Widget _buildTotalBadge(double amount) {
     return Container(
       height: 52,
-      padding:
-      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-            colors: [Colors.green.shade50, Colors.green.shade100]),
+          colors: [Colors.green.shade50, Colors.green.shade100],
+        ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.green.shade200),
       ),
@@ -3076,17 +3162,21 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Total",
-              style: TextStyle(
-                  color: Colors.green.shade700,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500)),
+          Text(
+            "Total",
+            style: TextStyle(
+              color: Colors.green.shade700,
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           Text(
             "Rs${formatted.format(amount)}",
             style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-                color: Color(0xFF166534)),
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+              color: Color(0xFF166534),
+            ),
           ),
         ],
       ),
@@ -3101,9 +3191,10 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 16,
-              offset: const Offset(0, -4)),
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
         ],
       ),
       child: Column(
@@ -3111,17 +3202,21 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Grand Total",
-                  style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF64748B))),
+              const Text(
+                "Grand Total",
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF64748B),
+                ),
+              ),
               Text(
                 "Rs:${formatted.format(total)}",
                 style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2563EB)),
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2563EB),
+                ),
               ),
             ],
           ),
@@ -3135,20 +3230,22 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
                 elevation: 0,
                 backgroundColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 padding: EdgeInsets.zero,
               ),
               child: Ink(
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                      colors: [AppColors.secondary, AppColors.primary]),
+                    colors: [AppColors.secondary, AppColors.primary],
+                  ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                        color:
-                        const Color(0xFF2563EB).withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4)),
+                      color: const Color(0xFF2563EB).withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
                   ],
                 ),
                 child: Container(
@@ -3156,15 +3253,21 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add_circle_outline,
-                          color: Colors.white, size: 20),
+                      Icon(
+                        Icons.add_circle_outline,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                       SizedBox(width: 10),
-                      Text("Create Invoice",
-                          style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                              letterSpacing: 0.5)),
+                      Text(
+                        "Create Invoice",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -3184,16 +3287,20 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
           children: [
             Icon(Icons.inbox, size: 80, color: Colors.grey[400]),
             const SizedBox(height: 16),
-            Text("No Orders Available",
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[700])),
+            Text(
+              "No Orders Available",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
             const SizedBox(height: 8),
-            Text("There are no sales orders to create invoices",
-                style:
-                TextStyle(fontSize: 14, color: Colors.grey[500]),
-                textAlign: TextAlign.center),
+            Text(
+              "There are no sales orders to create invoices",
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -3209,24 +3316,34 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
             Container(
               padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
-                  color: Colors.grey.shade100, shape: BoxShape.circle),
-              child: Icon(Icons.receipt_outlined,
-                  size: 70, color: Colors.grey.shade400),
+                color: Colors.grey.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.receipt_outlined,
+                size: 70,
+                color: Colors.grey.shade400,
+              ),
             ),
             const SizedBox(height: 20),
-            Text("No Order Selected",
-                style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade700)),
+            Text(
+              "No Order Selected",
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
-                "Please select a sales order from\nthe dropdown above",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade500,
-                    height: 1.5)),
+              "Please select a sales order from\nthe dropdown above",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade500,
+                height: 1.5,
+              ),
+            ),
           ],
         ),
       ),
@@ -3318,17 +3435,9 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
   //   );
   // }
 
-  Widget _buildDropdownCard(
-      {required Widget child}) {
-    return Row(
-      children: [
-
-        Expanded(child: child),
-      ],
-    );
+  Widget _buildDropdownCard({required Widget child}) {
+    return Row(children: [Expanded(child: child)]);
   }
-
-
 
   // ─────────────────────────────────────────────
   // INPUT FIELDS
@@ -3343,8 +3452,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border:
-        Border.all(color: Colors.grey.shade200, width: 1.5),
+        border: Border.all(color: Colors.grey.shade200, width: 1.5),
       ),
       child: TextFormField(
         initialValue: value,
@@ -3352,23 +3460,25 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
         onChanged: onChanged,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(
-              color: Colors.grey.shade600, fontSize: 11),
+          labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 11),
           floatingLabelStyle: const TextStyle(
-              color: Colors.blue, fontWeight: FontWeight.w500),
-          prefixIcon:
-          Icon(icon, size: 14, color: Colors.grey.shade500),
+            color: Colors.blue,
+            fontWeight: FontWeight.w500,
+          ),
+          prefixIcon: Icon(icon, size: 14, color: Colors.grey.shade500),
           border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
           filled: true,
           fillColor: Colors.grey.shade50,
           contentPadding: const EdgeInsets.symmetric(
-              horizontal: 8, vertical: 10),
+            horizontal: 8,
+            vertical: 10,
+          ),
           isDense: true,
         ),
-        style: const TextStyle(
-            fontSize: 13, fontWeight: FontWeight.w500),
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
       ),
     );
   }
@@ -3389,13 +3499,13 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
         keyboardType: TextInputType.number,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(
-              fontSize: 12, color: Colors.grey.shade600),
-          prefixIcon:
-          Icon(icon, size: 16, color: AppColors.primary),
+          labelStyle: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          prefixIcon: Icon(icon, size: 16, color: AppColors.primary),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
-              horizontal: 10, vertical: 12),
+            horizontal: 10,
+            vertical: 12,
+          ),
           isDense: true,
         ),
       ),
@@ -3418,8 +3528,7 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
           stops: const [0.0, 0.5, 1.0],
           begin: const Alignment(-1.0, -0.5),
           end: const Alignment(1.0, 0.5),
-          transform: GradientRotation(
-              _shimmerController.value * 2 * 3.14159),
+          transform: GradientRotation(_shimmerController.value * 2 * 3.14159),
         ).createShader(bounds);
       },
       blendMode: BlendMode.srcATop,
@@ -3440,42 +3549,44 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4))
+                color: Colors.grey.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
             ],
           ),
           child: Row(
             children: [
               Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius:
-                      BorderRadius.circular(12))),
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                        width: double.infinity,
-                        height: 16,
-                        decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius:
-                            BorderRadius.circular(4))),
+                      width: double.infinity,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Container(
-                        width:
-                        MediaQuery.of(context).size.width *
-                            0.5,
-                        height: 12,
-                        decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius:
-                            BorderRadius.circular(4))),
+                      width: MediaQuery.of(context).size.width * 0.5,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -3510,14 +3621,14 @@ class _AddSalesInvoiceScreenState extends State<AddSalesInvoiceScreen>
       title: const Text(
         "Sales Invoice",
         style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 20),
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 20,
+        ),
       ),
       centerTitle: true,
       leading: IconButton(
-        icon:
-        const Icon(Icons.arrow_back_ios, color: Colors.white),
+        icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
         onPressed: () => Navigator.pop(context),
       ),
     );

@@ -1,4 +1,3 @@
-
 import 'package:demo_distribution/Provider/setup/Department_provider/DepartmentProvider.dart';
 import 'package:demo_distribution/Provider/setup/Designation_provider/Designation_provider.dart';
 import 'package:demo_distribution/Provider/setup/SalesAreasProvider.dart';
@@ -50,21 +49,19 @@ import 'Provider/setup/location_provider.dart';
 import 'Provider/stock_provider/low_level_stock_provider.dart';
 import 'Provider/stock_provider/stock_position_provider.dart';
 import 'Screen/splashview/splashLogo.dart';
+import 'utils/session_manager.dart';
 
-
-void main()async {
-
-
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // ✅ Initialize SharedPreferences safely
   final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
+  final token = await SessionManager.getToken();
   final bool isFirstTime = prefs.getBool('isFirstTime') ?? true;
 
   runApp(MyApp(token: token, isFirstTime: isFirstTime));
-
 }
+
 class MyApp extends StatelessWidget {
   final String? token;
   final bool isFirstTime;
@@ -92,7 +89,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PaymentToSupplierProvider()),
         ChangeNotifierProvider(create: (_) => SupplierProvider()),
         ChangeNotifierProvider(create: (_) => SupplierLedgerProvider()),
-        ChangeNotifierProvider(create: (_)=>PayableAmountProvider()),
+        ChangeNotifierProvider(create: (_) => PayableAmountProvider()),
         ChangeNotifierProvider(create: (_) => CategoriesProvider()),
         ChangeNotifierProvider(create: (_) => ItemTypeProvider()),
         ChangeNotifierProvider(create: (_) => ItemUnitProvider()),
@@ -101,19 +98,15 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ReceiptVoucherProvider()),
         ChangeNotifierProvider(create: (_) => PaymentVoucherProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
-    ChangeNotifierProvider(create: (_) => PurchaseOrderProvider()),
+        ChangeNotifierProvider(create: (_) => PurchaseOrderProvider()),
         ChangeNotifierProvider(create: (_) => SubCategory()),
         ChangeNotifierProvider(create: (_) => ManufacturesProvider()),
         ChangeNotifierProvider(create: (_) => CustomerPaymentProvider()),
-        ChangeNotifierProvider(create: (_) => StockPositionProvider(),),
-    ChangeNotifierProvider(create: (_) => RecoveryPendingReportProvider(),),
-        ChangeNotifierProvider(
-          create: (_) => TaxTypesProvider(),
-        ),
+        ChangeNotifierProvider(create: (_) => StockPositionProvider()),
+        ChangeNotifierProvider(create: (_) => RecoveryPendingReportProvider()),
+        ChangeNotifierProvider(create: (_) => TaxTypesProvider()),
 
-        ChangeNotifierProvider(
-          create: (_) => LocationProvider(),
-        ),
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProvider(create: (_) => SaleManRecoveryProvider()),
         ChangeNotifierProvider(create: (_) => DaybookLedgerProvider()),
         ChangeNotifierProvider(create: (_) => ExpenseVoucherProvider()),
@@ -122,11 +115,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SalesAreasProvider()),
         ChangeNotifierProvider(create: (_) => DepartmentProvider()),
         ChangeNotifierProvider(create: (_) => DesignationProvider()),
-        ChangeNotifierProvider(create: (_) => LowLevelStockProvider()),//DeliveryBoyProvider
-        ChangeNotifierProvider(create: (_) => DeliveryBoyProvider())
-
-
-
+        ChangeNotifierProvider(
+          create: (_) => LowLevelStockProvider(),
+        ), //DeliveryBoyProvider
+        ChangeNotifierProvider(create: (_) => DeliveryBoyProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

@@ -835,7 +835,6 @@
 //   }
 // }
 
-
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -845,6 +844,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../compoents/AppColors.dart';
 import '../utils/access_control.dart';
 import 'Auth/LoginScreen.dart';
+import '../utils/session_manager.dart';
 import 'Bank/BankDefine/BanksDefineScreen.dart';
 import 'DashBoardScreen.dart';
 import 'PurchaseScreen/PurchaseScreen.dart';
@@ -902,12 +902,12 @@ class _HomeScreenState extends State<HomeScreen>
 
   // ── Design tokens ──
   static const Color _headerStart = Color(0xFF5B86E5);
-  static const Color _headerEnd   = Color(0xFF36D1DC);
-  static const Color _surface     = Color(0xFFF8FAFC);
-  static const Color _cardBg      = Colors.white;
+  static const Color _headerEnd = Color(0xFF36D1DC);
+  static const Color _surface = Color(0xFFF8FAFC);
+  static const Color _cardBg = Colors.white;
   static const Color _textPrimary = Color(0xFF0F172A);
-  static const Color _textMuted   = Color(0xFF64748B);
-  static const Color _border      = Color(0xFFE4E9F2);
+  static const Color _textMuted = Color(0xFF64748B);
+  static const Color _border = Color(0xFFE4E9F2);
 
   @override
   void initState() {
@@ -933,7 +933,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _updateTime() {
-    final now  = DateTime.now();
+    final now = DateTime.now();
     final hour = now.hour;
     setState(() {
       _currentTime = DateFormat('hh:mm a').format(now);
@@ -949,48 +949,50 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _loadUserData() async {
-    final prefs    = await SharedPreferences.getInstance();
-    final admin    = await AccessControl.isAdmin();
+    final prefs = await SharedPreferences.getInstance();
+    final admin = await AccessControl.isAdmin();
     final userType = prefs.getString('user_type') ?? '';
 
-    String userName  = 'User';
+    String userName = 'User';
     String userEmail = '';
-    final userJson   = prefs.getString('user');
+    final userJson = prefs.getString('user');
     if (userJson != null) {
       try {
         final map = Map<String, dynamic>.from(
-            const JsonDecoder().convert(userJson));
-        userName  = map['name'] ?? map['user_name'] ?? 'User';
+          const JsonDecoder().convert(userJson),
+        );
+        userName = map['name'] ?? map['user_name'] ?? 'User';
         userEmail = map['email'] ?? map['username'] ?? '';
       } catch (_) {}
     }
     if (userName == 'User') {
-      userName = prefs.getString('user_name') ?? prefs.getString('name') ?? 'User';
+      userName =
+          prefs.getString('user_name') ?? prefs.getString('name') ?? 'User';
     }
 
     final dashboard = await AccessControl.canDo('can_view_dashboard');
-    final sales     = await AccessControl.canDo('can_view_sales');
-    final purchase  = await AccessControl.canDo('can_view_purchase');
-    final stock     = await AccessControl.canDo('can_view_stock');
-    final reports   = await AccessControl.canDo('can_view_reports');
-    final bank      = await AccessControl.canDo('can_view_accounts');
-    final setup     = await AccessControl.canDo('can_view_setup');
+    final sales = await AccessControl.canDo('can_view_sales');
+    final purchase = await AccessControl.canDo('can_view_purchase');
+    final stock = await AccessControl.canDo('can_view_stock');
+    final reports = await AccessControl.canDo('can_view_reports');
+    final bank = await AccessControl.canDo('can_view_accounts');
+    final setup = await AccessControl.canDo('can_view_setup');
 
     if (!mounted) return;
     setState(() {
-      _userName          = userName;
-      _userInitial       = userName.isNotEmpty ? userName[0].toUpperCase() : 'U';
-      _userEmail         = userEmail;
-      _userType          = userType;
-      _isAdmin           = admin;
-      canViewDashboard   = dashboard;
-      canViewSales       = sales;
-      canViewPurchase    = purchase;
-      canViewStock       = stock;
-      canViewReports     = reports;
-      canViewBank        = bank;
-      canViewSetUp       = setup;
-      _loaded            = true;
+      _userName = userName;
+      _userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : 'U';
+      _userEmail = userEmail;
+      _userType = userType;
+      _isAdmin = admin;
+      canViewDashboard = dashboard;
+      canViewSales = sales;
+      canViewPurchase = purchase;
+      canViewStock = stock;
+      canViewReports = reports;
+      canViewBank = bank;
+      canViewSetUp = setup;
+      _loaded = true;
     });
     _fadeController.forward();
   }
@@ -1068,11 +1070,10 @@ class _HomeScreenState extends State<HomeScreen>
       PageRouteBuilder(
         pageBuilder: (_, animation, __) => module.screenBuilder(),
         transitionsBuilder: (_, animation, __, child) => SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(1.0, 0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-              parent: animation, curve: Curves.easeOutCubic)),
+          position: Tween<Offset>(begin: const Offset(1.0, 0), end: Offset.zero)
+              .animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              ),
           child: child,
         ),
         transitionDuration: const Duration(milliseconds: 280),
@@ -1084,8 +1085,7 @@ class _HomeScreenState extends State<HomeScreen>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape:
-        RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: Colors.white,
         title: Row(
           children: [
@@ -1095,13 +1095,17 @@ class _HomeScreenState extends State<HomeScreen>
                 color: Colors.red.shade50,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.logout_rounded,
-                  color: Colors.red.shade400, size: 20),
+              child: Icon(
+                Icons.logout_rounded,
+                color: Colors.red.shade400,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
-            const Text('Logout',
-                style: TextStyle(
-                    fontSize: 17, fontWeight: FontWeight.w700)),
+            const Text(
+              'Logout',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+            ),
           ],
         ),
         content: const Text(
@@ -1111,35 +1115,34 @@ class _HomeScreenState extends State<HomeScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel',
-                style:
-                TextStyle(color: Colors.grey.shade600, fontSize: 14)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade400,
               elevation: 0,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-              padding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Logout',
-                style: TextStyle(color: Colors.white)),
+            child: const Text('Logout', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
 
     if (confirm ?? false) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
+      await SessionManager.clearSession();
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => LoginScreen()),
-              (route) => false,
+          (route) => false,
         );
       }
     }
@@ -1154,34 +1157,32 @@ class _HomeScreenState extends State<HomeScreen>
       backgroundColor: _surface,
       body: !_loaded
           ? const Center(
-        child: CircularProgressIndicator(
-          color: AppColors.primary,
-          strokeWidth: 2.5,
-        ),
-      )
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+                strokeWidth: 2.5,
+              ),
+            )
           : FadeTransition(
-        opacity: _fadeAnimation,
-        child: SafeArea(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 20),
-                _buildDateTimeRow(),
-                const SizedBox(height: 24),
-                _buildSectionHeader(),
-                const SizedBox(height: 14),
-                _visibleModules.isEmpty
-                    ? _buildEmpty()
-                    : _buildGrid(),
-                const SizedBox(height: 28),
-              ],
+              opacity: _fadeAnimation,
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(),
+                      const SizedBox(height: 20),
+                      _buildDateTimeRow(),
+                      const SizedBox(height: 24),
+                      _buildSectionHeader(),
+                      const SizedBox(height: 14),
+                      _visibleModules.isEmpty ? _buildEmpty() : _buildGrid(),
+                      const SizedBox(height: 28),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -1252,8 +1253,11 @@ class _HomeScreenState extends State<HomeScreen>
                             color: Colors.white.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(Icons.store_rounded,
-                              color: Colors.white, size: 18),
+                          child: const Icon(
+                            Icons.store_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                         ),
                         const SizedBox(width: 10),
                         Column(
@@ -1289,18 +1293,21 @@ class _HomeScreenState extends State<HomeScreen>
                           color: Colors.white.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                              color: Colors.white.withOpacity(0.15)),
+                            color: Colors.white.withOpacity(0.15),
+                          ),
                         ),
-                        child: const Icon(Icons.logout_rounded,
-                            color: Colors.white70, size: 17),
+                        child: const Icon(
+                          Icons.logout_rounded,
+                          color: Colors.white70,
+                          size: 17,
+                        ),
                       ),
                     ),
                   ],
                 ),
 
                 const SizedBox(height: 20),
-                Divider(
-                    color: Colors.white.withOpacity(0.12), thickness: 0.5),
+                Divider(color: Colors.white.withOpacity(0.12), thickness: 0.5),
                 const SizedBox(height: 18),
 
                 // User info
@@ -1372,12 +1379,13 @@ class _HomeScreenState extends State<HomeScreen>
                 // Role badge
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.14),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                        color: Colors.white.withOpacity(0.18)),
+                    border: Border.all(color: Colors.white.withOpacity(0.18)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1418,11 +1426,17 @@ class _HomeScreenState extends State<HomeScreen>
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          _buildChip(Icons.calendar_today_rounded, _currentDate,
-              const Color(0xFF2563EB)),
+          _buildChip(
+            Icons.calendar_today_rounded,
+            _currentDate,
+            const Color(0xFF2563EB),
+          ),
           const SizedBox(width: 10),
-          _buildChip(Icons.access_time_rounded, _currentTime,
-              const Color(0xFF059669)),
+          _buildChip(
+            Icons.access_time_rounded,
+            _currentTime,
+            const Color(0xFF059669),
+          ),
         ],
       ),
     );
@@ -1431,8 +1445,7 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildChip(IconData icon, String label, Color color) {
     return Expanded(
       child: Container(
-        padding:
-        const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: _cardBg,
           borderRadius: BorderRadius.circular(14),
@@ -1499,8 +1512,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           const Spacer(),
           Container(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
             decoration: BoxDecoration(
               color: const Color(0xFF2563EB).withOpacity(0.08),
               borderRadius: BorderRadius.circular(20),
@@ -1610,10 +1622,7 @@ class _HomeScreenState extends State<HomeScreen>
                     const SizedBox(height: 2),
                     Text(
                       module.subtitle,
-                      style: const TextStyle(
-                        color: _textMuted,
-                        fontSize: 10.5,
-                      ),
+                      style: const TextStyle(color: _textMuted, fontSize: 10.5),
                     ),
                   ],
                 ),
@@ -1664,8 +1673,11 @@ class _HomeScreenState extends State<HomeScreen>
               color: Colors.grey.shade100,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(Icons.lock_outline_rounded,
-                size: 28, color: Colors.grey.shade400),
+            child: Icon(
+              Icons.lock_outline_rounded,
+              size: 28,
+              color: Colors.grey.shade400,
+            ),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -1680,11 +1692,7 @@ class _HomeScreenState extends State<HomeScreen>
           const Text(
             'Contact your administrator\nto get access to modules',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: _textMuted,
-              fontSize: 13,
-              height: 1.5,
-            ),
+            style: TextStyle(color: _textMuted, fontSize: 13, height: 1.5),
           ),
         ],
       ),

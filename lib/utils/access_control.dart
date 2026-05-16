@@ -4,6 +4,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AccessControl {
+  static bool isDeliveryBoyType(String? userType) {
+    final normalized = userType?.toLowerCase().replaceAll(
+      RegExp(r'[\s_-]+'),
+      '',
+    );
+    return normalized == 'deliveryboy';
+  }
 
   /// True if user is owner OR has an admin role
   static Future<bool> isAdmin() async {
@@ -28,16 +35,16 @@ class AccessControl {
   //   return prefs.containsKey('salesman_id');
   // }
 
-// ✅ Use user_type instead
+  // ✅ Use user_type instead
   static Future<bool> isSalesman() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_type') == 'salesman';
   }
 
-// Also add delivery boy check
+  // Also add delivery boy check
   static Future<bool> isDeliveryBoy() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_type') == 'deliveryboy';
+    return isDeliveryBoyType(prefs.getString('user_type'));
   }
 
   static Future<bool> hasRole(String role) async {
@@ -74,7 +81,11 @@ class AccessControl {
     try {
       final data = jsonDecode(user);
       final ids = data['assigned_area_ids'] as List?;
-      return ids?.map<int>((e) => e as int).toList() ?? [];
+      return ids
+              ?.map((e) => e is int ? e : int.tryParse(e.toString()))
+              .whereType<int>()
+              .toList() ??
+          [];
     } catch (e) {
       debugPrint('getAssignedAreaIds error: $e');
       return [];
@@ -87,7 +98,7 @@ class AccessControl {
     if (!prefs.containsKey('salesman_id')) return null;
     return prefs.getInt('salesman_id');
   }
-  
+
   /// Returns the delivery_boy_id if logged-in user is a delivery boy, null otherwise
   static Future<int?> getDeliveryBoyId() async {
     final prefs = await SharedPreferences.getInstance();

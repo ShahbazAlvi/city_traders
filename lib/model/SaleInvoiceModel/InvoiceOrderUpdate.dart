@@ -56,22 +56,36 @@ class SingleOrderData {
   });
 
   factory SingleOrderData.fromJson(Map<String, dynamic> json) {
+    int parseInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      return int.tryParse(value.toString()) ?? 0;
+    }
+
     return SingleOrderData(
-      id: json['id'] ?? 0,
+      id: parseInt(json['id']),
       soNo: json['so_no'] ?? '',
-      customerId: json['customer_id'] ?? 0,
+      customerId: parseInt(json['customer_id']),
       customerName: json['customer_name'] ?? '',
-      salesmanId: json['salesman_id'] ?? 0,
+      salesmanId: parseInt(json['salesman_id']),
       salesmanName: json['salesman_name'] ?? '',
       salesAreaId: json['sales_area_id'], // ✅ Map from JSON
-      orderDate: DateTime.parse(json['order_date'] ?? DateTime.now().toIso8601String()),
+      orderDate: DateTime.parse(
+        json['order_date'] ?? DateTime.now().toIso8601String(),
+      ),
       status: json['status'] ?? '',
       remarks: json['remarks'],
-      createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updated_at'] ?? DateTime.now().toIso8601String()),
-      details: (json['details'] as List<dynamic>?)
-          ?.map((e) => OrderDetail.fromJson(e))
-          .toList() ??
+      createdAt: DateTime.parse(
+        json['created_at'] ?? DateTime.now().toIso8601String(),
+      ),
+      updatedAt: DateTime.parse(
+        json['updated_at'] ?? DateTime.now().toIso8601String(),
+      ),
+      details:
+          (json['details'] as List<dynamic>?)
+              ?.map((e) => OrderDetail.fromJson(e))
+              .toList() ??
           [],
     );
   }
@@ -117,6 +131,13 @@ class OrderDetail {
   });
 
   factory OrderDetail.fromJson(Map<String, dynamic> json) {
+    int parseInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      return int.tryParse(value.toString()) ?? 0;
+    }
+
     double parseDouble(dynamic value) {
       if (value == null) return 0;
       if (value is num) return value.toDouble();
@@ -124,14 +145,14 @@ class OrderDetail {
     }
 
     return OrderDetail(
-      id: json['id'] ?? 0,
-      itemId: json['item_id'] ?? 0,
+      id: parseInt(json['id']),
+      itemId: parseInt(json['item_id']),
       itemName: json['item_name'] ?? '',
       itemSku: json['item_sku'] ?? '',
       qty: parseDouble(json['qty']),
       rate: parseDouble(json['rate']),
       lineTotal: parseDouble(json['line_total']),
-      unitId: json['unit_id'] ?? 0,
+      unitId: parseInt(json['unit_id']),
       unitName: json['unit_name'] ?? '',
     );
   }

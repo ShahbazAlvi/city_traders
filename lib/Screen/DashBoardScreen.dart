@@ -1,4 +1,3 @@
-
 import 'package:demo_distribution/Screen/reports/reports_dashboard/reports_dashboard_screen.dart';
 import 'package:demo_distribution/Screen/setup/setup_dashboard.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -11,12 +10,12 @@ import '../model/DashBoardModel.dart';
 import '../utils/access_control.dart';
 
 import 'Auth/LoginScreen.dart';
+import '../utils/session_manager.dart';
 import 'Bank/BankDefine/BanksDefineScreen.dart';
 import 'PurchaseScreen/PurchaseScreen.dart';
 import 'SalesView/SalesScreen.dart';
 import 'SalesView/stock/stockcard/stock_main.dart';
 import 'appTheme.dart';
-
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -28,7 +27,6 @@ String fmtAmount(double n) {
 }
 
 String pkr(double n) => '${n < 0 ? '-' : ''}PKR ${fmtAmount(n)}';
-
 
 class _NavItem {
   final IconData icon;
@@ -62,12 +60,13 @@ class AppCard extends StatelessWidget {
   final double? width;
   final Gradient? gradient;
 
-  const AppCard(
-      {super.key,
-        required this.child,
-        this.padding,
-        this.width,
-        this.gradient});
+  const AppCard({
+    super.key,
+    required this.child,
+    this.padding,
+    this.width,
+    this.gradient,
+  });
 
   @override
   Widget build(BuildContext context) => Container(
@@ -95,30 +94,42 @@ class SectionHeader extends StatelessWidget {
   final String? subtitle;
   final Widget? trailing;
 
-  const SectionHeader(
-      {super.key, required this.title, this.subtitle, this.trailing});
+  const SectionHeader({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+  });
 
   @override
-  Widget build(BuildContext context) => Row(children: [
-    Expanded(
-      child:
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        ShaderMask(
-          shaderCallback: (b) => AppTheme.brandGradient.createShader(b),
-          child: Text(title,
-              style: const TextStyle(
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ShaderMask(
+              shaderCallback: (b) => AppTheme.brandGradient.createShader(b),
+              child: Text(
+                title,
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
-                  fontSize: 15)),
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            if (subtitle != null)
+              Text(
+                subtitle!,
+                style: const TextStyle(color: AppTheme.textMuted, fontSize: 11),
+              ),
+          ],
         ),
-        if (subtitle != null)
-          Text(subtitle!,
-              style:
-              const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
-      ]),
-    ),
-    if (trailing != null) trailing!,
-  ]);
+      ),
+      if (trailing != null) trailing!,
+    ],
+  );
 }
 
 class LegendDot extends StatelessWidget {
@@ -127,17 +138,23 @@ class LegendDot extends StatelessWidget {
   const LegendDot({super.key, required this.color, required this.label});
 
   @override
-  Widget build(BuildContext context) => Row(children: [
-    Container(
+  Widget build(BuildContext context) => Row(
+    children: [
+      Container(
         width: 8,
         height: 8,
         decoration: BoxDecoration(
-            color: color, borderRadius: BorderRadius.circular(2))),
-    const SizedBox(width: 4),
-    Text(label,
-        style:
-        const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
-  ]);
+          color: color,
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+      const SizedBox(width: 4),
+      Text(
+        label,
+        style: const TextStyle(color: AppTheme.textMuted, fontSize: 11),
+      ),
+    ],
+  );
 }
 
 class KpiCard extends StatelessWidget {
@@ -172,79 +189,83 @@ class KpiCard extends StatelessWidget {
       ],
     ),
     child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: positive
-                          ? [
-                        AppColors.secondary.withOpacity(0.15),
-                        AppColors.primary.withOpacity(0.08)
-                      ]
-                          : [
-                        AppTheme.red.withOpacity(0.12),
-                        AppTheme.red.withOpacity(0.05)
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Center(
-                      child: Text(icon,
-                          style: const TextStyle(fontSize: 17))),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: positive
+                      ? [
+                          AppColors.secondary.withOpacity(0.15),
+                          AppColors.primary.withOpacity(0.08),
+                        ]
+                      : [
+                          AppTheme.red.withOpacity(0.12),
+                          AppTheme.red.withOpacity(0.05),
+                        ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: positive
-                        ? AppColors.primary.withOpacity(0.10)
-                        : AppTheme.red.withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    positive ? '▲' : '▼',
-                    style: TextStyle(
-                        fontSize: 10,
-                        color: positive
-                            ? AppColors.primary
-                            : AppTheme.red,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ]),
-          const SizedBox(height: 12),
-          ShaderMask(
-            shaderCallback: (b) => LinearGradient(
-              colors: positive
-                  ? [AppColors.secondary, AppColors.primary]
-                  : [AppTheme.red, AppTheme.red.withOpacity(0.8)],
-            ).createShader(b),
-            child: Text(
-              pkr(value),
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: Text(icon, style: const TextStyle(fontSize: 17)),
+              ),
             ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: positive
+                    ? AppColors.primary.withOpacity(0.10)
+                    : AppTheme.red.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                positive ? '▲' : '▼',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: positive ? AppColors.primary : AppTheme.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ShaderMask(
+          shaderCallback: (b) => LinearGradient(
+            colors: positive
+                ? [AppColors.secondary, AppColors.primary]
+                : [AppTheme.red, AppTheme.red.withOpacity(0.8)],
+          ).createShader(b),
+          child: Text(
+            pkr(value),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
-          Text(label,
-              style: const TextStyle(
-                  color: AppTheme.textMuted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500)),
-        ]),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            color: AppTheme.textMuted,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    ),
   );
 }
 
@@ -270,91 +291,109 @@ class ActivityRow extends StatelessWidget {
     final icon = AppTheme.typeIcon(type);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding:
-      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: AppTheme.bg,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.border),
       ),
-      child: Row(children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                color.withOpacity(0.18),
-                color.withOpacity(0.06)
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [color.withOpacity(0.18), color.withOpacity(0.06)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(10),
             ),
-            borderRadius: BorderRadius.circular(10),
+            child: Center(
+              child: Text(icon, style: TextStyle(color: color, fontSize: 16)),
+            ),
           ),
-          child: Center(
-              child:
-              Text(icon, style: TextStyle(color: color, fontSize: 16))),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [
-                        color.withOpacity(0.15),
-                        color.withOpacity(0.05)
-                      ]),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(type,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            color.withOpacity(0.15),
+                            color.withOpacity(0.05),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        type,
                         style: TextStyle(
-                            color: color,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700)),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(refNo,
-                      style: const TextStyle(
-                          color: AppTheme.textMuted,
+                          color: color,
                           fontSize: 10,
-                          fontFamily: 'monospace')),
-                ]),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      refNo,
+                      style: const TextStyle(
+                        color: AppTheme.textMuted,
+                        fontSize: 10,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 3),
                 Text(
                   who.isNotEmpty
                       ? '${who[0].toUpperCase()}${who.substring(1)}'
                       : who,
                   style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500),
+                    color: AppTheme.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-              ]),
-        ),
-        const SizedBox(width: 10),
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          ShaderMask(
-            shaderCallback: (b) =>
-                AppTheme.brandGradient.createShader(b),
-            child: Text('PKR ${fmtAmount(amount)}',
-                style: const TextStyle(
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              ShaderMask(
+                shaderCallback: (b) => AppTheme.brandGradient.createShader(b),
+                child: Text(
+                  'PKR ${fmtAmount(amount)}',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 13,
-                    fontWeight: FontWeight.w800)),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Text(
+                date,
+                style: const TextStyle(color: AppTheme.textMuted, fontSize: 10),
+              ),
+            ],
           ),
-          Text(date,
-              style:
-              const TextStyle(color: AppTheme.textMuted, fontSize: 10)),
-        ]),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -378,53 +417,59 @@ class InvoiceStatusRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.only(bottom: 8),
-    padding:
-    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     decoration: BoxDecoration(
       color: AppTheme.bg,
       borderRadius: BorderRadius.circular(12),
       border: Border.all(color: AppTheme.border),
     ),
-    child: Row(children: [
-      Container(
-        width: 34,
-        height: 34,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              color.withOpacity(0.18),
-              color.withOpacity(0.06)
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    child: Row(
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [color.withOpacity(0.18), color.withOpacity(0.06)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(9),
           ),
-          borderRadius: BorderRadius.circular(9),
+          child: Center(
+            child: Text(icon, style: TextStyle(color: color, fontSize: 15)),
+          ),
         ),
-        child: Center(
-            child: Text(icon,
-                style: TextStyle(color: color, fontSize: 15))),
-      ),
-      const SizedBox(width: 10),
-      Expanded(
-        child: Column(
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label,
-                  style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600)),
-              Text('$count invoice${count != 1 ? 's' : ''}',
-                  style: const TextStyle(
-                      color: AppTheme.textMuted, fontSize: 11)),
-            ]),
-      ),
-      Text(pkr(amount),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                '$count invoice${count != 1 ? 's' : ''}',
+                style: const TextStyle(color: AppTheme.textMuted, fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          pkr(amount),
           style: TextStyle(
-              color: color,
-              fontSize: 14,
-              fontWeight: FontWeight.w800)),
-    ]),
+            color: color,
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    ),
   );
 }
 
@@ -434,63 +479,85 @@ class RecoveryBar extends StatelessWidget {
   final double total;
   final Color color;
 
-  const RecoveryBar(
-      {super.key,
-        required this.label,
-        required this.value,
-        required this.total,
-        required this.color});
+  const RecoveryBar({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.total,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     final pct = total > 0 ? (value / total).clamp(0.0, 1.0) : 0.0;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Row(children: [
-          Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(2))),
-          const SizedBox(width: 6),
-          Text(label,
-              style: const TextStyle(
-                  color: AppTheme.textSecondary, fontSize: 12)),
-        ]),
-        Text('PKR ${fmtAmount(value)}',
-            style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 12,
-                fontWeight: FontWeight.w700)),
-      ]),
-      const SizedBox(height: 6),
-      Stack(children: [
-        Container(
-          height: 6,
-          decoration: BoxDecoration(
-            color: AppTheme.border,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        FractionallySizedBox(
-          widthFactor: pct,
-          child: Container(
-            height: 6,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                  colors: [AppColors.secondary, AppColors.primary]),
-              borderRadius: BorderRadius.circular(4),
-              boxShadow: [
-                BoxShadow(
-                    color: AppColors.primary.withOpacity(0.35),
-                    blurRadius: 5)
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
-          ),
+            Text(
+              'PKR ${fmtAmount(value)}',
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ),
-      ]),
-    ]);
+        const SizedBox(height: 6),
+        Stack(
+          children: [
+            Container(
+              height: 6,
+              decoration: BoxDecoration(
+                color: AppTheme.border,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            FractionallySizedBox(
+              widthFactor: pct,
+              child: Container(
+                height: 6,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.secondary, AppColors.primary],
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.35),
+                      blurRadius: 5,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }
 
@@ -580,10 +647,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       label: 'Logout',
       isLogout: true,
       alwaysVisible: true,
-
     ),
   ];
-
 
   List<_NavItem> get _visibleItems => _allNavItems.where((item) {
     if (!_loaded) return false;
@@ -594,14 +659,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   bool _hasPermission(String key) {
     switch (key) {
-      case 'can_view_dashboard': return canViewDashboard;
-      case 'can_view_sales':     return canViewSales;
-      case 'can_view_purchase':  return canViewPurchase;
-      case 'can_view_stock':     return canViewStock;
-      case 'can_view_reports':   return canViewReports;
-      case 'can_view_accounts':  return canViewBank;
-      case 'can_view_setup':     return canViewSetUp;
-      default:                   return false;
+      case 'can_view_dashboard':
+        return canViewDashboard;
+      case 'can_view_sales':
+        return canViewSales;
+      case 'can_view_purchase':
+        return canViewPurchase;
+      case 'can_view_stock':
+        return canViewStock;
+      case 'can_view_reports':
+        return canViewReports;
+      case 'can_view_accounts':
+        return canViewBank;
+      case 'can_view_setup':
+        return canViewSetUp;
+      default:
+        return false;
     }
   }
 
@@ -617,55 +690,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadAccess() async {
-    final admin    = await AccessControl.isAdmin();
-    final stock    = await AccessControl.canDo('can_view_stock');
-    final reports  = await AccessControl.canDo('can_view_reports');
-    final sales    = await AccessControl.canDo('can_view_sales');
+    final admin = await AccessControl.isAdmin();
+    final stock = await AccessControl.canDo('can_view_stock');
+    final reports = await AccessControl.canDo('can_view_reports');
+    final sales = await AccessControl.canDo('can_view_sales');
     final purchase = await AccessControl.canDo('can_view_purchase');
-    final dashboard= await AccessControl.canDo('can_view_dashboard');
-    final bank     = await AccessControl.canDo('can_view_accounts');
-    final setup    = await AccessControl.canDo('can_view_setup');
+    final dashboard = await AccessControl.canDo('can_view_dashboard');
+    final bank = await AccessControl.canDo('can_view_accounts');
+    final setup = await AccessControl.canDo('can_view_setup');
 
     // Dashboard content permissions (matching React frontend codes)
-    final salesTotal       = await AccessControl.canDo('view_sales_total');
-    final purchaseTotal    = await AccessControl.canDo('view_purchase_total');
-    final paymentsInTotal  = await AccessControl.canDo('view_payments_in_total');
-    final recoveryKpi      = await AccessControl.canDo('view_recovery_total');
-    final salesPurchGraph  = await AccessControl.canDo('view_sales_purchase_graph');
-    final invoiceChart     = await AccessControl.canDo('view_invoice_status_chart');
-    final topProducts      = await AccessControl.canDo('view_top_products_chart');
-    final recentAct        = await AccessControl.canDo('view_recent_sales_purchase_activity');
-    final recoveryTotal    = await AccessControl.canDo('view_recovery_total');
+    final salesTotal = await AccessControl.canDo('view_sales_total');
+    final purchaseTotal = await AccessControl.canDo('view_purchase_total');
+    final paymentsInTotal = await AccessControl.canDo('view_payments_in_total');
+    final recoveryKpi = await AccessControl.canDo('view_recovery_total');
+    final salesPurchGraph = await AccessControl.canDo(
+      'view_sales_purchase_graph',
+    );
+    final invoiceChart = await AccessControl.canDo('view_invoice_status_chart');
+    final topProducts = await AccessControl.canDo('view_top_products_chart');
+    final recentAct = await AccessControl.canDo(
+      'view_recent_sales_purchase_activity',
+    );
+    final recoveryTotal = await AccessControl.canDo('view_recovery_total');
     final prefs = await SharedPreferences.getInstance();
 
     // Add these two lines at the top
-    final userName = prefs.getString('user_name') ?? prefs.getString('name') ?? 'User';
-   // final admin = await AccessControl.isAdmin();
-
+    final userName =
+        prefs.getString('user_name') ?? prefs.getString('name') ?? 'User';
+    // final admin = await AccessControl.isAdmin();
 
     setState(() {
-      isAdmin          = admin;
-      canViewStock     = stock;
-      canViewReports   = reports;
-      canViewSales     = sales;
-      canViewPurchase  = purchase;
+      isAdmin = admin;
+      canViewStock = stock;
+      canViewReports = reports;
+      canViewSales = sales;
+      canViewPurchase = purchase;
       canViewDashboard = dashboard;
-      canViewBank      = bank;
-      canViewSetUp     = setup;
+      canViewBank = bank;
+      canViewSetUp = setup;
 
       // Dashboard content
-      canViewSalesTotal         = salesTotal;
-      canViewPurchaseTotal      = purchaseTotal;
-      canViewPaymentsInTotal    = paymentsInTotal;
-      canViewRecoveryKpi        = recoveryKpi;
+      canViewSalesTotal = salesTotal;
+      canViewPurchaseTotal = purchaseTotal;
+      canViewPaymentsInTotal = paymentsInTotal;
+      canViewRecoveryKpi = recoveryKpi;
       canViewSalesPurchaseGraph = salesPurchGraph;
       canViewInvoiceStatusChart = invoiceChart;
-      canViewTopProductsChart   = topProducts;
-      canViewRecentActivity     = recentAct;
-      canViewRecoveryTotal      = recoveryTotal;
+      canViewTopProductsChart = topProducts;
+      canViewRecentActivity = recentAct;
+      canViewRecoveryTotal = recoveryTotal;
 
-      _loaded          = true;
-      _navIndex        = 0;
+      _loaded = true;
+      _navIndex = 0;
       _userName = userName;
       _userInitial = userName.isNotEmpty ? userName[0].toUpperCase() : 'U';
 
@@ -678,8 +755,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.surface,
-        title: const Text('Confirm Logout', style: TextStyle(color: AppTheme.textPrimary)),
-        content: const Text('Are you sure you want to logout?', style: TextStyle(color: AppTheme.textSecondary)),
+        title: const Text(
+          'Confirm Logout',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(color: AppTheme.textSecondary),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -695,13 +778,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
 
     if (shouldLogout ?? false) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear(); // Clear all user data
+      await SessionManager.clearSession();
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => LoginScreen()),
-              (route) => false,
+          (route) => false,
         );
       }
     }
@@ -711,13 +793,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppTheme.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Select Date Range', style: TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              'Select Date Range',
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 15),
             _buildFilterTile('This Week', () {
               final now = DateTime.now();
@@ -733,7 +824,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             }),
             _buildFilterTile('This Year', () {
               final now = DateTime.now();
-              _updateDates(DateTime(now.year, 1, 1), DateTime(now.year, 12, 31));
+              _updateDates(
+                DateTime(now.year, 1, 1),
+                DateTime(now.year, 12, 31),
+              );
             }),
             _buildFilterTile('Custom Range', () async {
               Navigator.pop(context);
@@ -804,11 +898,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       PageRouteBuilder(
         pageBuilder: (_, animation, __) => item.screenBuilder!(),
         transitionsBuilder: (_, animation, __, child) => SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(1.0, 0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-              parent: animation, curve: Curves.easeOutCubic)),
+          position: Tween<Offset>(begin: const Offset(1.0, 0), end: Offset.zero)
+              .animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              ),
           child: child,
         ),
         transitionDuration: const Duration(milliseconds: 280),
@@ -822,7 +915,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
-    final isTablet  = w >= 768;
+    final isTablet = w >= 768;
     final isDesktop = w >= 1200;
 
     return Scaffold(
@@ -831,35 +924,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
       drawer: isTablet ? null : _buildDrawer(),
       appBar: _buildAppBar(isTablet),
 
-      body: Row(children: [
-        if (isTablet) _buildSidebar(isDesktop),
-        Expanded(
-          child: Column(children: [
-            SizedBox(height: 10,),
-            // _buildTopBar(isTablet),
-            Expanded(
-              child: Consumer<DashboardProvider>(
-                builder: (_, prov, __) {
-                  if (!_loaded || prov.state == LoadState.loading)
-                    return _buildLoading();
-                  if (prov.state == LoadState.error)
-                    return _buildError(prov.errorMsg, prov.refresh);
-                  if (prov.data == null) return _buildEmpty();
-                  return _buildBody(prov.data!, isTablet, isDesktop);
-                },
-              ),
+      body: Row(
+        children: [
+          if (isTablet) _buildSidebar(isDesktop),
+          Expanded(
+            child: Column(
+              children: [
+                SizedBox(height: 10),
+                // _buildTopBar(isTablet),
+                Expanded(
+                  child: Consumer<DashboardProvider>(
+                    builder: (_, prov, __) {
+                      if (!_loaded || prov.state == LoadState.loading)
+                        return _buildLoading();
+                      if (prov.state == LoadState.error)
+                        return _buildError(prov.errorMsg, prov.refresh);
+                      if (prov.data == null) return _buildEmpty();
+                      return _buildBody(prov.data!, isTablet, isDesktop);
+                    },
+                  ),
+                ),
+              ],
             ),
-          ]),
-        ),
-      ]),
-      bottomNavigationBar: (isTablet || !_loaded)
-          ? null
-          : _buildBottomNav(),
+          ),
+        ],
+      ),
+      bottomNavigationBar: (isTablet || !_loaded) ? null : _buildBottomNav(),
     );
   }
 
   // ─── Sidebar ────────────────────────────────────────────────────────────
-
 
   Widget _buildSidebar(bool isDesktop) {
     final items = _visibleItems;
@@ -870,198 +964,231 @@ class _DashboardScreenState extends State<DashboardScreen> {
         border: Border(right: BorderSide(color: AppTheme.border)),
         boxShadow: [
           BoxShadow(
-              color: Color(0x0A000000),
-              blurRadius: 12,
-              offset: Offset(2, 0))
+            color: Color(0x0A000000),
+            blurRadius: 12,
+            offset: Offset(2, 0),
+          ),
         ],
       ),
-      child: Column(children: [
-        // ── Logo ──
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppTheme.border))),
-          child: Row(children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                gradient: AppTheme.brandGradient,
-                borderRadius: BorderRadius.circular(11),
-                boxShadow: [
-                  BoxShadow(
-                      color: AppColors.primary.withOpacity(0.35),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4)),
-                ],
-              ),
-              child: const Center(
-                  child: Text('🏪', style: TextStyle(fontSize: 20))),
+      child: Column(
+        children: [
+          // ── Logo ──
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: AppTheme.border)),
             ),
-            if (isDesktop) ...[
-              const SizedBox(width: 10),
-              Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ShaderMask(
-                      shaderCallback: (b) =>
-                          AppTheme.brandGradient.createShader(b),
-                      child: const Text('Siddiqui Traders',
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.brandGradient,
+                    borderRadius: BorderRadius.circular(11),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.35),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Text('🏪', style: TextStyle(fontSize: 20)),
+                  ),
+                ),
+                if (isDesktop) ...[
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ShaderMask(
+                        shaderCallback: (b) =>
+                            AppTheme.brandGradient.createShader(b),
+                        child: const Text(
+                          'Siddiqui Traders',
                           style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 16)),
-                    ),
-                    const Text('DASHBOARD',
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                      const Text(
+                        'DASHBOARD',
                         style: TextStyle(
-                            color: AppTheme.textMuted,
-                            fontSize: 9,
-                            letterSpacing: 1.5)),
-                  ]),
-            ],
-          ]),
-        ),
-
-        // ── Nav Items ──
-        Expanded(
-          child: !_loaded
-              ? const Center(
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.primary),
-            ),
-          )
-              : items.isEmpty
-              ? Center(
-            child: Text(
-              isDesktop ? 'No access' : '🔒',
-              style: const TextStyle(
-                  color: AppTheme.textMuted, fontSize: 12),
-            ),
-          )
-              : ListView(
-            padding: const EdgeInsets.symmetric(
-                vertical: 12, horizontal: 8),
-            children: List.generate(items.length, (i) {
-              final item = items[i];
-              final active = _navIndex == i;
-              return _buildNavTile(
-                  item, active, isDesktop, i);
-            }),
-          ),
-        ),
-
-        // ── User chip ──
-        // Container(
-        //   padding: const EdgeInsets.all(16),
-        //   decoration: const BoxDecoration(
-        //       border:
-        //       Border(top: BorderSide(color: AppTheme.border))),
-        //   child: Row(children: [
-        //     Container(
-        //       width: 36,
-        //       height: 36,
-        //       decoration: BoxDecoration(
-        //         gradient: AppTheme.brandGradient,
-        //         borderRadius: BorderRadius.circular(18),
-        //         boxShadow: [
-        //           BoxShadow(
-        //               color: AppColors.primary.withOpacity(0.3),
-        //               blurRadius: 8,
-        //               offset: const Offset(0, 3)),
-        //         ],
-        //       ),
-        //       child: const Center(
-        //           child: Text('A',
-        //               style: TextStyle(
-        //                   color: Colors.white,
-        //                   fontWeight: FontWeight.w800,
-        //                   fontSize: 15))),
-        //     ),
-        //     if (isDesktop) ...[
-        //       const SizedBox(width: 10),
-        //       Column(
-        //           crossAxisAlignment: CrossAxisAlignment.start,
-        //           children: [
-        //             const Text('Admin',
-        //                 style: TextStyle(
-        //                     color: AppTheme.textPrimary,
-        //                     fontSize: 13,
-        //                     fontWeight: FontWeight.w600)),
-        //             Text(
-        //               isAdmin ? 'Super Admin' : 'Staff',
-        //               style: TextStyle(
-        //                   color: isAdmin
-        //                       ? AppColors.primary
-        //                       : AppTheme.textMuted,
-        //                   fontSize: 10,
-        //                   fontWeight: isAdmin
-        //                       ? FontWeight.w600
-        //                       : FontWeight.w400),
-        //             ),
-        //           ]),
-        //     ],
-        //   ]),
-        // ),
-        // ── User chip ──
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppTheme.border))),
-          child: Row(children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                gradient: AppTheme.brandGradient,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3)),
+                          color: AppTheme.textMuted,
+                          fontSize: 9,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
-              ),
-              child: Center(
-                  child: Text(
-                      _userInitial,   // ← real initial instead of 'A'
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15))),
+              ],
             ),
-            if (isDesktop) ...[
-              const SizedBox(width: 10),
-              Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                        _userName,    // ← real name instead of 'Admin'
-                        style: const TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600)),
-                    Text(
-                      isAdmin ? 'Super Admin' : 'Staff',
-                      style: TextStyle(
-                          color: isAdmin ? AppColors.primary : AppTheme.textMuted,
-                          fontSize: 10,
-                          fontWeight: isAdmin ? FontWeight.w600 : FontWeight.w400),
+          ),
+
+          // ── Nav Items ──
+          Expanded(
+            child: !_loaded
+                ? const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.primary,
+                      ),
                     ),
-                  ]),
-            ],
-          ]),
-        ),
-      ]),
+                  )
+                : items.isEmpty
+                ? Center(
+                    child: Text(
+                      isDesktop ? 'No access' : '🔒',
+                      style: const TextStyle(
+                        color: AppTheme.textMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  )
+                : ListView(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 8,
+                    ),
+                    children: List.generate(items.length, (i) {
+                      final item = items[i];
+                      final active = _navIndex == i;
+                      return _buildNavTile(item, active, isDesktop, i);
+                    }),
+                  ),
+          ),
+
+          // ── User chip ──
+          // Container(
+          //   padding: const EdgeInsets.all(16),
+          //   decoration: const BoxDecoration(
+          //       border:
+          //       Border(top: BorderSide(color: AppTheme.border))),
+          //   child: Row(children: [
+          //     Container(
+          //       width: 36,
+          //       height: 36,
+          //       decoration: BoxDecoration(
+          //         gradient: AppTheme.brandGradient,
+          //         borderRadius: BorderRadius.circular(18),
+          //         boxShadow: [
+          //           BoxShadow(
+          //               color: AppColors.primary.withOpacity(0.3),
+          //               blurRadius: 8,
+          //               offset: const Offset(0, 3)),
+          //         ],
+          //       ),
+          //       child: const Center(
+          //           child: Text('A',
+          //               style: TextStyle(
+          //                   color: Colors.white,
+          //                   fontWeight: FontWeight.w800,
+          //                   fontSize: 15))),
+          //     ),
+          //     if (isDesktop) ...[
+          //       const SizedBox(width: 10),
+          //       Column(
+          //           crossAxisAlignment: CrossAxisAlignment.start,
+          //           children: [
+          //             const Text('Admin',
+          //                 style: TextStyle(
+          //                     color: AppTheme.textPrimary,
+          //                     fontSize: 13,
+          //                     fontWeight: FontWeight.w600)),
+          //             Text(
+          //               isAdmin ? 'Super Admin' : 'Staff',
+          //               style: TextStyle(
+          //                   color: isAdmin
+          //                       ? AppColors.primary
+          //                       : AppTheme.textMuted,
+          //                   fontSize: 10,
+          //                   fontWeight: isAdmin
+          //                       ? FontWeight.w600
+          //                       : FontWeight.w400),
+          //             ),
+          //           ]),
+          //     ],
+          //   ]),
+          // ),
+          // ── User chip ──
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: AppTheme.border)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.brandGradient,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      _userInitial, // ← real initial instead of 'A'
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                ),
+                if (isDesktop) ...[
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _userName, // ← real name instead of 'Admin'
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        isAdmin ? 'Super Admin' : 'Staff',
+                        style: TextStyle(
+                          color: isAdmin
+                              ? AppColors.primary
+                              : AppTheme.textMuted,
+                          fontSize: 10,
+                          fontWeight: isAdmin
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   // ── Single nav tile ──
-  Widget _buildNavTile(
-      _NavItem item, bool active, bool isDesktop, int idx) {
+  Widget _buildNavTile(_NavItem item, bool active, bool isDesktop, int idx) {
     return Tooltip(
       message: isDesktop ? '' : item.label,
       child: GestureDetector(
@@ -1070,18 +1197,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
           duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.only(bottom: 2),
           padding: EdgeInsets.symmetric(
-              horizontal: isDesktop ? 12 : 0, vertical: 10),
+            horizontal: isDesktop ? 12 : 0,
+            vertical: 10,
+          ),
           decoration: BoxDecoration(
             gradient: active
-                ? LinearGradient(colors: [
-              AppColors.secondary.withOpacity(0.12),
-              AppColors.primary.withOpacity(0.06),
-            ])
+                ? LinearGradient(
+                    colors: [
+                      AppColors.secondary.withOpacity(0.12),
+                      AppColors.primary.withOpacity(0.06),
+                    ],
+                  )
                 : null,
             borderRadius: BorderRadius.circular(10),
             border: active
-                ? Border.all(
-                color: AppColors.primary.withOpacity(0.2))
+                ? Border.all(color: AppColors.primary.withOpacity(0.2))
                 : null,
           ),
           child: Row(
@@ -1090,27 +1220,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 : MainAxisAlignment.center,
             children: [
               ShaderMask(
-                shaderCallback: (b) => (active
-                    ? AppTheme.brandGradient
-                    : const LinearGradient(colors: [
-                  AppTheme.textMuted,
-                  AppTheme.textMuted
-                ]))
-                    .createShader(b),
+                shaderCallback: (b) =>
+                    (active
+                            ? AppTheme.brandGradient
+                            : const LinearGradient(
+                                colors: [
+                                  AppTheme.textMuted,
+                                  AppTheme.textMuted,
+                                ],
+                              ))
+                        .createShader(b),
                 child: Icon(item.icon, size: 20, color: Colors.white),
               ),
               if (isDesktop) ...[
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(item.label,
-                      style: TextStyle(
-                          color: active
-                              ? AppColors.secondary
-                              : AppTheme.textSecondary,
-                          fontSize: 13,
-                          fontWeight: active
-                              ? FontWeight.w600
-                              : FontWeight.w400)),
+                  child: Text(
+                    item.label,
+                    style: TextStyle(
+                      color: active
+                          ? AppColors.secondary
+                          : AppTheme.textSecondary,
+                      fontSize: 13,
+                      fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                  ),
                 ),
                 if (active)
                   Container(
@@ -1122,9 +1256,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   )
                 else
-                // small arrow hint
-                  const Icon(Icons.chevron_right,
-                      size: 14, color: AppTheme.textMuted),
+                  // small arrow hint
+                  const Icon(
+                    Icons.chevron_right,
+                    size: 14,
+                    color: AppTheme.textMuted,
+                  ),
               ],
             ],
           ),
@@ -1133,12 +1270,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildDrawer() => Drawer(
-    backgroundColor: AppTheme.surface,
-    child: _buildSidebar(true),
-  );
-
-
+  Widget _buildDrawer() =>
+      Drawer(backgroundColor: AppTheme.surface, child: _buildSidebar(true));
 
   PreferredSizeWidget _buildAppBar(bool isTablet) {
     return AppBar(
@@ -1147,12 +1280,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       automaticallyImplyLeading: false,
       leading: !isTablet
           ? IconButton(
-        onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        icon: ShaderMask(
-          shaderCallback: (b) => AppTheme.brandGradient.createShader(b),
-          child: const Icon(Icons.menu, color: Colors.white),
-        ),
-      )
+              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+              icon: ShaderMask(
+                shaderCallback: (b) => AppTheme.brandGradient.createShader(b),
+                child: const Icon(Icons.menu, color: Colors.white),
+              ),
+            )
           : null,
       titleSpacing: 0,
       title: Column(
@@ -1185,10 +1318,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             margin: const EdgeInsets.only(right: 8),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [
-                AppColors.secondary.withOpacity(0.15),
-                AppColors.primary.withOpacity(0.15),
-              ]),
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.secondary.withOpacity(0.15),
+                  AppColors.primary.withOpacity(0.15),
+                ],
+              ),
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Center(
@@ -1230,9 +1365,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         border: Border(top: BorderSide(color: AppTheme.border)),
         boxShadow: [
           BoxShadow(
-              color: Color(0x08000000),
-              blurRadius: 8,
-              offset: Offset(0, -2))
+            color: Color(0x08000000),
+            blurRadius: 8,
+            offset: Offset(0, -2),
+          ),
         ],
       ),
       child: BottomNavigationBar(
@@ -1248,10 +1384,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           if (i < items.length) _onNavTap(items[i]);
         },
         items: items
-            .map((e) => BottomNavigationBarItem(
-          icon: Icon(e.icon, size: 20),
-          label: e.label,
-        ))
+            .map(
+              (e) => BottomNavigationBarItem(
+                icon: Icon(e.icon, size: 20),
+                label: e.label,
+              ),
+            )
             .toList(),
       ),
     );
@@ -1261,30 +1399,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildLoading() => Center(
     child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ShaderMask(
-            shaderCallback: (b) =>
-                AppTheme.brandGradient.createShader(b),
-            child: const CircularProgressIndicator(
-                color: Colors.white, strokeWidth: 2.5),
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ShaderMask(
+          shaderCallback: (b) => AppTheme.brandGradient.createShader(b),
+          child: const CircularProgressIndicator(
+            color: Colors.white,
+            strokeWidth: 2.5,
           ),
-          const SizedBox(height: 16),
-          ShaderMask(
-            shaderCallback: (b) =>
-                AppTheme.brandGradient.createShader(b),
-            child: const Text('Loading dashboard…',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500)),
+        ),
+        const SizedBox(height: 16),
+        ShaderMask(
+          shaderCallback: (b) => AppTheme.brandGradient.createShader(b),
+          child: const Text(
+            'Loading dashboard…',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ]),
+        ),
+      ],
+    ),
   );
 
   Widget _buildEmpty() => const Center(
-    child: Text('No data available',
-        style: TextStyle(color: AppTheme.textMuted)),
+    child: Text(
+      'No data available',
+      style: TextStyle(color: AppTheme.textMuted),
+    ),
   );
 
   Widget _buildError(String msg, VoidCallback retry) => Center(
@@ -1316,7 +1460,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             icon: const Icon(Icons.refresh, size: 18),
             label: const Text('Try Again'),
@@ -1328,96 +1474,112 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ─── Body ─────────────────────────────────────────────────────────────────
 
-  Widget _buildBody(
-      DashboardData d, bool isTablet, bool isDesktop) {
-
+  Widget _buildBody(DashboardData d, bool isTablet, bool isDesktop) {
     // Build the middle row: trend chart + invoice/recovery cards
-    final showTrend    = canViewSalesPurchaseGraph;
-    final showInvoice  = canViewInvoiceStatusChart;
+    final showTrend = canViewSalesPurchaseGraph;
+    final showInvoice = canViewInvoiceStatusChart;
     final showRecovery = canViewRecoveryTotal;
     final showProducts = canViewTopProductsChart;
     final showActivity = canViewRecentActivity;
 
     // Collect visible right-side cards for the tablet layout
     final rightCards = <Widget>[
-      if (showInvoice)  _InvoiceCard(status: d.invoiceStatus),
+      if (showInvoice) _InvoiceCard(status: d.invoiceStatus),
       if (showRecovery) _RecoveryCard(summary: d.recoverySummary),
     ];
 
     // Collect visible bottom-row cards
-    final bottomLeft  = showProducts  ? _ProductsCard(products: d.topProducts)    : null;
-    final bottomRight = showActivity  ? _ActivityCard(activity: d.recentActivity) : null;
+    final bottomLeft = showProducts
+        ? _ProductsCard(products: d.topProducts)
+        : null;
+    final bottomRight = showActivity
+        ? _ActivityCard(activity: d.recentActivity)
+        : null;
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(isDesktop ? 24 : 16),
-      child:
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // ── KPI Cards (permission-gated per card) ──
-        _KpiGrid(
-          d: d,
-          isTablet: isTablet,
-          isDesktop: isDesktop,
-          showSales: canViewSalesTotal,
-          showPurchases: canViewPurchaseTotal,
-          showPaymentsIn: canViewPaymentsInTotal,
-          showRecoveries: canViewRecoveryKpi,
-        ),
-        const SizedBox(height: 20),
-
-        // ── Trend Chart + Invoice/Recovery ──
-        if (showTrend || rightCards.isNotEmpty)
-          if (isTablet)
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              if (showTrend)
-                Expanded(
-                    flex: 3,
-                    child: _TrendChart(trend: d.monthlyTrend)),
-              if (showTrend && rightCards.isNotEmpty)
-                const SizedBox(width: 16),
-              if (rightCards.isNotEmpty)
-                Expanded(
-                  flex: 2,
-                  child: Column(children: [
-                    for (var i = 0; i < rightCards.length; i++) ...[
-                      if (i > 0) const SizedBox(height: 16),
-                      rightCards[i],
-                    ],
-                  ]),
-                ),
-            ])
-          else
-            Column(children: [
-              if (showTrend)  _TrendChart(trend: d.monthlyTrend),
-              if (showTrend && rightCards.isNotEmpty)
-                const SizedBox(height: 16),
-              for (var i = 0; i < rightCards.length; i++) ...[
-                if (i > 0) const SizedBox(height: 16),
-                rightCards[i],
-              ],
-            ]),
-
-        // ── Products + Activity ──
-        if (bottomLeft != null || bottomRight != null) ...[
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── KPI Cards (permission-gated per card) ──
+          _KpiGrid(
+            d: d,
+            isTablet: isTablet,
+            isDesktop: isDesktop,
+            showSales: canViewSalesTotal,
+            showPurchases: canViewPurchaseTotal,
+            showPaymentsIn: canViewPaymentsInTotal,
+            showRecoveries: canViewRecoveryKpi,
+          ),
           const SizedBox(height: 20),
-          if (isDesktop)
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              if (bottomLeft != null)
-                SizedBox(width: 300, child: bottomLeft),
-              if (bottomLeft != null && bottomRight != null)
-                const SizedBox(width: 16),
-              if (bottomRight != null)
-                Expanded(child: bottomRight),
-            ])
-          else
-            Column(children: [
-              if (bottomLeft != null)  bottomLeft,
-              if (bottomLeft != null && bottomRight != null)
-                const SizedBox(height: 16),
-              if (bottomRight != null) bottomRight,
-            ]),
+
+          // ── Trend Chart + Invoice/Recovery ──
+          if (showTrend || rightCards.isNotEmpty)
+            if (isTablet)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (showTrend)
+                    Expanded(
+                      flex: 3,
+                      child: _TrendChart(trend: d.monthlyTrend),
+                    ),
+                  if (showTrend && rightCards.isNotEmpty)
+                    const SizedBox(width: 16),
+                  if (rightCards.isNotEmpty)
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        children: [
+                          for (var i = 0; i < rightCards.length; i++) ...[
+                            if (i > 0) const SizedBox(height: 16),
+                            rightCards[i],
+                          ],
+                        ],
+                      ),
+                    ),
+                ],
+              )
+            else
+              Column(
+                children: [
+                  if (showTrend) _TrendChart(trend: d.monthlyTrend),
+                  if (showTrend && rightCards.isNotEmpty)
+                    const SizedBox(height: 16),
+                  for (var i = 0; i < rightCards.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 16),
+                    rightCards[i],
+                  ],
+                ],
+              ),
+
+          // ── Products + Activity ──
+          if (bottomLeft != null || bottomRight != null) ...[
+            const SizedBox(height: 20),
+            if (isDesktop)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (bottomLeft != null)
+                    SizedBox(width: 300, child: bottomLeft),
+                  if (bottomLeft != null && bottomRight != null)
+                    const SizedBox(width: 16),
+                  if (bottomRight != null) Expanded(child: bottomRight),
+                ],
+              )
+            else
+              Column(
+                children: [
+                  if (bottomLeft != null) bottomLeft,
+                  if (bottomLeft != null && bottomRight != null)
+                    const SizedBox(height: 16),
+                  if (bottomRight != null) bottomRight,
+                ],
+              ),
+          ],
+          const SizedBox(height: 24),
         ],
-        const SizedBox(height: 24),
-      ]),
+      ),
     );
   }
 }
@@ -1450,13 +1612,37 @@ class _KpiGrid extends StatelessWidget {
     // Build only the cards the user has permission to see
     final cards = <KpiCard>[
       if (showSales)
-        KpiCard(label: 'Total Sales', value: kpi.totalSales, color: AppColors.primary, icon: '📈', positive: true),
+        KpiCard(
+          label: 'Total Sales',
+          value: kpi.totalSales,
+          color: AppColors.primary,
+          icon: '📈',
+          positive: true,
+        ),
       if (showPurchases)
-        KpiCard(label: 'Purchases', value: kpi.totalPurchases, color: AppTheme.orange, icon: '🛒', positive: false),
+        KpiCard(
+          label: 'Purchases',
+          value: kpi.totalPurchases,
+          color: AppTheme.orange,
+          icon: '🛒',
+          positive: false,
+        ),
       if (showPaymentsIn)
-        KpiCard(label: 'Payments In', value: kpi.totalPaymentsIn, color: AppColors.secondary, icon: '💰', positive: true),
+        KpiCard(
+          label: 'Payments In',
+          value: kpi.totalPaymentsIn,
+          color: AppColors.secondary,
+          icon: '💰',
+          positive: true,
+        ),
       if (showRecoveries)
-        KpiCard(label: 'Recoveries', value: kpi.totalRecoveries, color: AppTheme.green, icon: '🔄', positive: true),
+        KpiCard(
+          label: 'Recoveries',
+          value: kpi.totalRecoveries,
+          color: AppTheme.green,
+          icon: '🔄',
+          positive: true,
+        ),
     ];
 
     if (cards.isEmpty) return const SizedBox.shrink();
@@ -1465,16 +1651,20 @@ class _KpiGrid extends StatelessWidget {
     final rows = <Widget>[];
     for (var i = 0; i < cards.length; i += cols) {
       final slice = cards.skip(i).take(cols).toList();
-      rows.add(Row(children: [
-        for (var j = 0; j < slice.length; j++) ...[
-          if (j > 0) const SizedBox(width: 12),
-          Expanded(child: slice[j]),
-        ],
-        for (var k = slice.length; k < cols; k++) ...[
-          const SizedBox(width: 12),
-          const Expanded(child: SizedBox()),
-        ],
-      ]));
+      rows.add(
+        Row(
+          children: [
+            for (var j = 0; j < slice.length; j++) ...[
+              if (j > 0) const SizedBox(width: 12),
+              Expanded(child: slice[j]),
+            ],
+            for (var k = slice.length; k < cols; k++) ...[
+              const SizedBox(width: 12),
+              const Expanded(child: SizedBox()),
+            ],
+          ],
+        ),
+      );
       if (i + cols < cards.length) rows.add(const SizedBox(height: 12));
     }
     return Column(children: rows);
@@ -1490,21 +1680,26 @@ class _TrendChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AppCard(
     child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader(
-              title: 'Trend Overview',
-              subtitle: 'Sales · Purchases · Payments Out'),
-          const SizedBox(height: 10),
-          Wrap(spacing: 16, children: [
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Trend Overview',
+          subtitle: 'Sales · Purchases · Payments Out',
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 16,
+          children: [
             LegendDot(color: AppColors.primary, label: 'Sales'),
             LegendDot(color: AppTheme.orange, label: 'Purchases'),
             LegendDot(color: AppTheme.red, label: 'Pay Out'),
-          ]),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 200,
-            child: LineChart(LineChartData(
+          ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 200,
+          child: LineChart(
+            LineChartData(
               backgroundColor: Colors.transparent,
               gridData: FlGridData(
                 show: true,
@@ -1515,25 +1710,30 @@ class _TrendChart extends StatelessWidget {
               borderData: FlBorderData(show: false),
               titlesData: FlTitlesData(
                 leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
+                  sideTitles: SideTitles(showTitles: false),
+                ),
                 rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
+                  sideTitles: SideTitles(showTitles: false),
+                ),
                 topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
+                  sideTitles: SideTitles(showTitles: false),
+                ),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
                     reservedSize: 28,
                     getTitlesWidget: (v, meta) {
                       final i = v.toInt();
-                      if (i < 0 || i >= trend.length)
-                        return const SizedBox();
+                      if (i < 0 || i >= trend.length) return const SizedBox();
                       return Padding(
                         padding: const EdgeInsets.only(top: 6),
-                        child: Text(trend[i].month,
-                            style: const TextStyle(
-                                color: AppTheme.textMuted,
-                                fontSize: 10)),
+                        child: Text(
+                          trend[i].month,
+                          style: const TextStyle(
+                            color: AppTheme.textMuted,
+                            fontSize: 10,
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -1546,37 +1746,49 @@ class _TrendChart extends StatelessWidget {
                     final colors = [
                       AppColors.primary,
                       AppTheme.orange,
-                      AppTheme.red
+                      AppTheme.red,
                     ];
                     return LineTooltipItem(
                       'PKR ${fmtAmount(s.y)}',
                       TextStyle(
-                          color:
-                          colors[s.barIndex % colors.length],
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700),
+                        color: colors[s.barIndex % colors.length],
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
                     );
                   }).toList(),
                 ),
               ),
               lineBarsData: [
-                _line(trend.map((t) => t.sales).toList(),
-                    AppColors.primary, AppColors.secondary),
-                _line(trend.map((t) => t.purchases).toList(),
-                    AppTheme.orange, AppTheme.orange),
-                _line(trend.map((t) => t.paymentsOut).toList(),
-                    AppTheme.red, AppTheme.red),
+                _line(
+                  trend.map((t) => t.sales).toList(),
+                  AppColors.primary,
+                  AppColors.secondary,
+                ),
+                _line(
+                  trend.map((t) => t.purchases).toList(),
+                  AppTheme.orange,
+                  AppTheme.orange,
+                ),
+                _line(
+                  trend.map((t) => t.paymentsOut).toList(),
+                  AppTheme.red,
+                  AppTheme.red,
+                ),
               ],
-            )),
+            ),
           ),
-        ]),
+        ),
+      ],
+    ),
   );
 
-  LineChartBarData _line(
-      List<double> values, Color color, Color gradColor) =>
+  LineChartBarData _line(List<double> values, Color color, Color gradColor) =>
       LineChartBarData(
         spots: List.generate(
-            values.length, (i) => FlSpot(i.toDouble(), values[i])),
+          values.length,
+          (i) => FlSpot(i.toDouble(), values[i]),
+        ),
         isCurved: true,
         gradient: LinearGradient(colors: [color, gradColor]),
         barWidth: 2.5,
@@ -1584,10 +1796,7 @@ class _TrendChart extends StatelessWidget {
         belowBarData: BarAreaData(
           show: true,
           gradient: LinearGradient(
-            colors: [
-              color.withOpacity(0.12),
-              color.withOpacity(0.0)
-            ],
+            colors: [color.withOpacity(0.12), color.withOpacity(0.0)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -1604,15 +1813,36 @@ class _InvoiceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AppCard(
     child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SectionHeader(
-              title: 'Invoice Status', subtitle: 'Current period'),
-          const SizedBox(height: 16),
-          InvoiceStatusRow(label: 'Paid', count: status.paid.count, amount: status.paid.amount, color: AppColors.primary, icon: '✓'),
-          InvoiceStatusRow(label: 'Receivable', count: status.receivable.count, amount: status.receivable.amount, color: AppTheme.orange, icon: '⏳'),
-          InvoiceStatusRow(label: 'Overdue', count: status.overdue.count, amount: status.overdue.amount, color: AppTheme.red, icon: '⚠'),
-        ]),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(
+          title: 'Invoice Status',
+          subtitle: 'Current period',
+        ),
+        const SizedBox(height: 16),
+        InvoiceStatusRow(
+          label: 'Paid',
+          count: status.paid.count,
+          amount: status.paid.amount,
+          color: AppColors.primary,
+          icon: '✓',
+        ),
+        InvoiceStatusRow(
+          label: 'Receivable',
+          count: status.receivable.count,
+          amount: status.receivable.amount,
+          color: AppTheme.orange,
+          icon: '⏳',
+        ),
+        InvoiceStatusRow(
+          label: 'Overdue',
+          count: status.overdue.count,
+          amount: status.overdue.amount,
+          color: AppTheme.red,
+          icon: '⚠',
+        ),
+      ],
+    ),
   );
 }
 
@@ -1625,15 +1855,17 @@ class _RecoveryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AppCard(
     child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SectionHeader(
-              title: 'Recovery Breakdown',
-              subtitle: 'Cash vs Bank'),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 110,
-            child: PieChart(PieChartData(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(
+          title: 'Recovery Breakdown',
+          subtitle: 'Cash vs Bank',
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 110,
+          child: PieChart(
+            PieChartData(
               sectionsSpace: 4,
               centerSpaceRadius: 30,
               sections: [
@@ -1650,46 +1882,64 @@ class _RecoveryCard extends StatelessWidget {
                   showTitle: false,
                 ),
               ],
-            )),
+            ),
           ),
-          const SizedBox(height: 14),
-          RecoveryBar(label: 'Cash', value: summary.cashAmount, total: summary.totalAmount, color: AppColors.primary),
-          const SizedBox(height: 10),
-          RecoveryBar(label: 'Bank', value: summary.bankAmount, total: summary.totalAmount, color: AppColors.secondary),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [
+        ),
+        const SizedBox(height: 14),
+        RecoveryBar(
+          label: 'Cash',
+          value: summary.cashAmount,
+          total: summary.totalAmount,
+          color: AppColors.primary,
+        ),
+        const SizedBox(height: 10),
+        RecoveryBar(
+          label: 'Bank',
+          value: summary.bankAmount,
+          total: summary.totalAmount,
+          color: AppColors.secondary,
+        ),
+        const SizedBox(height: 14),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
                 AppColors.secondary.withOpacity(0.08),
                 AppColors.primary.withOpacity(0.05),
-              ]),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                  color: AppColors.primary.withOpacity(0.18)),
+              ],
             ),
-            child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('TOTAL RECOVERED',
-                      style: TextStyle(
-                          color: AppTheme.textMuted,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5)),
-                  ShaderMask(
-                    shaderCallback: (b) =>
-                        AppTheme.brandGradient.createShader(b),
-                    child: Text(
-                        'PKR ${fmtAmount(summary.totalAmount)}',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800)),
-                  ),
-                ]),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.primary.withOpacity(0.18)),
           ),
-        ]),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'TOTAL RECOVERED',
+                style: TextStyle(
+                  color: AppTheme.textMuted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              ShaderMask(
+                shaderCallback: (b) => AppTheme.brandGradient.createShader(b),
+                child: Text(
+                  'PKR ${fmtAmount(summary.totalAmount)}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
   );
 }
 
@@ -1703,127 +1953,138 @@ class _ProductsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final maxSold = products.isEmpty
         ? 1
-        : products
-        .map((p) => p.sold)
-        .reduce((a, b) => a > b ? a : b);
+        : products.map((p) => p.sold).reduce((a, b) => a > b ? a : b);
 
     return AppCard(
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SectionHeader(
-                title: 'Top Products',
-                subtitle: 'Units sold this period'),
-            const SizedBox(height: 16),
-            ...List.generate(products.length, (i) {
-              final p = products[i];
-              final pct = maxSold > 0 ? p.sold / maxSold : 0.0;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(
+            title: 'Top Products',
+            subtitle: 'Units sold this period',
+          ),
+          const SizedBox(height: 16),
+          ...List.generate(products.length, (i) {
+            final p = products[i];
+            final pct = maxSold > 0 ? p.sold / maxSold : 0.0;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                          mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '${p.name[0].toUpperCase()}${p.name.substring(1)}',
-                                style: const TextStyle(
-                                    color: AppTheme.textPrimary,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            ShaderMask(
-                              shaderCallback: (b) =>
-                                  AppTheme.brandGradient.createShader(b),
-                              child: Text('${p.sold} units',
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w800)),
-                            ),
-                          ]),
-                      const SizedBox(height: 6),
-                      Stack(children: [
-                        Container(
+                      Expanded(
+                        child: Text(
+                          '${p.name[0].toUpperCase()}${p.name.substring(1)}',
+                          style: const TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ShaderMask(
+                        shaderCallback: (b) =>
+                            AppTheme.brandGradient.createShader(b),
+                        child: Text(
+                          '${p.sold} units',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Stack(
+                    children: [
+                      Container(
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: AppTheme.border,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      FractionallySizedBox(
+                        widthFactor: pct,
+                        child: Container(
                           height: 6,
                           decoration: BoxDecoration(
-                            color: AppTheme.border,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                        FractionallySizedBox(
-                          widthFactor: pct,
-                          child: Container(
-                            height: 6,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(colors: [
-                                AppColors.secondary,
-                                AppColors.primary
-                              ]),
-                              borderRadius: BorderRadius.circular(4),
-                              boxShadow: [
-                                BoxShadow(
-                                    color: AppColors.primary
-                                        .withOpacity(0.35),
-                                    blurRadius: 5),
-                              ],
+                            gradient: const LinearGradient(
+                              colors: [AppColors.secondary, AppColors.primary],
                             ),
+                            borderRadius: BorderRadius.circular(4),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.35),
+                                blurRadius: 5,
+                              ),
+                            ],
                           ),
                         ),
-                      ]),
-                    ]),
-              );
-            }),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 140,
-              child: BarChart(BarChartData(
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 140,
+            child: BarChart(
+              BarChartData(
                 alignment: BarChartAlignment.spaceAround,
                 barTouchData: BarTouchData(
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipColor: (_) => AppTheme.surface,
-                    getTooltipItem:
-                        (group, groupIndex, rod, rodIndex) =>
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) =>
                         BarTooltipItem(
                           '${products[groupIndex].sold} units',
                           const TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600),
+                            color: AppTheme.textPrimary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                   ),
                 ),
                 titlesData: FlTitlesData(
                   leftTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (v, _) {
                         final i = v.toInt();
-                        if (i >= products.length)
-                          return const SizedBox();
+                        if (i >= products.length) return const SizedBox();
                         final name = products[i].name;
                         final short = name.length > 10
                             ? name.substring(0, 10)
                             : name;
                         return Padding(
                           padding: const EdgeInsets.only(top: 4),
-                          child: Text(short,
-                              style: const TextStyle(
-                                  color: AppTheme.textMuted,
-                                  fontSize: 9),
-                              overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            short,
+                            style: const TextStyle(
+                              color: AppTheme.textMuted,
+                              fontSize: 9,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         );
                       },
                     ),
@@ -1833,31 +2094,34 @@ class _ProductsCard extends StatelessWidget {
                 borderData: FlBorderData(show: false),
                 barGroups: List.generate(
                   products.length,
-                      (i) => BarChartGroupData(x: i, barRods: [
-                    BarChartRodData(
-                      toY: products[i].sold.toDouble(),
-                      gradient: const LinearGradient(
-                        colors: [
-                          AppColors.secondary,
-                          AppColors.primary
-                        ],
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
+                  (i) => BarChartGroupData(
+                    x: i,
+                    barRods: [
+                      BarChartRodData(
+                        toY: products[i].sold.toDouble(),
+                        gradient: const LinearGradient(
+                          colors: [AppColors.secondary, AppColors.primary],
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                        ),
+                        width: 32,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(6),
+                        ),
+                        backDrawRodData: BackgroundBarChartRodData(
+                          show: true,
+                          toY: maxSold.toDouble() * 1.2,
+                          color: AppTheme.border,
+                        ),
                       ),
-                      width: 32,
-                      borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(6)),
-                      backDrawRodData: BackgroundBarChartRodData(
-                        show: true,
-                        toY: maxSold.toDouble() * 1.2,
-                        color: AppTheme.border,
-                      ),
-                    ),
-                  ]),
+                    ],
+                  ),
                 ),
-              )),
+              ),
             ),
-          ]),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1871,42 +2135,47 @@ class _ActivityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AppCard(
     child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader(
-            title: 'Recent Activity',
-            subtitle: '${activity.length} transactions this period',
-            trailing: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 5),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Recent Activity',
+          subtitle: '${activity.length} transactions this period',
+          trailing: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
                   AppColors.secondary.withOpacity(0.12),
                   AppColors.primary.withOpacity(0.12),
-                ]),
-                border: Border.all(
-                    color: AppColors.primary.withOpacity(0.22)),
-                borderRadius: BorderRadius.circular(8),
+                ],
               ),
-              child: ShaderMask(
-                shaderCallback: (b) =>
-                    AppTheme.brandGradient.createShader(b),
-                child: const Text('View All',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700)),
+              border: Border.all(color: AppColors.primary.withOpacity(0.22)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ShaderMask(
+              shaderCallback: (b) => AppTheme.brandGradient.createShader(b),
+              child: const Text(
+                'View All',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          ...activity.map((item) => ActivityRow(
+        ),
+        const SizedBox(height: 16),
+        ...activity.map(
+          (item) => ActivityRow(
             refNo: item.refNo,
             type: item.type,
             who: item.who,
             date: item.date,
             amount: item.amount,
-          )),
-        ]),
+          ),
+        ),
+      ],
+    ),
   );
 }
